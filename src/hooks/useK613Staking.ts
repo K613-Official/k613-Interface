@@ -6,6 +6,62 @@ import stakingArtifact from 'src/abis/Staking/Staking.json';
 const STAKING_ABI = (stakingArtifact as unknown as { abi: unknown[] }).abi;
 const K613_ABI = (k613Artifact as unknown as { abi: unknown[] }).abi;
 
+export type StakingExitRequest = {
+  amount: bigint;
+  exitInitiatedAt: bigint;
+};
+
+export type StakingDepositView = {
+  amount: bigint;
+  exitQueue: StakingExitRequest[];
+};
+
+function parseExitRequestRow(item: unknown): StakingExitRequest | null {
+  if (item === null || item === undefined) return null;
+  if (Array.isArray(item)) {
+    const [amount, exitInitiatedAt] = item;
+    if (typeof amount !== 'bigint' || typeof exitInitiatedAt !== 'bigint') return null;
+    return { amount, exitInitiatedAt };
+  }
+  if (typeof item === 'object' && 'amount' in item && 'exitInitiatedAt' in item) {
+    const row = item as { amount: unknown; exitInitiatedAt: unknown };
+    if (typeof row.amount !== 'bigint' || typeof row.exitInitiatedAt !== 'bigint') return null;
+    return { amount: row.amount, exitInitiatedAt: row.exitInitiatedAt };
+  }
+  return null;
+}
+
+export function parseStakingDepositsRead(data: unknown): StakingDepositView | undefined {
+  if (data === undefined || data === null) return undefined;
+  if (Array.isArray(data)) {
+    if (data.length < 2) return undefined;
+    const amount = data[0];
+    const rawQueue = data[1];
+    if (typeof amount !== 'bigint') return undefined;
+    const exitQueue: StakingExitRequest[] = [];
+    if (Array.isArray(rawQueue)) {
+      for (const row of rawQueue) {
+        const parsed = parseExitRequestRow(row);
+        if (parsed) exitQueue.push(parsed);
+      }
+    }
+    return { amount, exitQueue };
+  }
+  if (typeof data === 'object' && 'amount' in data && 'exitQueue' in data) {
+    const record = data as { amount: unknown; exitQueue: unknown };
+    if (typeof record.amount !== 'bigint') return undefined;
+    const exitQueue: StakingExitRequest[] = [];
+    if (Array.isArray(record.exitQueue)) {
+      for (const row of record.exitQueue) {
+        const parsed = parseExitRequestRow(row);
+        if (parsed) exitQueue.push(parsed);
+      }
+    }
+    return { amount: record.amount, exitQueue };
+  }
+  return undefined;
+}
+
 export function useK613StakingAddress() {
   const { chainId } = useAccount();
   const addresses = chainId ? addressesByChainId(chainId) : null;
