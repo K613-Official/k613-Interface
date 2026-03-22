@@ -1,33 +1,34 @@
 import { createTheme } from '@mui/material/styles';
 
-import alertConfig from './alert';
 import buttonConfig from './button';
 import checkboxConfig from './checkbox';
 import inputConfig from './input';
+import selectConfig from './select';
 import switchConfig from './switch';
+import tabsConfig from './tabs';
 
 const theme = createTheme({
   palette: {
     mode: 'dark',
 
     primary: {
-      main: '#80FF00',
+      main: '#30434D',
       dark: '#192328',
     },
 
     secondary: {
-      main: '#E0E0E0',
+      main: '#405966',
     },
 
     text: {
-      primary: '#FFF',
-      secondary: '#757575',
+      primary: '#B3CCD9',
+      secondary: '#192328',
       muted: '#546066',
     },
 
     background: {
       default: '#000000',
-      paper: '#0b0b0b',
+      paper: '#192328',
       surface: '#192328',
       surface2: '#0D1112',
       disabled: '#0D1112',
@@ -58,11 +59,11 @@ const theme = createTheme({
 
   components: {
     ...buttonConfig(),
-    //...selectConfig(),
+    ...selectConfig(),
     ...checkboxConfig(),
     ...switchConfig(),
+    ...tabsConfig(),
     ...inputConfig(),
-    ...alertConfig(),
   },
 });
 
