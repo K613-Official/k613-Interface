@@ -51,14 +51,9 @@ export function K613StakingPanel() {
   const k613Balance = useK613TokenBalance(k613Address);
   const allowance = useK613TokenAllowance(k613Address, stakingAddress as `0x${string}` | undefined);
 
-  const {
-    stake,
-    initiateExit,
-    exit,
-    instantExit,
-    cancelExit,
-    isPending,
-  } = useK613StakingActions();
+  const { stake, initiateExit, exit, instantExit, cancelExit } = useK613StakingActions();
+
+  const [stakingActionPending, setStakingActionPending] = useState<string | null>(null);
 
   const { approve, isPending: isApprovePending } = useK613Approve();
 
@@ -72,13 +67,14 @@ export function K613StakingPanel() {
 
   const handleStake = useCallback(async () => {
     setError(null);
-    try {
-      const amount = parseUnits(stakeAmount, 18);
-      if (amount <= 0n) {
-        setError('Введите количество');
-        return;
-      }
+    const amount = parseUnits(stakeAmount, 18);
+    if (amount <= 0n) {
+      setError('Введите количество');
+      return;
+    }
 
+    setStakingActionPending('stake');
+    try {
       const currentAllowance = BigInt((allowance.data as bigint | undefined) ?? 0);
       if (currentAllowance < amount && k613Address && stakingAddress) {
         await approve(k613Address, stakingAddress as `0x${string}`, MAX_UINT256);
@@ -91,33 +87,43 @@ export function K613StakingPanel() {
       allowance.refetch();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ошибка стейкинга');
+    } finally {
+      setStakingActionPending(null);
     }
   }, [stakeAmount, allowance.data, k613Address, stakingAddress, approve, stake, refetch, k613Balance, allowance]);
 
   const handleInitiateExit = useCallback(async () => {
     setError(null);
+    const amount = parseUnits(exitAmount, 18);
+    if (amount <= 0n) {
+      setError('Введите количество');
+      return;
+    }
+
+    setStakingActionPending('initiateExit');
     try {
-      const amount = parseUnits(exitAmount, 18);
-      if (amount <= 0n) {
-        setError('Введите количество');
-        return;
-      }
       await initiateExit(amount);
       setExitAmount('');
       refetch();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ошибка инициации выхода');
+    } finally {
+      setStakingActionPending(null);
     }
   }, [exitAmount, initiateExit, refetch]);
 
   const handleExit = useCallback(
     async (index: bigint) => {
       setError(null);
+      const key = `exit:${index.toString()}`;
+      setStakingActionPending(key);
       try {
         await exit(index);
         refetch();
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Ошибка вывода');
+      } finally {
+        setStakingActionPending(null);
       }
     },
     [exit, refetch]
@@ -140,11 +146,15 @@ export function K613StakingPanel() {
   const handleCancelExit = useCallback(
     async (index: bigint) => {
       setError(null);
+      const key = `cancel:${index.toString()}`;
+      setStakingActionPending(key);
       try {
         await cancelExit(index);
         refetch();
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Ошибка отмены');
+      } finally {
+        setStakingActionPending(null);
       }
     },
     [cancelExit, refetch]
@@ -287,13 +297,13 @@ export function K613StakingPanel() {
               onClick={handleStake}
               disabled={
                 !!paused ||
-                isPending ||
+                stakingActionPending !== null ||
                 isApprovePending ||
                 !stakeAmount ||
                 parseFloat(stakeAmount) <= 0
               }
             >
-              {(isPending || isApprovePending) ? (
+              {stakingActionPending === 'stake' || isApprovePending ? (
                 <CircularProgress size={20} color="inherit" />
               ) : (
                 'Stake'
@@ -328,13 +338,17 @@ export function K613StakingPanel() {
               onClick={handleInitiateExit}
               disabled={
                 !!paused ||
-                isPending ||
+                stakingActionPending !== null ||
                 !exitAmount ||
                 parseFloat(exitAmount) <= 0 ||
                 stakedAmount === 0n
               }
             >
-              {isPending ? <CircularProgress size={20} color="inherit" /> : 'Initiate Exit'}
+              {stakingActionPending === 'initiateExit' ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                'Initiate Exit'
+              )}
             </Button>
           </Stack>
         </CardContent>
@@ -375,27 +389,39 @@ export function K613StakingPanel() {
                         size="small"
                         variant="contained"
                         onClick={() => handleExit(BigInt(index))}
-                        disabled={!canExit || isPending}
+                        disabled={!canExit || stakingActionPending !== null}
                       >
-                        Exit
+                        {stakingActionPending === `exit:${index}` ? (
+                          <CircularProgress size={16} color="inherit" />
+                        ) : (
+                          'Exit'
+                        )}
                       </Button>
                       <Button
                         size="small"
                         variant="outlined"
                         color="warning"
                         onClick={() => handleInstantExit(BigInt(index))}
-                        disabled={isPending}
+                        disabled={stakingActionPending !== null}
                       >
-                        Instant ({penaltyPercent}% штраф)
+                        {stakingActionPending === `instant:${index}` ? (
+                          <CircularProgress size={16} color="inherit" />
+                        ) : (
+                          `Instant (${penaltyPercent}% fee)`
+                        )}
                       </Button>
                       {!canExit && (
                         <Button
                           size="small"
                           variant="text"
                           onClick={() => handleCancelExit(BigInt(index))}
-                          disabled={isPending}
+                          disabled={stakingActionPending !== null}
                         >
-                          Отмена
+                          {stakingActionPending === `cancel:${index}` ? (
+                            <CircularProgress size={16} color="inherit" />
+                          ) : (
+                            'Cancel'
+                          )}
                         </Button>
                       )}
                     </Stack>
