@@ -10,6 +10,7 @@ import {
 } from 'src/utils/marketsAndNetworksConfig';
 import { type Chain } from 'viem';
 import { createConfig, CreateConfigParameters, http } from 'wagmi';
+import { arbitrumSepolia } from 'wagmi/chains';
 import { injected, safe } from 'wagmi/connectors';
 
 import { prodNetworkConfig, testnetConfig } from './networksConfig';
@@ -44,6 +45,8 @@ if (FORK_ENABLED) {
   prodChains = [forkChain, ...prodChains];
 }
 
+const prodChainsWithArbitrumSepolia = [...prodChains, arbitrumSepolia] as [Chain, ...Chain[]];
+
 const defaultConfig = {
   walletConnectProjectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID as string,
   appName: 'Aave',
@@ -68,8 +71,8 @@ const buildTransports = (chains: CreateConfigParameters['chains']) =>
   Object.fromEntries(chains.map((chain) => [chain.id, http(getTransport(chain.id))]));
 
 const prodCkConfig = getDefaultConfig({
-  chains: ENABLE_TESTNET ? testnetChains : prodChains,
-  transports: ENABLE_TESTNET ? undefined : buildTransports(prodChains),
+  chains: ENABLE_TESTNET ? testnetChains : prodChainsWithArbitrumSepolia,
+  transports: ENABLE_TESTNET ? undefined : buildTransports(prodChainsWithArbitrumSepolia),
   ...defaultConfig,
 });
 const prodConfig = createConfig({
