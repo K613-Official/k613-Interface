@@ -13,6 +13,8 @@ import {
 } from '@mui/material';
 import { useCallback, useState } from 'react';
 import { parseUnits } from 'viem';
+import { useAccount, useSwitchChain } from 'wagmi';
+import { ConnectWalletButton } from 'src/components/WalletConnection/ConnectWalletButton';
 import {
   useK613Approve,
   useK613StakingActions,
@@ -23,8 +25,12 @@ import {
 } from 'src/hooks/useK613Staking';
 
 const MAX_UINT256 = BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
+const K613_STAKING_CHAIN_ID = 421614;
 
 export function K613StakingPanel() {
+  const { chainId } = useAccount();
+  const { switchChainAsync, isPending: isSwitchChainPending } = useSwitchChain();
+
   const [stakeAmount, setStakeAmount] = useState('');
   const [exitAmount, setExitAmount] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -158,18 +164,48 @@ export function K613StakingPanel() {
     return now >= unlockTime;
   };
 
-  if (!stakingAddress) {
+  if (!userAddress) {
     return (
       <Paper sx={{ p: 4, textAlign: 'center' }}>
-        <Typography color="text.secondary">
-          Контракт стейкинга не настроен. Добавьте адрес в src/const/addresses.ts
-        </Typography>
+        <Stack spacing={2} alignItems="center">
+          <Typography color="text.secondary">
+            Connect your wallet to use K613 staking.
+          </Typography>
+          <ConnectWalletButton funnel="K613 Staking" />
+        </Stack>
       </Paper>
     );
   }
 
-  if (!userAddress) {
-    return null;
+  if (chainId !== K613_STAKING_CHAIN_ID) {
+    return (
+      <Paper sx={{ p: 4, textAlign: 'center' }}>
+        <Stack spacing={2} alignItems="center">
+          <Typography color="text.secondary">
+            K613 staking uses Arbitrum Sepolia (chain ID {K613_STAKING_CHAIN_ID}). Your wallet is on
+            another network.
+          </Typography>
+          <Button
+            variant="contained"
+            disabled={!switchChainAsync || isSwitchChainPending}
+            onClick={() => switchChainAsync?.({ chainId: K613_STAKING_CHAIN_ID })}
+          >
+            {isSwitchChainPending ? 'Switching…' : 'Switch to Arbitrum Sepolia'}
+          </Button>
+        </Stack>
+      </Paper>
+    );
+  }
+
+  if (!stakingAddress) {
+    return (
+      <Paper sx={{ p: 4, textAlign: 'center' }}>
+        <Typography color="text.secondary">
+          Staking contract address is missing for this chain. Check src/const/addresses.ts and
+          src/utils/addresses.ts.
+        </Typography>
+      </Paper>
+    );
   }
 
   const balanceFormatted =
