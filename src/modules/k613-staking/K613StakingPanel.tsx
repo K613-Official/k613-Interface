@@ -22,6 +22,7 @@ import {
   useK613TokenAllowance,
   useK613TokenBalance,
   formatLockDuration,
+  parseStakingDepositsRead,
 } from 'src/hooks/useK613Staking';
 
 const MAX_UINT256 = BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
@@ -61,12 +62,10 @@ export function K613StakingPanel() {
 
   const { approve, isPending: isApprovePending } = useK613Approve();
 
-  const depositData = deposits.data as
-    | { amount: bigint; exitQueue: { amount: bigint; exitInitiatedAt: bigint }[] }
-    | undefined;
+  const depositData = parseStakingDepositsRead(deposits.data);
 
   const stakedAmount = depositData?.amount ?? BigInt(0);
-  const exitQueue = (depositData?.exitQueue ?? []) as { amount: bigint; exitInitiatedAt: bigint }[];
+  const exitQueue = depositData?.exitQueue ?? [];
   const lockDurationSeconds = (lockDuration.data as bigint | undefined) ?? BigInt(0);
   const penaltyBps = Number((instantExitPenaltyBps.data as bigint | undefined) ?? 0);
   const penaltyPercent = (penaltyBps / 100).toFixed(1);
@@ -258,7 +257,7 @@ export function K613StakingPanel() {
               </Box>
               <Box>
                 <Typography variant="body2" color="text.secondary">
-                  Застейкано (xK613)
+                  Застейкано (K613)
                 </Typography>
                 <Typography variant="h6">{stakedFormatted}</Typography>
               </Box>
