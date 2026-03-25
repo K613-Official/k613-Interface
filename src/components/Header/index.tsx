@@ -17,6 +17,7 @@ const TABS = [
   { label: 'Dashboard', href: ROUTES.dashboard },
   { label: 'Markets', href: ROUTES.markets },
   { label: 'FAQ', href: ROUTES.faq },
+  { label: 'Staking K613', href: ROUTES.stakingK613 },
 ];
 
 export default function Header() {

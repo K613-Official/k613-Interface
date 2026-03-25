@@ -109,6 +109,12 @@ export function useK613StakingData() {
     functionName: 'paused',
   });
 
+  const maxExitRequests = useReadContract({
+    address: stakingAddress as `0x${string}` | undefined,
+    abi: STAKING_ABI,
+    functionName: 'MAX_EXIT_REQUESTS',
+  });
+
   return {
     stakingAddress,
     userAddress,
@@ -118,17 +124,23 @@ export function useK613StakingData() {
     k613Address: k613Address.data as `0x${string}` | undefined,
     xk613Address: xk613Address.data as `0x${string}` | undefined,
     paused: paused.data,
+    maxExitRequests: maxExitRequests.data as bigint | undefined,
     isLoading:
       deposits.isLoading ||
       lockDuration.isLoading ||
+      instantExitPenaltyBps.isLoading ||
       k613Address.isLoading ||
-      xk613Address.isLoading,
+      xk613Address.isLoading ||
+      paused.isLoading ||
+      maxExitRequests.isLoading,
     refetch: () => {
       deposits.refetch();
       lockDuration.refetch();
+      instantExitPenaltyBps.refetch();
       k613Address.refetch();
       xk613Address.refetch();
       paused.refetch();
+      maxExitRequests.refetch();
     },
   };
 }
@@ -244,4 +256,28 @@ export function formatLockDuration(seconds: bigint | undefined): string {
   const hours = Number(seconds) / 3600;
   if (hours >= 1) return `${hours} ч.`;
   return `${Number(seconds)} сек.`;
+}
+
+export function formatLockPeriodMonths(seconds: bigint | undefined): string {
+  if (!seconds) return '—';
+  const s = Number(seconds);
+  const months = Math.max(1, Math.round(s / (30 * 24 * 3600)));
+  return `${months} month${months === 1 ? '' : 's'}`;
+}
+
+export function formatUnlockCountdown(exitInitiatedAt: bigint, lockDurationSeconds: bigint): string {
+  const unlockAt = Number(exitInitiatedAt) + Number(lockDurationSeconds);
+  const now = Math.floor(Date.now() / 1000);
+  let remaining = unlockAt - now;
+  if (remaining <= 0) return 'Ready';
+  const d = Math.floor(remaining / 86400);
+  remaining %= 86400;
+  const h = Math.floor(remaining / 3600);
+  remaining %= 3600;
+  const m = Math.floor(remaining / 60);
+  return `${d}d ${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
+}
+
+export function formatExitRequestId(index: number): string {
+  return `REQ-${String(index + 1).padStart(3, '0')}`;
 }
