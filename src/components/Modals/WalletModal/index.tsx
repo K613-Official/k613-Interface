@@ -1,6 +1,7 @@
 import { Close, ContentCopy, Logout } from '@mui/icons-material';
 import { Typography } from '@mui/material';
 import { useCallback, useState } from 'react';
+import { useDisconnect } from 'wagmi';
 
 import { BaseModalProps, WalletModalProps } from '../types';
 import {
@@ -22,6 +23,16 @@ function shortenAddress(address: string) {
 
 export default function WalletModal({ open, onClose, address }: Props) {
   const [copied, setCopied] = useState(false);
+  const { disconnectAsync, isPending: isDisconnecting } = useDisconnect();
+
+  const handleDisconnect = useCallback(async () => {
+    try {
+      await disconnectAsync();
+      onClose();
+    } catch {
+      // User rejected or connector error — keep modal open
+    }
+  }, [disconnectAsync, onClose]);
 
   const handleCopy = useCallback(async () => {
     await navigator.clipboard.writeText(address);
@@ -58,7 +69,14 @@ export default function WalletModal({ open, onClose, address }: Props) {
 
       <Balance variant="body1">0.00 ETH</Balance>
 
-      <DisconnectButton variant="contained" color="secondary" size="small" startIcon={<Logout />}>
+      <DisconnectButton
+        variant="contained"
+        color="secondary"
+        size="small"
+        startIcon={<Logout />}
+        disabled={isDisconnecting}
+        onClick={handleDisconnect}
+      >
         DISCONNECT
       </DisconnectButton>
     </Dialog>
