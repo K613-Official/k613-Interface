@@ -1,15 +1,18 @@
-import { AccountCircleSharp, Menu as MenuIcon, Settings } from '@mui/icons-material';
+import { Menu as MenuIcon, Settings } from '@mui/icons-material';
 import { Box, Button, Menu, MenuItem, IconButton as MuiIconButton, Tab } from '@mui/material';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
+import { AvatarSize } from 'src/components/Avatar';
 import MaxWidthContainer from 'src/components/MaxWidthContainer';
-import { WALLET_ADDRESS } from 'src/components/Modals/const';
 import SettingsMenu from 'src/components/Modals/SettingsMenu';
 import { ModalType } from 'src/components/Modals/types';
 import { Link, ROUTES } from 'src/components/primitives/Link';
+import { UserDisplay } from 'src/components/UserDisplay';
+import { ConnectWalletButton } from 'src/components/WalletConnection/ConnectWalletButton';
 import { useDevice } from 'src/hooks';
 import { useModalStore } from 'src/store/useModalStore';
+import { useAccount } from 'wagmi';
 
 import { Container, IconButton, MobileMenuButton, Tabs, TabsWrapper } from './styles';
 
@@ -22,6 +25,7 @@ const TABS = [
 
 export default function Header() {
   const router = useRouter();
+  const { address, isConnected } = useAccount();
   const openModal = useModalStore((s) => s.openModal);
   const [settingsAnchor, setSettingsAnchor] = useState<HTMLElement | null>(null);
   const [mobileMenuAnchor, setMobileMenuAnchor] = useState<HTMLElement | null>(null);
@@ -30,6 +34,8 @@ export default function Header() {
     const tabPath = tab.href.replace(/\/$/, '') || '/';
     return pathname === tabPath || (tabPath !== '/' && pathname.startsWith(tabPath + '/'));
   });
+
+  console.log('1');
 
   const { isMobile } = useDevice();
 
@@ -64,13 +70,21 @@ export default function Header() {
             {/* <Button variant="outlined" endIcon={<SwapHorizOutlined />}>
               Swap
             </Button> */}
-            <Button
-              variant="outlined"
-              startIcon={<AccountCircleSharp />}
-              onClick={() => openModal(ModalType.Wallet, { address: WALLET_ADDRESS })}
-            >
-              0x56...6810
-            </Button>
+            {isConnected && address ? (
+              <Button
+                variant="outlined"
+                onClick={() => openModal(ModalType.Wallet, { address })}
+                sx={{ textTransform: 'none', gap: 1, pl: 1, pr: 2 }}
+              >
+                <UserDisplay
+                  avatarProps={{ size: AvatarSize.SM }}
+                  oneLiner
+                  titleProps={{ variant: 'button' }}
+                />
+              </Button>
+            ) : (
+              <ConnectWalletButton />
+            )}
             {isMobile ? (
               <MobileMenuButton>
                 <MuiIconButton
