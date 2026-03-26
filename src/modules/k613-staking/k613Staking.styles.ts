@@ -707,3 +707,68 @@ export const LoadingBox = styled(Box)(() => ({
   justifyContent: 'center',
   padding: 24,
 }));
+
+export const StakingStartCard = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  gap: 16,
+  boxSizing: 'border-box',
+  width: '100%',
+  minHeight: 116,
+  padding: 24,
+  backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  border: '1px solid rgba(255, 255, 255, 0.3)',
+  borderRadius: 4,
+  [theme.breakpoints.down('sm')]: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    minHeight: 'auto',
+  },
+}));
+
+export const StakingStartTextCol = styled(Box)(() => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 8,
+  flex: 1,
+  minWidth: 0,
+}));
+
+export const StakingStartTitle = styled(Typography)(() => ({
+  margin: 0,
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 400,
+  fontSize: 24,
+  lineHeight: 1.334,
+  color: '#FFFFFF',
+}));
+
+export const StakingStartSubtitle = styled(Typography)(() => ({
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 400,
+  fontSize: 14,
+  lineHeight: 1.43,
+  letterSpacing: '0.012142857em',
+  color: '#A3A3A3',
+  maxWidth: 400,
+}));
+
+export const StakingStartCta = styled(Button)(({ theme }) => ({
+  flexShrink: 0,
+  borderRadius: 4,
+  minHeight: 32,
+  padding: '4px 10px',
+  fontFamily: 'Roboto, sans-serif',
+  fontSize: 13,
+  fontWeight: 500,
+  lineHeight: 1.75,
+  letterSpacing: '0.028571429em',
+  textTransform: 'none',
+  boxShadow: theme.shadows[2],
+  [theme.breakpoints.down('sm')]: {
+    alignSelf: 'stretch',
+    width: '100%',
+  },
+}));

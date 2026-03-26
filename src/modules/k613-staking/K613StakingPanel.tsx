@@ -1,13 +1,20 @@
 'use client';
 
 import { CircularProgress } from '@mui/material';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { K613InfoDialog } from './K613InfoDialog';
-import { LoadingBox, PageRoot, PausedBanner, TabContentColumn } from './k613Staking.styles';
+import {
+  LoadingBox,
+  MainPanel,
+  PageRoot,
+  PausedBanner,
+  TabContentColumn,
+} from './k613Staking.styles';
 import { K613StakingProvider } from './K613StakingContext';
 import { K613StakingFooter } from './K613StakingFooter';
 import { K613StakingHeader } from './K613StakingHeader';
+import { K613StakingStartPanel } from './K613StakingStartPanel';
 import { K613StakingStatsGrid } from './K613StakingStatsGrid';
 import { K613StakingTabBar } from './K613StakingTabBar';
 import { K613ClaimUnstakeTab } from './tabs/K613ClaimUnstakeTab';
@@ -16,6 +23,7 @@ import { K613ManageExitTab } from './tabs/K613ManageExitTab';
 import { useK613StakingController } from './useK613StakingController';
 
 export function K613StakingPanel() {
+  const [stakingStarted, setStakingStarted] = useState(false);
   const ctx = useK613StakingController();
   const { mainTab, resetLockFlow, gate, infoDialog, setInfoDialog, paused, isLoading } = ctx;
 
@@ -40,7 +48,7 @@ export function K613StakingPanel() {
           <LoadingBox>
             <CircularProgress size={32} />
           </LoadingBox>
-        ) : (
+        ) : stakingStarted ? (
           <>
             <K613StakingStatsGrid />
             {paused && <PausedBanner>Staking is paused</PausedBanner>}
@@ -51,6 +59,10 @@ export function K613StakingPanel() {
               {mainTab === 'manageExit' && <K613ManageExitTab />}
             </TabContentColumn>
           </>
+        ) : (
+          <MainPanel>
+            <K613StakingStartPanel onStart={() => setStakingStarted(true)} />
+          </MainPanel>
         )}
         <K613StakingFooter />
       </K613StakingProvider>
