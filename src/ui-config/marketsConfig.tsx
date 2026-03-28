@@ -363,6 +363,7 @@ export const marketsData: {
     enabledFeatures: {
       incentives: true,
     },
+    subgraphUrl: process.env.NEXT_PUBLIC_SUBGRAPH_ARBITRUM_SEPOLIA_URL,
     addresses: {
       LENDING_POOL_ADDRESS_PROVIDER: '0x20f1827195Bbff32942C43681841d6b2B82651b7',
       LENDING_POOL: '0x41c45715a50a98e8924bcedd31e6402a2f54afd7',
