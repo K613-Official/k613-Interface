@@ -11,6 +11,8 @@ import { Link, ROUTES } from 'src/components/primitives/Link';
 import { getEmodeMessage } from 'src/components/transactions/Emode/EmodeNaming';
 import { ComputedReserveData, useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { AssetCapsProvider, useAssetCaps } from 'src/hooks/useAssetCaps';
+import { BROKEN_ASSETS } from 'src/hooks/useReservesHistory';
+import { ApyGraphContainer } from 'src/modules/reserve-overview/graphs/ApyGraphContainer';
 import { useRootStore } from 'src/store/root';
 import { useShallow } from 'zustand/shallow';
 
@@ -180,6 +182,15 @@ function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveData }) {
   const [supplyRange, setSupplyRange] = useState<ChartRange>('1w');
   const [borrowRange, setBorrowRange] = useState<ChartRange>('1w');
 
+  const reserveChartId =
+    reserve.underlyingAsset + currentMarketData.addresses.LENDING_POOL_ADDRESS_PROVIDER;
+  const renderCharts =
+    !!currentNetworkConfig.ratesHistoryApiUrl &&
+    !currentMarketData.disableCharts &&
+    !BROKEN_ASSETS.includes(reserveChartId);
+
+  const showBorrowApyChart = reserve.borrowingEnabled || Number(reserve.totalDebt) > 0;
+
   const showSupplyCap = reserve.supplyCap !== '0';
   const showBorrowCap = reserve.borrowCap !== '0';
 
@@ -208,13 +219,17 @@ function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveData }) {
 
   const tokenIconSrc = `/icons/tokens/${reserve.iconSymbol.toLowerCase()}.svg`;
 
+  const instanceIconSrc = currentNetworkConfig.wrappedBaseAssetSymbol
+    ? `/icons/tokens/${currentNetworkConfig.wrappedBaseAssetSymbol.toLowerCase()}.svg`
+    : '/icons/tokens/eth.svg';
+
   const canBeCollateral = reserve.reserveLiquidationThreshold !== '0';
 
   return (
     <PageWrapper>
       <TopRows>
         <InstanceRow>
-          <Image src="/icons/tokens/eth.svg" width={32} height={32} alt="" />
+          <Image src={instanceIconSrc} width={32} height={32} alt="" />
           <Typography
             component="span"
             sx={{ typography: { xs: 'h4', sm: 'h6' }, lineHeight: { xs: 1.2, sm: undefined } }}
@@ -409,13 +424,23 @@ function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveData }) {
               </MetricCell>
             </MetricsRow>
           </SupplyBorrowMain>
-          <ApyChartPanel
-            title="Supply ARP"
-            avgLabel={formatLiveApyCaption(reserve.supplyAPY)}
-            range={supplyRange}
-            onRangeChange={setSupplyRange}
-            accent="supply"
-          />
+          {renderCharts ? (
+            <Box sx={{ width: '100%', '& > *:first-of-type': { mt: 2, mb: 2 } }}>
+              <ApyGraphContainer
+                graphKey="supply"
+                reserve={reserve}
+                currentMarketData={currentMarketData}
+              />
+            </Box>
+          ) : (
+            <ApyChartPanel
+              title="Supply ARP"
+              avgLabel={formatLiveApyCaption(reserve.supplyAPY)}
+              range={supplyRange}
+              onRangeChange={setSupplyRange}
+              accent="supply"
+            />
+          )}
           <Subsection>
             <Typography variant="body1">Collateral usage</Typography>
             <FlagRow>
@@ -565,13 +590,23 @@ function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveData }) {
               </MetricCell>
             </MetricsRow>
           </SupplyBorrowMain>
-          <ApyChartPanel
-            title="Borrow APR, variable"
-            avgLabel={formatLiveApyCaption(reserve.variableBorrowAPY)}
-            range={borrowRange}
-            onRangeChange={setBorrowRange}
-            accent="borrow"
-          />
+          {renderCharts && showBorrowApyChart ? (
+            <Box sx={{ width: '100%', '& > *:first-of-type': { mt: 2, mb: 2 } }}>
+              <ApyGraphContainer
+                graphKey="borrow"
+                reserve={reserve}
+                currentMarketData={currentMarketData}
+              />
+            </Box>
+          ) : !renderCharts ? (
+            <ApyChartPanel
+              title="Borrow APR, variable"
+              avgLabel={formatLiveApyCaption(reserve.variableBorrowAPY)}
+              range={borrowRange}
+              onRangeChange={setBorrowRange}
+              accent="borrow"
+            />
+          ) : null}
         </ConfigCard>
 
         {collectorAddress ? (
