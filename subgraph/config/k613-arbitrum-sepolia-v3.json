@@ -1,0 +1,9 @@
+{
+    "network": "arbitrum-sepolia",
+    "AaveOracleAddress": "0x4D82d72AF7ee91b5c16cA3A4C85585e9791f9Cc0",
+    "AaveOracleStartBlock": 244793879,
+    "PoolAddressesProviderRegistryAddress": "0x79dfff4ed0dcc1012d7631f9043d6c3de82f62ed",
+    "PoolAddressesProviderRegistryStartBlock": 244793804,
+    "RewardsControllerAddress": "0x68884bc5ca880c72c6d7b17b90763e5ca5726f2e",
+    "RewardsControllerStartBlock": 244793879
+}
