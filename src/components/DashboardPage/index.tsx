@@ -2,11 +2,13 @@ import { Badge, Button, Typography } from '@mui/material';
 import Image from 'next/image';
 import { useState } from 'react';
 import AssetsTable from 'src/components/AssetsTable';
+import { ConnectWalletPaper } from 'src/components/ConnectWalletPaper';
 import InfoCard from 'src/components/InfoCard';
 import Layout from 'src/components/Layout';
 import MaxWidthContainer from 'src/components/MaxWidthContainer';
 import { ModalType } from 'src/components/Modals/types';
 import { useDevice } from 'src/hooks';
+import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
 import { useModalStore } from 'src/store/useModalStore';
 
 import { DASHBOARD_TABLES } from './const';
@@ -29,6 +31,8 @@ export default function DashboardPage() {
   const openModal = useModalStore((s) => s.openModal);
   const { isTablet } = useDevice();
   const [table, setTable] = useState<DASHBOARD_TABLES>(DASHBOARD_TABLES.SUPPLY);
+
+  const { currentAccount } = useWeb3Context();
 
   return (
     <Layout>
@@ -83,36 +87,43 @@ export default function DashboardPage() {
           </RightContainer>
         </FirstBlock>
 
-        <TableSwitchContainer>
-          <Button
-            variant={table === DASHBOARD_TABLES.SUPPLY ? 'contained' : 'text'}
-            color="inherit"
-            fullWidth
-            onClick={() => setTable(DASHBOARD_TABLES.SUPPLY)}
-          >
-            SUPPLY
-          </Button>
-          <Button
-            variant={table === DASHBOARD_TABLES.BORROW ? 'contained' : 'text'}
-            color="inherit"
-            fullWidth
-            onClick={() => setTable(DASHBOARD_TABLES.BORROW)}
-          >
-            BORROW
-          </Button>
-        </TableSwitchContainer>
+        {currentAccount ? (
+          <>
+            <TableSwitchContainer>
+              <Button
+                variant={table === DASHBOARD_TABLES.SUPPLY ? 'contained' : 'text'}
+                color="inherit"
+                fullWidth
+                onClick={() => setTable(DASHBOARD_TABLES.SUPPLY)}
+              >
+                SUPPLY
+              </Button>
+              <Button
+                variant={table === DASHBOARD_TABLES.BORROW ? 'contained' : 'text'}
+                color="inherit"
+                fullWidth
+                onClick={() => setTable(DASHBOARD_TABLES.BORROW)}
+              >
+                BORROW
+              </Button>
+            </TableSwitchContainer>
+            <CardsContainer>
+              {(!isTablet || table === DASHBOARD_TABLES.SUPPLY) && (
+                <InfoCard title="Your supplies" />
+              )}
+              {(!isTablet || table === DASHBOARD_TABLES.BORROW) && (
+                <InfoCard title="Your borrows" extra="E-Mode" />
+              )}
+            </CardsContainer>
 
-        <CardsContainer>
-          {(!isTablet || table === DASHBOARD_TABLES.SUPPLY) && <InfoCard title="Your supplies" />}
-          {(!isTablet || table === DASHBOARD_TABLES.BORROW) && (
-            <InfoCard title="Your borrows" extra="E-Mode" />
-          )}
-        </CardsContainer>
-
-        <TablesContainer>
-          {(!isTablet || table === DASHBOARD_TABLES.SUPPLY) && <AssetsTable type="supply" />}
-          {(!isTablet || table === DASHBOARD_TABLES.BORROW) && <AssetsTable type="borrow" />}
-        </TablesContainer>
+            <TablesContainer>
+              {(!isTablet || table === DASHBOARD_TABLES.SUPPLY) && <AssetsTable type="supply" />}
+              {(!isTablet || table === DASHBOARD_TABLES.BORROW) && <AssetsTable type="borrow" />}
+            </TablesContainer>
+          </>
+        ) : (
+          <ConnectWalletPaper />
+        )}
       </MaxWidthContainer>
     </Layout>
   );

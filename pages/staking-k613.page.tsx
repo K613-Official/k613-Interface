@@ -13,7 +13,7 @@ export default function StakingK613() {
         <K613StakingPanel />
       ) : (
         <PageRoot>
-          <ConnectWalletPaper description="Connect your wallet to stake K613, manage exit requests, and view balances." />
+          <ConnectWalletPaper />
         </PageRoot>
       )}
     </Layout>
