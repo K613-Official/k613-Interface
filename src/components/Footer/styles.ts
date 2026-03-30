@@ -8,7 +8,7 @@ export const Container = styled(Box)(({ theme }) => ({
 
 export const Wrapper = styled(Box)(({ theme }) => ({
   display: 'flex',
-  justifyContent: 'space-between',
+  justifyContent: 'flex-end',
   alignItems: 'center',
 
   [theme.breakpoints.down('sm')]: {

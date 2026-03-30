@@ -8,7 +8,7 @@ export const Paper = styled(PaperBase, {
   borderRadius: 4,
   padding: 24,
   maxBlockSize: 'fit-content',
-  blockSize: isOpen ? 1000 : 88,
+  blockSize: isOpen ? 1200 : 88,
   overflow: 'hidden',
   transition: 'block-size .25s ease',
 }));

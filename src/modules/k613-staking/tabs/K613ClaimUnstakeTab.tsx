@@ -51,18 +51,23 @@ export function K613ClaimUnstakeTab() {
     handleExit,
     handleInstantExit,
     handleCancelExit,
+    handleClaimRewards,
     setMaxExit,
     isLockDurationPassed,
     formatUnlockCountdown,
     formatExitRequestId,
     formatTokenAmount,
     penaltyPercent,
+    instantExitRequiresDistributor,
+    pendingRewardsAmount,
+    lastAccrualDisplay,
   } = useK613StakingPage();
 
   const parsedPositive =
     exitAmount.trim() !== '' && !Number.isNaN(parseFloat(exitAmount)) && parseFloat(exitAmount) > 0;
   const queueFull = exitQueue.length >= maxExitSlots;
   const initiateBusy = actionPending === 'initiateExit';
+  const claimBusy = actionPending === 'claimRewards';
 
   return (
     <>
@@ -75,14 +80,18 @@ export function K613ClaimUnstakeTab() {
             </PanelCaptionLeft>
             <RewardRow>
               <ExitCellLabel>Pending rewards</ExitCellLabel>
-              <ExitCellValue>{formatted.pendingRewards}</ExitCellValue>
+              <ExitCellValue>{formatted.pendingRewards} xK613</ExitCellValue>
             </RewardRow>
             <RewardRow>
               <ExitCellLabel>Last accrual</ExitCellLabel>
-              <ExitCellValue>—</ExitCellValue>
+              <ExitCellValue>{lastAccrualDisplay}</ExitCellValue>
             </RewardRow>
-            <CtaOutlined variant="outlined" disabled>
-              claim rewards
+            <CtaOutlined
+              variant="outlined"
+              disabled={paused || claimBusy || pendingRewardsAmount <= 0n}
+              onClick={handleClaimRewards}
+            >
+              {claimBusy ? <CircularProgress color="inherit" size={22} /> : 'claim rewards'}
             </CtaOutlined>
           </RewardCard>
         </ClaimCol>
@@ -197,7 +206,7 @@ export function K613ClaimUnstakeTab() {
                     size="small"
                     variant="outlined"
                     color="warning"
-                    disabled={paused || actionPending !== null}
+                    disabled={paused || actionPending !== null || instantExitRequiresDistributor}
                     onClick={() => handleInstantExit(BigInt(index))}
                   >
                     {busyInstant ? (
@@ -213,10 +222,19 @@ export function K613ClaimUnstakeTab() {
                       disabled={paused || actionPending !== null}
                       onClick={() => handleCancelExit(BigInt(index))}
                     >
-                      {busyCancel ? <CircularProgress size={16} color="inherit" /> : 'cancel request'}
+                      {busyCancel ? (
+                        <CircularProgress size={16} color="inherit" />
+                      ) : (
+                        'cancel request'
+                      )}
                     </SmallActionButton>
                   )}
                 </RewardRow>
+                {instantExitRequiresDistributor && (
+                  <QueueNotice>
+                    instant exit disabled until rewards distributor is configured
+                  </QueueNotice>
+                )}
               </ExitCard>
             );
           })}

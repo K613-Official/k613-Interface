@@ -46,6 +46,7 @@ export const HorizontalDivider = styled(Box)(({ theme }) => ({
 
 export const V3 = styled(Box)(({ theme }) => ({
   backgroundColor: theme.palette.primary.main,
+  color: theme.palette.primary.dark,
   borderRadius: 100,
   paddingInline: 6,
 }));

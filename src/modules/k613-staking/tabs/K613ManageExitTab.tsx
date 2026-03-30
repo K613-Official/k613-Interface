@@ -12,17 +12,19 @@ import {
   PanelCaptionLeft,
   PanelHeading,
   PanelSection,
+  QueueNotice,
+  RequestRowActions,
+  RequestRowCard,
+  RequestRowLabel,
+  RequestRowMetric,
+  RequestRowValue,
+  RequestsList,
   RewardRow,
   SmallActionButton,
   StatCard,
   StatInner,
   StatLabel,
   StatValue,
-  TableRoot,
-  TableWrap,
-  TdCell,
-  ThCell,
-  TrSelectable,
 } from '../k613Staking.styles';
 import { useK613StakingPage } from '../K613StakingContext';
 
@@ -37,6 +39,7 @@ export function K613ManageExitTab() {
     selectedRow,
     selectedReceive,
     penaltyPercent,
+    instantExitRequiresDistributor,
     lockDurationSeconds,
     actionPending,
     error,
@@ -100,11 +103,16 @@ export function K613ManageExitTab() {
           </RewardRow>
           <CtaOutlined
             variant="outlined"
-            disabled={paused || actionPending !== null}
+            disabled={paused || actionPending !== null || instantExitRequiresDistributor}
             onClick={() => handleInstantExit(BigInt(manageSelectedIndex))}
           >
             {instantBusy ? <CircularProgress color="inherit" size={22} /> : 'instant exit'}
           </CtaOutlined>
+          {instantExitRequiresDistributor && (
+            <QueueNotice>
+              instant exit is unavailable until rewards distributor is configured
+            </QueueNotice>
+          )}
         </InstantPanel>
       )}
 
@@ -114,60 +122,63 @@ export function K613ManageExitTab() {
           <PanelCaptionLeft>
             Every request can be canceled separately. Use the action button next to each row
           </PanelCaptionLeft>
-          <TableWrap>
-            <TableRoot>
-              <thead>
-                <tr>
-                  <ThCell>#</ThCell>
-                  <ThCell>Request ID</ThCell>
-                  <ThCell>Amount</ThCell>
-                  <ThCell>Timer</ThCell>
-                  <ThCell>Action</ThCell>
-                  <ThCell>Cancelable</ThCell>
-                </tr>
-              </thead>
-              <tbody>
-                {exitQueue.map((item, index) => {
-                  const canExit = isLockDurationPassed(item.exitInitiatedAt);
-                  const timer = canExit ? 'Ready' : formatUnlockCountdown(item.exitInitiatedAt, lockDurationSeconds);
-                  const rowCancelBusy = actionPending === `cancel:${index}`;
+          <RequestsList>
+            {exitQueue.map((item, index) => {
+              const canExit = isLockDurationPassed(item.exitInitiatedAt);
+              const timer = canExit
+                ? 'Ready'
+                : formatUnlockCountdown(item.exitInitiatedAt, lockDurationSeconds);
+              const rowCancelBusy = actionPending === `cancel:${index}`;
 
-                  return (
-                    <TrSelectable
-                      key={`${item.exitInitiatedAt.toString()}-${index}`}
-                      selected={manageSelectedIndex === index}
-                      onClick={() => setManageSelectedIndex(index)}
-                    >
-                      <TdCell>{index + 1}</TdCell>
-                      <TdCell>{formatExitRequestId(index)}</TdCell>
-                      <TdCell>{formatTokenAmount(item.amount)} xK613</TdCell>
-                      <TdCell>{timer}</TdCell>
-                      <TdCell>
-                        {!canExit && (
-                          <SmallActionButton
-                            size="small"
-                            variant="text"
-                            disabled={paused || actionPending !== null}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCancelExit(BigInt(index));
-                            }}
-                          >
-                            {rowCancelBusy ? (
-                              <CircularProgress size={16} color="inherit" />
-                            ) : (
-                              'cancel exit'
-                            )}
-                          </SmallActionButton>
+              return (
+                <RequestRowCard
+                  key={`${item.exitInitiatedAt.toString()}-${index}`}
+                  selected={manageSelectedIndex === index}
+                  onClick={() => setManageSelectedIndex(index)}
+                >
+                  <RequestRowMetric>
+                    <RequestRowLabel>#</RequestRowLabel>
+                    <RequestRowValue>{index + 1}</RequestRowValue>
+                  </RequestRowMetric>
+                  <RequestRowMetric>
+                    <RequestRowLabel>Request ID</RequestRowLabel>
+                    <RequestRowValue>{formatExitRequestId(index)}</RequestRowValue>
+                  </RequestRowMetric>
+                  <RequestRowMetric>
+                    <RequestRowLabel>Amount</RequestRowLabel>
+                    <RequestRowValue>{formatTokenAmount(item.amount)} xK613</RequestRowValue>
+                  </RequestRowMetric>
+                  <RequestRowMetric>
+                    <RequestRowLabel>Timer</RequestRowLabel>
+                    <RequestRowValue>{timer}</RequestRowValue>
+                  </RequestRowMetric>
+                  <RequestRowMetric>
+                    <RequestRowLabel>Action</RequestRowLabel>
+                    <RequestRowValue>{canExit ? '—' : 'Cancelable'}</RequestRowValue>
+                  </RequestRowMetric>
+                  <RequestRowActions>
+                    {!canExit && (
+                      <SmallActionButton
+                        size="small"
+                        variant="text"
+                        disabled={paused || actionPending !== null}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCancelExit(BigInt(index));
+                        }}
+                      >
+                        {rowCancelBusy ? (
+                          <CircularProgress size={16} color="inherit" />
+                        ) : (
+                          'cancel exit'
                         )}
-                      </TdCell>
-                      <TdCell>{canExit ? '—' : 'Cancelable'}</TdCell>
-                    </TrSelectable>
-                  );
-                })}
-              </tbody>
-            </TableRoot>
-          </TableWrap>
+                      </SmallActionButton>
+                    )}
+                  </RequestRowActions>
+                </RequestRowCard>
+              );
+            })}
+          </RequestsList>
         </PanelSection>
       )}
 

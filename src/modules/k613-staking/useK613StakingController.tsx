@@ -8,25 +8,35 @@ import {
   formatUnlockCountdown,
   parseStakingDepositsRead,
   useK613Approve,
+  useK613RewardsActions,
+  useK613RewardsData,
   useK613StakingActions,
   useK613StakingData,
   useK613TokenAllowance,
   useK613TokenBalance,
 } from 'src/hooks/useK613Staking';
-import { parseUnits } from 'viem';
+import { formatUnits, parseUnits } from 'viem';
 import { useAccount, useSwitchChain } from 'wagmi';
 
-import type { K613InfoDialogKind, K613StakingMainTab, LockStakePhase } from './k613Staking.types';
 import { CtaButton, StatePaper, StateText } from './k613Staking.styles';
+import type { K613InfoDialogKind, K613StakingMainTab, LockStakePhase } from './k613Staking.types';
 
 const MAX_UINT256 = BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
 const K613_STAKING_CHAIN_ID = 421614;
 
 function formatTokenAmount(amount: bigint): string {
-  return (Number(amount) / 1e18).toLocaleString('en-US', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 4,
-  });
+  const negative = amount < 0n;
+  const normalized = negative ? -amount : amount;
+  const formatted = formatUnits(normalized, 18);
+  const [integerPart, fractionPartRaw = ''] = formatted.split('.');
+  const fractionPart = fractionPartRaw.replace(/0+$/, '').slice(0, 4);
+  const integerWithGroups = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+  if (!fractionPart) {
+    return `${negative ? '-' : ''}${integerWithGroups}`;
+  }
+
+  return `${negative ? '-' : ''}${integerWithGroups}.${fractionPart}`;
 }
 
 export function useK613StakingController() {
@@ -50,6 +60,7 @@ export function useK613StakingController() {
     k613Address,
     xk613Address,
     paused,
+    rewardsDistributor,
     maxExitRequests,
     isLoading,
     refetch,
@@ -58,9 +69,11 @@ export function useK613StakingController() {
   const k613Balance = useK613TokenBalance(k613Address);
   const xk613Balance = useK613TokenBalance(xk613Address);
   const allowance = useK613TokenAllowance(k613Address, stakingAddress as `0x${string}` | undefined);
+  const rewardsData = useK613RewardsData(rewardsDistributor);
 
   const { stake, initiateExit, exit, instantExit, cancelExit } = useK613StakingActions();
   const { approve, isPending: isApprovePending } = useK613Approve();
+  const { claimRewards, isPending: isClaimPending } = useK613RewardsActions(rewardsDistributor);
 
   const depositData = parseStakingDepositsRead(deposits.data);
   const stakedAmount = depositData?.amount ?? BigInt(0);
@@ -69,9 +82,16 @@ export function useK613StakingController() {
   const penaltyBps = Number((instantExitPenaltyBps.data as bigint | undefined) ?? 0);
   const penaltyPercent = (penaltyBps / 100).toFixed(1);
   const maxExitSlots = maxExitRequests !== undefined ? Number(maxExitRequests) : 10;
+  const isZeroAddress =
+    !rewardsDistributor || rewardsDistributor === '0x0000000000000000000000000000000000000000';
+  const instantExitRequiresDistributor = penaltyBps > 0 && isZeroAddress;
 
   const walletK613 = typeof k613Balance.data === 'bigint' ? k613Balance.data : BigInt(0);
   const walletXk613 = typeof xk613Balance.data === 'bigint' ? xk613Balance.data : BigInt(0);
+  const pendingRewardsAmount =
+    typeof rewardsData.pendingRewardsOf.data === 'bigint'
+      ? rewardsData.pendingRewardsOf.data
+      : BigInt(0);
 
   const queuedTotal = useMemo(
     () => exitQueue.reduce((acc, row) => acc + row.amount, BigInt(0)),
@@ -79,11 +99,26 @@ export function useK613StakingController() {
   );
 
   const availableToUnstake = stakedAmount > queuedTotal ? stakedAmount - queuedTotal : BigInt(0);
+  const hasStakingActivity = stakedAmount > 0n || walletXk613 > 0n || queuedTotal > 0n;
 
   const displayApy =
     typeof process !== 'undefined' && process.env.NEXT_PUBLIC_K613_DISPLAY_APY
       ? process.env.NEXT_PUBLIC_K613_DISPLAY_APY
       : '—';
+
+  const lastAccrualDisplay = useMemo(() => {
+    const lastEpoch = rewardsData.lastEpochFlushAt;
+    if (!lastEpoch || lastEpoch <= 0n) return '—';
+    const now = Math.floor(Date.now() / 1000);
+    const diff = now - Number(lastEpoch);
+    if (!Number.isFinite(diff) || diff < 0) return 'just now';
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+    return `${Math.floor(diff / 86400)} days ago`;
+  }, [rewardsData.lastEpochFlushAt]);
+
+  const combinedLoading = isLoading || rewardsData.isLoading;
 
   const formatted = useMemo(
     () => ({
@@ -91,7 +126,7 @@ export function useK613StakingController() {
       lockedInExit: formatTokenAmount(queuedTotal),
       stakedXk613: formatTokenAmount(walletXk613),
       stakedPosition: formatTokenAmount(stakedAmount),
-      pendingRewards: '—',
+      pendingRewards: formatTokenAmount(pendingRewardsAmount),
       exitSlots: `${exitQueue.length} / ${maxExitSlots}`,
       lockPeriodShort: formatLockPeriodMonths(lockDurationSeconds),
       penaltyPercent,
@@ -101,6 +136,7 @@ export function useK613StakingController() {
       queuedTotal,
       walletXk613,
       stakedAmount,
+      pendingRewardsAmount,
       exitQueue.length,
       maxExitSlots,
       lockDurationSeconds,
@@ -269,12 +305,44 @@ export function useK613StakingController() {
     [cancelExit, refetch]
   );
 
+  const handleClaimRewards = useCallback(async () => {
+    setError(null);
+    if (!rewardsDistributor || isZeroAddress) {
+      setError('Rewards distributor is not configured');
+      return;
+    }
+    if (pendingRewardsAmount <= 0n) {
+      setError('No rewards to claim');
+      return;
+    }
+
+    setActionPending('claimRewards');
+    try {
+      await claimRewards();
+      rewardsData.refetch();
+      refetch();
+      xk613Balance.refetch();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Claim failed');
+    } finally {
+      setActionPending(null);
+    }
+  }, [
+    rewardsDistributor,
+    isZeroAddress,
+    pendingRewardsAmount,
+    claimRewards,
+    rewardsData,
+    refetch,
+    xk613Balance,
+  ]);
+
   const setMaxStake = useCallback(() => {
     if (walletK613 <= 0n) {
       setStakeAmount('0');
       return;
     }
-    setStakeAmount((Number(walletK613) / 1e18).toString());
+    setStakeAmount(formatUnits(walletK613, 18));
   }, [walletK613]);
 
   const setMaxExit = useCallback(() => {
@@ -282,7 +350,7 @@ export function useK613StakingController() {
       setExitAmount('0');
       return;
     }
-    setExitAmount((Number(availableToUnstake) / 1e18).toString());
+    setExitAmount(formatUnits(availableToUnstake, 18));
   }, [availableToUnstake]);
 
   const earliestUnlockRemaining = useMemo(() => {
@@ -317,8 +385,8 @@ export function useK613StakingController() {
     selectedRow && penaltyBps < 10000
       ? formatTokenAmount((selectedRow.amount * BigInt(10000 - penaltyBps)) / BigInt(10000))
       : selectedRow
-        ? formatTokenAmount(selectedRow.amount)
-        : '0';
+      ? formatTokenAmount(selectedRow.amount)
+      : '0';
 
   const gate = useMemo(() => {
     if (!userAddress) {
@@ -361,7 +429,7 @@ export function useK613StakingController() {
   return {
     gate,
     paused: Boolean(paused),
-    isLoading,
+    isLoading: combinedLoading,
     error,
     setError,
     mainTab,
@@ -385,10 +453,16 @@ export function useK613StakingController() {
     totalQueuedFormatted,
     earliestUnlockRemaining,
     penaltyPercent,
+    hasStakingActivity,
+    instantExitRequiresDistributor,
+    pendingRewardsAmount,
+    lastAccrualDisplay,
     selectedRow,
     selectedReceive,
     actionPending,
     isApprovePending,
+    isClaimPending,
+    handleClaimRewards,
     handleLockTokens,
     handleSendToStaking,
     handleInitiateExit,

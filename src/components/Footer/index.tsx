@@ -1,16 +1,17 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Link } from '@mui/material';
 import Image from 'next/image';
 import { FC } from 'react';
 import MaxWidthContainer from 'src/components/MaxWidthContainer';
 
-import { Container, LinksWrapper, Wrapper } from './styles';
+import { SOCIAL_LINKS } from './const';
+import { Container, Wrapper } from './styles';
 
 const Footer: FC = () => {
   return (
     <Container>
       <MaxWidthContainer>
         <Wrapper>
-          <LinksWrapper>
+          {/* <LinksWrapper>
             <Typography fontWeight={400} fontSize={12}>
               TERMS
             </Typography>
@@ -26,12 +27,18 @@ const Footer: FC = () => {
             <Typography fontWeight={400} fontSize={12}>
               GET SUPPORT
             </Typography>
-          </LinksWrapper>
+          </LinksWrapper> */}
 
-          <Box display="flex" gap={2}>
-            <Image src="/icons/github.svg" width={24} height={24} alt="github" />
-            <Image src="/icons/linkedin.svg" width={24} height={24} alt="linkedin" />
-            <Image src="/icons/instagram.svg" width={24} height={24} alt="instagram" />
+          <Box display="flex" alignItems="center" gap={2}>
+            {SOCIAL_LINKS.map((link) => {
+              const { id, href, icon, alt } = link;
+
+              return (
+                <Link key={id} href={href}>
+                  <Image src={icon} width={24} height={24} alt={alt} />
+                </Link>
+              );
+            })}
           </Box>
         </Wrapper>
       </MaxWidthContainer>

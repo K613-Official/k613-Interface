@@ -10,7 +10,7 @@ export function K613StakingTabBar() {
     <TabBar>
       <TabBarInner>
         <TabItem active={mainTab === 'lockStake'} onClick={() => setMainTab('lockStake')}>
-          Lock &amp; Stake
+          Staking
         </TabItem>
         <TabItem active={mainTab === 'claimUnstake'} onClick={() => setMainTab('claimUnstake')}>
           Claim &amp; unstake
