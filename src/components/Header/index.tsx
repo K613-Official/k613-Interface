@@ -35,8 +35,6 @@ export default function Header() {
     return pathname === tabPath || (tabPath !== '/' && pathname.startsWith(tabPath + '/'));
   });
 
-  console.log('1');
-
   const { isMobile } = useDevice();
 
   const onClick = (href: string) => {
