@@ -6,7 +6,7 @@ import {
   StatLabel,
   StatsOuter,
   StatsRow,
-  StatValue
+  StatValue,
 } from './k613Staking.styles';
 import { useK613StakingPage } from './K613StakingContext';
 
