@@ -12,6 +12,16 @@ const buttonConfig = () => ({
           paddingInline: 8,
         }),
 
+        ...(ownerState.color === 'accent' && {
+          backgroundColor: theme.palette.primary.main,
+          color: theme.palette.background.default,
+          transition: 'opacity 0.25s ease',
+
+          '&:hover': {
+            opacity: 0.8,
+          },
+        }),
+
         ...(ownerState.color === 'primary' && {
           transition: 'opacity 0.25s ease',
 

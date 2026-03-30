@@ -21,7 +21,8 @@ export const ConnectWalletButton: React.FC<ConnectWalletProps> = ({ funnel }) =>
         {({ isConnected, show }) => {
           return (
             <Button
-              variant={isConnected ? 'surface' : 'outlined'}
+              variant={isConnected ? 'surface' : 'contained'}
+              color="accent"
               onClick={() => {
                 show && show();
                 trackEvent(AUTH.CONNECT_WALLET, { funnel: funnel });
@@ -34,7 +35,7 @@ export const ConnectWalletButton: React.FC<ConnectWalletProps> = ({ funnel }) =>
                   titleProps={{ variant: 'button' }}
                 />
               ) : (
-                <Trans>Connect wallet</Trans>
+                <Trans>CONNECT WALLET</Trans>
               )}
             </Button>
           );

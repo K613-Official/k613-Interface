@@ -30,11 +30,7 @@ export function BridgeWrapper() {
     useBridgeTransactionHistory(currentAccount);
 
   if (!currentAccount) {
-    return (
-      <ConnectWalletPaper
-        description={<Trans> Please connect your wallet to view transaction history.</Trans>}
-      />
-    );
+    return <ConnectWalletPaper />;
   }
 
   if (!loadingBridgeTransactions && bridgeTransactions?.length === 0) {

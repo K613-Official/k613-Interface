@@ -4,6 +4,7 @@ export const FirstBlock = styled(Box)(({ theme }) => ({
   display: 'flex',
   justifyContent: 'space-between',
   gap: 24,
+  marginBottom: 32,
   marginTop: 64,
   [theme.breakpoints.down('md')]: {
     flexDirection: 'column',
@@ -37,6 +38,7 @@ export const HorizontalDivider = styled(Box)(({ theme }) => ({
   width: 1,
   minHeight: 48,
   backgroundColor: theme.palette.text.secondary,
+
   [theme.breakpoints.down('sm')]: {
     width: '100%',
     minHeight: 1,

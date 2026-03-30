@@ -46,11 +46,7 @@ export default function FaucetAssetsList() {
     });
 
   if (!currentAccount) {
-    return (
-      <ConnectWalletPaper
-        description={<Trans>Please connect your wallet to get free testnet assets.</Trans>}
-      />
-    );
+    return <ConnectWalletPaper />;
   }
 
   return (
@@ -122,11 +118,7 @@ export default function FaucetAssetsList() {
 
             {!downToXSM && (
               <ListColumn>
-                <FormattedNumber
-                  compact
-                  value={reserve.walletBalance.toString()}
-                  variant="body1"
-                />
+                <FormattedNumber compact value={reserve.walletBalance.toString()} variant="body1" />
               </ListColumn>
             )}
 
