@@ -1,7 +1,12 @@
+'use client';
+
+import { API_ETH_MOCK_ADDRESS } from '@aave/contract-helpers';
+import { USD_DECIMALS, valueToBigNumber } from '@aave/math-utils';
 import { Check, MoreHorizOutlined } from '@mui/icons-material';
 import {
   Alert,
   Button,
+  CircularProgress,
   IconButton,
   Menu,
   MenuItem,
@@ -10,75 +15,357 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
+  TablePagination,
   TableRow,
   TableSortLabel,
   Typography,
 } from '@mui/material';
-import Image from 'next/image';
-import { useState } from 'react';
-import { ModalType } from 'src/components/Modals/types';
-import { useModalStore } from 'src/store/useModalStore';
+import { BigNumber } from 'bignumber.js';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, ROUTES } from 'src/components/primitives/Link';
+import { TokenIcon } from 'src/components/primitives/TokenIcon';
+import {
+  ComputedReserveData,
+  useAppDataContext,
+} from 'src/hooks/app-data-provider/useAppDataProvider';
+import { useWalletBalances } from 'src/hooks/app-data-provider/useWalletBalances';
+import { useModalContext } from 'src/hooks/useModal';
+import { useWrappedTokens } from 'src/hooks/useWrappedTokens';
+import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
+import { useRootStore } from 'src/store/root';
+import { CustomMarket } from 'src/ui-config/marketsConfig';
+import { fetchIconSymbolAndName } from 'src/ui-config/reservePatches';
+import {
+  assetCanBeBorrowedByUser,
+  getMaxAmountAvailableToBorrow,
+} from 'src/utils/getMaxAmountAvailableToBorrow';
+import {
+  displayGhoForMintableMarket,
+  findAndFilterMintableGhoReserve,
+} from 'src/utils/ghoUtilities';
 
 import { Paper } from './styles';
 
+type SortKey = 'assets' | 'walletBalance' | 'apy';
+
+type SupplyRow = {
+  id: string;
+  symbol: string;
+  iconSymbol: string;
+  name: string;
+  underlyingAsset: string;
+  walletBalanceNum: number;
+  walletBalanceStr: string;
+  apyPercent: number;
+  canBeCollateral: boolean;
+  disableSupply: boolean;
+};
+
+type BorrowRow = {
+  id: string;
+  symbol: string;
+  iconSymbol: string;
+  name: string;
+  underlyingAsset: string;
+  availableBorrows: number;
+  borrowApyPercent: number;
+  disableBorrow: boolean;
+};
+
+const ROWS_PER_PAGE = 10;
+
 export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
   const isSupply = type === 'supply';
-  const openModal = useModalStore((s) => s.openModal);
+  const { currentAccount } = useWeb3Context();
+  const { openSupply, openBorrow } = useModalContext();
 
-  type SortKey = 'assets' | 'walletBalance' | 'apy';
+  const currentMarketData = useRootStore((s) => s.currentMarketData);
+  const currentMarket = useRootStore((s) => s.currentMarket);
+  const { baseAssetSymbol, name: networkName } = useRootStore((s) => s.currentNetworkConfig);
+
+  const {
+    user,
+    reserves,
+    marketReferencePriceInUsd,
+    loading: loadingReserves,
+  } = useAppDataContext();
+  const {
+    walletBalances,
+    hasEmptyWallet,
+    loading: loadingWallet,
+  } = useWalletBalances(currentMarketData);
+  const wrappedTokenReserves = useWrappedTokens();
+
   const [sortKey, setSortKey] = useState<SortKey>('assets');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-
-  const [isOpen, setIsOpen] = useState<boolean>(true);
+  const [isOpen, setIsOpen] = useState(true);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
-  const [isAlertShown, setIsAlertShown] = useState<boolean>(true);
+  const [isAlertShown, setIsAlertShown] = useState(true);
+  const [page, setPage] = useState(0);
 
-  const rows = [
-    { symbol: 'ETH', tokenIconSrc: '/icons/tokens/eth.svg', walletBalance: 0, apy: 1.86, canBeCollateral: true },
-    { symbol: 'DAI', tokenIconSrc: '/icons/tokens/dai.svg', walletBalance: 128.5, apy: 2.31, canBeCollateral: false },
-    {
-      symbol: 'USDT',
-      tokenIconSrc: '/icons/tokens/usdt.svg',
-      walletBalance: 531.12,
-      apy: 3.04,
-      canBeCollateral: true,
-    },
-    { symbol: 'LINK', tokenIconSrc: '/icons/tokens/link.svg', walletBalance: 42, apy: 5.2, canBeCollateral: false },
-    { symbol: 'MKR', tokenIconSrc: '/icons/tokens/mkr.svg', walletBalance: 1.5, apy: 6.71, canBeCollateral: true },
-    {
-      symbol: 'USDC',
-      tokenIconSrc: '/icons/tokens/usdbc.svg',
-      walletBalance: 2300,
-      apy: 4.12,
-      canBeCollateral: false,
-    },
-    {
-      symbol: 'wstETH',
-      tokenIconSrc: '/icons/tokens/wsteth.svg',
-      walletBalance: 0.22,
-      apy: 7.05,
-      canBeCollateral: true,
-    },
-  ];
+  const dataLoading = loadingReserves || loadingWallet;
 
-  const sortedRows = isSupply
-    ? [...rows].sort((a, b) => {
-        let diff = 0;
-        switch (sortKey) {
-          case 'assets':
-            diff = a.symbol.localeCompare(b.symbol);
-            break;
-          case 'walletBalance':
-            diff = a.walletBalance - b.walletBalance;
-            break;
-          case 'apy':
-            diff = a.apy - b.apy;
-            break;
+  const supplyRows: SupplyRow[] = useMemo(() => {
+    if (!isSupply) return [];
+
+    const tokensToSupply = reserves
+      .filter(
+        (reserve: ComputedReserveData) =>
+          !(reserve.isFrozen || reserve.isPaused) &&
+          !displayGhoForMintableMarket({ symbol: reserve.symbol, currentMarket })
+      )
+      .map((reserve: ComputedReserveData) => {
+        const walletBalance = walletBalances[reserve.underlyingAsset]?.amount;
+        const walletBalanceUSD = walletBalances[reserve.underlyingAsset]?.amountUSD;
+        let availableToDeposit = valueToBigNumber(walletBalance);
+        if (reserve.supplyCap !== '0') {
+          availableToDeposit = BigNumber.min(
+            availableToDeposit,
+            new BigNumber(reserve.supplyCap).minus(reserve.totalLiquidity).multipliedBy('0.995')
+          );
         }
-        return sortDirection === 'asc' ? diff : -diff;
+        const availableToDepositUSD = valueToBigNumber(availableToDeposit)
+          .multipliedBy(reserve.priceInMarketReferenceCurrency)
+          .multipliedBy(marketReferencePriceInUsd)
+          .shiftedBy(-USD_DECIMALS)
+          .toString();
+
+        const isIsolated = reserve.isIsolated;
+        const hasDifferentCollateral = user?.userReservesData.find(
+          (userRes) => userRes.usageAsCollateralEnabledOnUser && userRes.reserve.id !== reserve.id
+        );
+
+        const usageAsCollateralEnabledOnUser = !user?.isInIsolationMode
+          ? reserve.reserveLiquidationThreshold !== '0' &&
+            (!isIsolated || (isIsolated && !hasDifferentCollateral))
+          : !isIsolated
+          ? false
+          : !hasDifferentCollateral;
+
+        if (reserve.isWrappedBaseAsset) {
+          let baseAvailableToDeposit = valueToBigNumber(
+            walletBalances[API_ETH_MOCK_ADDRESS.toLowerCase()]?.amount
+          );
+          if (reserve.supplyCap !== '0') {
+            baseAvailableToDeposit = BigNumber.min(
+              baseAvailableToDeposit,
+              new BigNumber(reserve.supplyCap).minus(reserve.totalLiquidity).multipliedBy('0.995')
+            );
+          }
+          const baseAvailableToDepositUSD = valueToBigNumber(baseAvailableToDeposit)
+            .multipliedBy(reserve.priceInMarketReferenceCurrency)
+            .multipliedBy(marketReferencePriceInUsd)
+            .shiftedBy(-USD_DECIMALS)
+            .toString();
+          return [
+            {
+              ...reserve,
+              reserve,
+              underlyingAsset: API_ETH_MOCK_ADDRESS.toLowerCase(),
+              ...fetchIconSymbolAndName({
+                symbol: baseAssetSymbol,
+                underlyingAsset: API_ETH_MOCK_ADDRESS.toLowerCase(),
+              }),
+              walletBalance: walletBalances[API_ETH_MOCK_ADDRESS.toLowerCase()]?.amount,
+              walletBalanceUSD: walletBalances[API_ETH_MOCK_ADDRESS.toLowerCase()]?.amountUSD,
+              availableToDeposit: baseAvailableToDeposit.toString(),
+              availableToDepositUSD: baseAvailableToDepositUSD,
+              usageAsCollateralEnabledOnUser,
+              detailsAddress: reserve.underlyingAsset,
+              id: reserve.id + 'base',
+            },
+            {
+              ...reserve,
+              reserve,
+              walletBalance,
+              walletBalanceUSD,
+              availableToDeposit:
+                availableToDeposit.toNumber() <= 0 ? '0' : availableToDeposit.toString(),
+              availableToDepositUSD:
+                Number(availableToDepositUSD) <= 0 ? '0' : availableToDepositUSD.toString(),
+              usageAsCollateralEnabledOnUser,
+              detailsAddress: reserve.underlyingAsset,
+            },
+          ];
+        }
+
+        return {
+          ...reserve,
+          reserve,
+          walletBalance,
+          walletBalanceUSD,
+          availableToDeposit:
+            availableToDeposit.toNumber() <= 0 ? '0' : availableToDeposit.toString(),
+          availableToDepositUSD:
+            Number(availableToDepositUSD) <= 0 ? '0' : availableToDepositUSD.toString(),
+          usageAsCollateralEnabledOnUser,
+          detailsAddress: reserve.underlyingAsset,
+        };
       })
-    : rows;
+      .flat();
+
+    const sortedSupplyReserves = [...tokensToSupply].sort((a, b) =>
+      +a.walletBalanceUSD > +b.walletBalanceUSD ? -1 : 1
+    );
+
+    const filteredSupplyReserves = sortedSupplyReserves.filter((reserve) => {
+      if (reserve.availableToDepositUSD !== '0') {
+        return true;
+      }
+      const wrappedTokenConfig = wrappedTokenReserves.find(
+        (r) => r.tokenOut.underlyingAsset === reserve.underlyingAsset
+      );
+      if (!wrappedTokenConfig) {
+        return false;
+      }
+      return walletBalances[wrappedTokenConfig.tokenIn.underlyingAsset]?.amount !== '0';
+    });
+
+    const list = filteredSupplyReserves.length >= 1 ? filteredSupplyReserves : sortedSupplyReserves;
+
+    return list.map((item) => {
+      const wb = item.walletBalance ?? '0';
+      const walletBalanceNum = Number(wb);
+      const wrappedToken = wrappedTokenReserves.find(
+        (r) => r.tokenOut.underlyingAsset === item.underlyingAsset
+      );
+      const canSupplyAsWrappedToken =
+        !!wrappedToken &&
+        walletBalances[wrappedToken.tokenIn.underlyingAsset.toLowerCase()]?.amount !== '0';
+
+      const disableSupply =
+        !item.isActive || item.isFrozen || (walletBalanceNum <= 0 && !canSupplyAsWrappedToken);
+
+      return {
+        id: String(item.id ?? item.underlyingAsset),
+        symbol: item.symbol,
+        iconSymbol: item.iconSymbol,
+        name: item.name,
+        underlyingAsset: item.underlyingAsset,
+        walletBalanceNum,
+        walletBalanceStr: wb,
+        apyPercent: Number(item.supplyAPY),
+        canBeCollateral: Boolean(item.usageAsCollateralEnabledOnUser),
+        disableSupply,
+      };
+    });
+  }, [
+    isSupply,
+    reserves,
+    walletBalances,
+    user,
+    currentMarket,
+    baseAssetSymbol,
+    wrappedTokenReserves,
+    marketReferencePriceInUsd,
+  ]);
+
+  const borrowRows: BorrowRow[] = useMemo(() => {
+    if (isSupply) return [];
+
+    const tokensToBorrow = reserves
+      .filter((reserve) => (user ? assetCanBeBorrowedByUser(reserve, user) : false))
+      .map((reserve: ComputedReserveData) => {
+        const availableBorrows = user ? Number(getMaxAmountAvailableToBorrow(reserve, user)) : 0;
+        const availableBorrowsInUSD = valueToBigNumber(availableBorrows)
+          .multipliedBy(reserve.formattedPriceInMarketReferenceCurrency)
+          .multipliedBy(marketReferencePriceInUsd)
+          .shiftedBy(-USD_DECIMALS)
+          .toFixed(2);
+
+        return {
+          ...reserve,
+          totalBorrows: reserve.totalDebt,
+          availableBorrows,
+          availableBorrowsInUSD,
+          variableBorrowRate: reserve.borrowingEnabled ? Number(reserve.variableBorrowAPY) : -1,
+          iconSymbol: reserve.iconSymbol,
+          ...(reserve.isWrappedBaseAsset
+            ? fetchIconSymbolAndName({
+                symbol: baseAssetSymbol,
+                underlyingAsset: API_ETH_MOCK_ADDRESS.toLowerCase(),
+              })
+            : {}),
+        };
+      });
+
+    const maxBorrowAmount = valueToBigNumber(user?.totalBorrowsMarketReferenceCurrency || '0').plus(
+      user?.availableBorrowsMarketReferenceCurrency || '0'
+    );
+    const collateralUsagePercent = maxBorrowAmount.eq(0)
+      ? '0'
+      : valueToBigNumber(user?.totalBorrowsMarketReferenceCurrency || '0')
+          .div(maxBorrowAmount)
+          .toFixed();
+
+    const borrowReserves =
+      user?.totalCollateralMarketReferenceCurrency === '0' || +collateralUsagePercent >= 0.98
+        ? tokensToBorrow
+        : tokensToBorrow.filter(({ availableBorrowsInUSD, totalLiquidityUSD, symbol }) => {
+            if (displayGhoForMintableMarket({ symbol, currentMarket })) return true;
+            return availableBorrowsInUSD !== '0.00' && totalLiquidityUSD !== '0';
+          });
+
+    const { value: ghoReserve, filtered: filteredReserves } = findAndFilterMintableGhoReserve(
+      borrowReserves,
+      currentMarket
+    );
+
+    const flat = [...(ghoReserve ? [ghoReserve] : []), ...filteredReserves];
+
+    return flat.map((item) => ({
+      id: item.underlyingAsset,
+      symbol: item.symbol,
+      iconSymbol: item.iconSymbol,
+      name: item.name,
+      underlyingAsset: item.underlyingAsset,
+      availableBorrows: item.availableBorrows,
+      borrowApyPercent: item.variableBorrowRate,
+      disableBorrow: item.isFrozen || Number(item.availableBorrows) <= 0,
+    }));
+  }, [isSupply, reserves, user, marketReferencePriceInUsd, currentMarket, baseAssetSymbol]);
+
+  const sortedSupplyRows = useMemo(() => {
+    if (!isSupply) return [];
+    const copy = [...supplyRows];
+    copy.sort((a, b) => {
+      let diff = 0;
+      switch (sortKey) {
+        case 'assets':
+          diff = a.symbol.localeCompare(b.symbol);
+          break;
+        case 'walletBalance':
+          diff = a.walletBalanceNum - b.walletBalanceNum;
+          break;
+        case 'apy':
+          diff = a.apyPercent - b.apyPercent;
+          break;
+      }
+      return sortDirection === 'asc' ? diff : -diff;
+    });
+    return copy;
+  }, [isSupply, supplyRows, sortKey, sortDirection]);
+
+  const displayRows = isSupply ? sortedSupplyRows : borrowRows;
+
+  useEffect(() => {
+    setPage(0);
+  }, [type]);
+
+  useEffect(() => {
+    setPage((p) => {
+      const pageCount = Math.max(1, Math.ceil(displayRows.length / ROWS_PER_PAGE));
+      const maxPage = pageCount - 1;
+      return p > maxPage ? maxPage : p;
+    });
+  }, [displayRows.length]);
+
+  const paginatedRows = useMemo(() => {
+    const start = page * ROWS_PER_PAGE;
+    return displayRows.slice(start, start + ROWS_PER_PAGE);
+  }, [displayRows, page]);
 
   const handleRequestSort = (key: SortKey) => {
     if (!isSupply) return;
@@ -90,13 +377,15 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
     }
   };
 
-  const handleSupply = (token: string, walletBalance: number) => {
-    openModal(ModalType.SupplySuccess, { amount: walletBalance.toFixed(6), token });
-  };
+  const showSupplyEmptyAlert =
+    isSupply && Boolean(currentAccount) && hasEmptyWallet && !dataLoading && isAlertShown;
 
-  const handleBorrow = () => {
-    openModal(ModalType.Borrow, { token: 'K613', available: '5.67' });
-  };
+  const showBorrowCollateralAlert =
+    !isSupply &&
+    Boolean(currentAccount) &&
+    user?.totalCollateralMarketReferenceCurrency === '0' &&
+    !dataLoading &&
+    isAlertShown;
 
   return (
     <Paper isOpen={isOpen}>
@@ -113,119 +402,238 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
         </Stack>
       </Stack>
 
-      {isAlertShown && (
+      {showSupplyEmptyAlert && (
         <Alert severity="warning" onClose={() => setIsAlertShown(false)}>
-          {isSupply
-            ? 'Your Ethereum wallet is empty. Purchase or transfer assets.'
-            : 'To borrow you need to supply any asset to be used as collateral.'}
+          Your {networkName} wallet is empty. Purchase or transfer assets.
         </Alert>
       )}
 
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>
-              {isSupply ? (
-                <TableSortLabel
-                  active={sortKey === 'assets'}
-                  direction={sortKey === 'assets' ? sortDirection : 'asc'}
-                  onClick={() => handleRequestSort('assets')}
-                >
-                  Assets
-                </TableSortLabel>
-              ) : (
-                'Assets'
-              )}
-            </TableCell>
-            <TableCell align="right">
-              {isSupply ? (
-                <TableSortLabel
-                  active={sortKey === 'walletBalance'}
-                  direction={sortKey === 'walletBalance' ? sortDirection : 'asc'}
-                  onClick={() => handleRequestSort('walletBalance')}
-                >
-                  Wallet Balance
-                </TableSortLabel>
-              ) : (
-                'Available'
-              )}
-            </TableCell>
-            <TableCell align="right">
-              {isSupply ? (
-                <TableSortLabel
-                  active={sortKey === 'apy'}
-                  direction={sortKey === 'apy' ? sortDirection : 'asc'}
-                  onClick={() => handleRequestSort('apy')}
-                >
-                  APY
-                </TableSortLabel>
-              ) : (
-                'APY, variable'
-              )}
-            </TableCell>
-            {isSupply && <TableCell align="center">Can be collateral</TableCell>}
-            <TableCell />
-          </TableRow>
-        </TableHead>
+      {showBorrowCollateralAlert && (
+        <Alert severity="warning" onClose={() => setIsAlertShown(false)}>
+          To borrow you need to supply any asset to be used as collateral.
+        </Alert>
+      )}
 
-        <TableBody>
-          {sortedRows.map((row) => (
-            <TableRow key={row.symbol}>
+      {dataLoading ? (
+        <Stack alignItems="center" py={4}>
+          <CircularProgress size={32} />
+        </Stack>
+      ) : !currentAccount ? (
+        <Typography color="text.secondary" py={2}>
+          Connect your wallet to see assets.
+        </Typography>
+      ) : (
+        <Table>
+          <TableHead>
+            <TableRow>
               <TableCell>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <Image src={row.tokenIconSrc} width={24} height={24} alt={row.symbol} />
-                  <Typography>{row.symbol}</Typography>
-                </Stack>
-              </TableCell>
-
-              <TableCell align="right">{row.walletBalance.toLocaleString(undefined, { maximumFractionDigits: 6 })}</TableCell>
-              <TableCell align="right">{row.apy.toFixed(2)}%</TableCell>
-
-              {isSupply && (
-                <TableCell align="center">
-                  {row.canBeCollateral ? (
-                    <Typography color="success.main">
-                      <Check />
-                    </Typography>
-                  ) : null}
-                </TableCell>
-              )}
-
-              <TableCell align="right">
                 {isSupply ? (
-                  <Stack direction="row" spacing={1} justifyContent="flex-end">
-                    <Button
-                      size="small"
-                      variant="contained"
-                      color="inherit"
-                      onClick={() => handleSupply(row.symbol, row.walletBalance)}
-                    >
-                      Supply
-                    </Button>
-                    <IconButton size="small" onClick={(e) => setMenuAnchor(e.currentTarget)}>
-                      <MoreHorizOutlined fontSize="small" />
-                    </IconButton>
-                  </Stack>
+                  <TableSortLabel
+                    active={sortKey === 'assets'}
+                    direction={sortKey === 'assets' ? sortDirection : 'asc'}
+                    onClick={() => handleRequestSort('assets')}
+                  >
+                    Assets
+                  </TableSortLabel>
                 ) : (
-                  <Stack direction="row" spacing={2} justifyContent="flex-end">
-                    <Button size="small" variant="contained" color="inherit" onClick={handleBorrow}>
-                      Borrow
-                    </Button>
-                    <Button variant="text" size="small" color="secondary">
-                      Details
-                    </Button>
-                  </Stack>
+                  'Assets'
                 )}
               </TableCell>
+              <TableCell align="right">
+                {isSupply ? (
+                  <TableSortLabel
+                    active={sortKey === 'walletBalance'}
+                    direction={sortKey === 'walletBalance' ? sortDirection : 'asc'}
+                    onClick={() => handleRequestSort('walletBalance')}
+                  >
+                    Wallet Balance
+                  </TableSortLabel>
+                ) : (
+                  'Available'
+                )}
+              </TableCell>
+              <TableCell align="right">
+                {isSupply ? (
+                  <TableSortLabel
+                    active={sortKey === 'apy'}
+                    direction={sortKey === 'apy' ? sortDirection : 'asc'}
+                    onClick={() => handleRequestSort('apy')}
+                  >
+                    APY
+                  </TableSortLabel>
+                ) : (
+                  'APY, variable'
+                )}
+              </TableCell>
+              {isSupply && <TableCell align="center">Can be collateral</TableCell>}
+              <TableCell />
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHead>
+
+          <TableBody>
+            {displayRows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={isSupply ? 5 : 4}>
+                  <Typography color="text.secondary">No assets in this market.</Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              paginatedRows.map((row) =>
+                isSupply ? (
+                  <SupplyTableRow
+                    key={(row as SupplyRow).id}
+                    row={row as SupplyRow}
+                    currentMarket={currentMarket}
+                    setMenuAnchor={setMenuAnchor}
+                    openSupply={openSupply}
+                  />
+                ) : (
+                  <BorrowTableRow
+                    key={(row as BorrowRow).id}
+                    row={row as BorrowRow}
+                    currentMarket={currentMarket as CustomMarket}
+                    openBorrow={openBorrow}
+                  />
+                )
+              )
+            )}
+          </TableBody>
+          {displayRows.length > 0 && (
+            <TableFooter>
+              <TableRow>
+                <TablePagination
+                  colSpan={isSupply ? 5 : 4}
+                  count={displayRows.length}
+                  page={page}
+                  rowsPerPage={ROWS_PER_PAGE}
+                  rowsPerPageOptions={[]}
+                  onPageChange={(_, newPage) => setPage(newPage)}
+                  sx={{ borderBottom: 'none' }}
+                />
+              </TableRow>
+            </TableFooter>
+          )}
+        </Table>
+      )}
 
       <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
         <MenuItem>Switch</MenuItem>
         <MenuItem>Details</MenuItem>
       </Menu>
     </Paper>
+  );
+}
+
+function SupplyTableRow({
+  row,
+  currentMarket,
+  setMenuAnchor,
+  openSupply,
+}: {
+  row: SupplyRow;
+  currentMarket: string;
+  setMenuAnchor: (el: HTMLElement | null) => void;
+  openSupply: (
+    underlyingAsset: string,
+    currentMarket: string,
+    name: string,
+    funnel: string
+  ) => void;
+}) {
+  return (
+    <TableRow>
+      <TableCell>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <TokenIcon symbol={row.iconSymbol} sx={{ width: 24, height: 24, fontSize: '24px' }} />
+          <Typography>{row.symbol}</Typography>
+        </Stack>
+      </TableCell>
+
+      <TableCell align="right">
+        {Number(row.walletBalanceStr).toLocaleString(undefined, { maximumFractionDigits: 6 })}
+      </TableCell>
+      <TableCell align="right">{row.apyPercent.toFixed(2)}%</TableCell>
+
+      <TableCell align="center">
+        {row.canBeCollateral ? (
+          <Typography color="success.main">
+            <Check />
+          </Typography>
+        ) : null}
+      </TableCell>
+
+      <TableCell align="right">
+        <Stack direction="row" spacing={1} justifyContent="flex-end">
+          <Button
+            size="small"
+            variant="contained"
+            color="inherit"
+            disabled={row.disableSupply}
+            onClick={() => openSupply(row.underlyingAsset, currentMarket, row.name, 'dashboard')}
+          >
+            Supply
+          </Button>
+          <IconButton size="small" onClick={(e) => setMenuAnchor(e.currentTarget)}>
+            <MoreHorizOutlined fontSize="small" />
+          </IconButton>
+        </Stack>
+      </TableCell>
+    </TableRow>
+  );
+}
+
+function BorrowTableRow({
+  row,
+  currentMarket,
+  openBorrow,
+}: {
+  row: BorrowRow;
+  currentMarket: CustomMarket;
+  openBorrow: (
+    underlyingAsset: string,
+    currentMarket: string,
+    name: string,
+    funnel: string
+  ) => void;
+}) {
+  const apyLabel = row.borrowApyPercent < 0 ? '—' : `${row.borrowApyPercent.toFixed(2)}%`;
+
+  return (
+    <TableRow>
+      <TableCell>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <TokenIcon symbol={row.iconSymbol} sx={{ width: 24, height: 24, fontSize: '24px' }} />
+          <Typography>{row.symbol}</Typography>
+        </Stack>
+      </TableCell>
+
+      <TableCell align="right">
+        {row.availableBorrows.toLocaleString(undefined, { maximumFractionDigits: 6 })}
+      </TableCell>
+      <TableCell align="right">{apyLabel}</TableCell>
+
+      <TableCell align="right">
+        <Stack direction="row" spacing={2} justifyContent="flex-end">
+          <Button
+            size="small"
+            variant="contained"
+            color="inherit"
+            disabled={row.disableBorrow}
+            onClick={() => openBorrow(row.underlyingAsset, currentMarket, row.name, 'dashboard')}
+          >
+            Borrow
+          </Button>
+          <Button
+            variant="text"
+            size="small"
+            color="secondary"
+            component={Link}
+            href={ROUTES.reserveOverview(row.underlyingAsset, currentMarket)}
+          >
+            Details
+          </Button>
+        </Stack>
+      </TableCell>
+    </TableRow>
   );
 }

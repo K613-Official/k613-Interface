@@ -1,10 +1,12 @@
-import { useAccount, useReadContract, useWriteContract } from 'wagmi';
-import { addressesByChainId } from 'src/utils/addresses';
 import k613Artifact from 'src/abis/K613/K613.json';
+import rewardsDistributorArtifact from 'src/abis/RewardsDistributor/RewardsDistributor.json';
 import stakingArtifact from 'src/abis/Staking/Staking.json';
+import { addressesByChainId } from 'src/utils/addresses';
+import { useAccount, useReadContract, useWriteContract } from 'wagmi';
 
 const STAKING_ABI = (stakingArtifact as unknown as { abi: unknown[] }).abi;
 const K613_ABI = (k613Artifact as unknown as { abi: unknown[] }).abi;
+const REWARDS_DISTRIBUTOR_ABI = (rewardsDistributorArtifact as unknown as { abi: unknown[] }).abi;
 
 export type StakingExitRequest = {
   amount: bigint;
@@ -109,6 +111,12 @@ export function useK613StakingData() {
     functionName: 'paused',
   });
 
+  const rewardsDistributor = useReadContract({
+    address: stakingAddress as `0x${string}` | undefined,
+    abi: STAKING_ABI,
+    functionName: 'rewardsDistributor',
+  });
+
   const maxExitRequests = useReadContract({
     address: stakingAddress as `0x${string}` | undefined,
     abi: STAKING_ABI,
@@ -124,6 +132,7 @@ export function useK613StakingData() {
     k613Address: k613Address.data as `0x${string}` | undefined,
     xk613Address: xk613Address.data as `0x${string}` | undefined,
     paused: paused.data,
+    rewardsDistributor: rewardsDistributor.data as `0x${string}` | undefined,
     maxExitRequests: maxExitRequests.data as bigint | undefined,
     isLoading:
       deposits.isLoading ||
@@ -132,6 +141,7 @@ export function useK613StakingData() {
       k613Address.isLoading ||
       xk613Address.isLoading ||
       paused.isLoading ||
+      rewardsDistributor.isLoading ||
       maxExitRequests.isLoading,
     refetch: () => {
       deposits.refetch();
@@ -140,6 +150,7 @@ export function useK613StakingData() {
       k613Address.refetch();
       xk613Address.refetch();
       paused.refetch();
+      rewardsDistributor.refetch();
       maxExitRequests.refetch();
     },
   };
@@ -249,6 +260,60 @@ export function useK613Approve() {
   return { approve, isPending };
 }
 
+export function useK613RewardsData(rewardsDistributorAddress: `0x${string}` | undefined) {
+  const { address: userAddress } = useAccount();
+
+  const pendingRewardsOf = useReadContract({
+    address: rewardsDistributorAddress,
+    abi: REWARDS_DISTRIBUTOR_ABI,
+    functionName: 'pendingRewardsOf',
+    args: userAddress ? [userAddress] : undefined,
+  });
+
+  const lastEpochFlushAt = useReadContract({
+    address: rewardsDistributorAddress,
+    abi: REWARDS_DISTRIBUTOR_ABI,
+    functionName: 'lastEpochFlushAt',
+  });
+
+  const nextEpochAt = useReadContract({
+    address: rewardsDistributorAddress,
+    abi: REWARDS_DISTRIBUTOR_ABI,
+    functionName: 'nextEpochAt',
+  });
+
+  return {
+    pendingRewardsOf,
+    lastEpochFlushAt: lastEpochFlushAt.data as bigint | undefined,
+    nextEpochAt: nextEpochAt.data as bigint | undefined,
+    isLoading: pendingRewardsOf.isLoading || lastEpochFlushAt.isLoading || nextEpochAt.isLoading,
+    refetch: () => {
+      pendingRewardsOf.refetch();
+      lastEpochFlushAt.refetch();
+      nextEpochAt.refetch();
+    },
+  };
+}
+
+export function useK613RewardsActions(rewardsDistributorAddress: `0x${string}` | undefined) {
+  const { writeContractAsync, isPending } = useWriteContract();
+
+  const claimRewards = async () => {
+    if (!rewardsDistributorAddress) throw new Error('Rewards distributor not configured');
+    return writeContractAsync({
+      address: rewardsDistributorAddress,
+      abi: REWARDS_DISTRIBUTOR_ABI,
+      functionName: 'claim',
+      args: [],
+    });
+  };
+
+  return {
+    claimRewards,
+    isPending,
+  };
+}
+
 export function formatLockDuration(seconds: bigint | undefined): string {
   if (!seconds) return '—';
   const days = Number(seconds) / 86400;
@@ -265,7 +330,10 @@ export function formatLockPeriodMonths(seconds: bigint | undefined): string {
   return `${months} month${months === 1 ? '' : 's'}`;
 }
 
-export function formatUnlockCountdown(exitInitiatedAt: bigint, lockDurationSeconds: bigint): string {
+export function formatUnlockCountdown(
+  exitInitiatedAt: bigint,
+  lockDurationSeconds: bigint
+): string {
   const unlockAt = Number(exitInitiatedAt) + Number(lockDurationSeconds);
   const now = Math.floor(Date.now() / 1000);
   let remaining = unlockAt - now;

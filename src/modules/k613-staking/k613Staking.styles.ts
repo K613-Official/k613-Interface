@@ -12,19 +12,20 @@ import TextField from '@mui/material/TextField';
 
 export const PageRoot = styled(Box)(({ theme }) => ({
   width: '100%',
-  maxWidth: 1252,
+  maxWidth: 1280,
   marginInline: 'auto',
   paddingInline: 24,
-  paddingBlock: theme.spacing(4),
+  paddingBlock: theme.spacing(5),
   [theme.breakpoints.down('md')]: {
     paddingInline: 16,
+    paddingBlock: theme.spacing(4),
   },
 }));
 
 export const HeaderBlock = styled(Box)(() => ({
   display: 'flex',
   flexDirection: 'column',
-  gap: 24,
+  gap: 8,
   marginBottom: 24,
 }));
 
@@ -45,7 +46,23 @@ export const SubtitleMuted = styled(Typography)(() => ({
   lineHeight: 1.43,
   letterSpacing: '0.012142857em',
   color: '#BDBDBD',
-  maxWidth: 720,
+  maxWidth: 800,
+}));
+
+export const PanelShell = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 16,
+  width: '100%',
+  maxWidth: 800,
+  marginInline: 'auto',
+  padding: 16,
+  borderRadius: 8,
+  backgroundColor: 'transparent',
+  border: 'none',
+  [theme.breakpoints.down('sm')]: {
+    padding: 0,
+  },
 }));
 
 export const StatsOuter = styled(Box)(() => ({
@@ -59,7 +76,7 @@ export const StatsRow = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'row',
   flexWrap: 'wrap',
-  gap: 8,
+  gap: 10,
   alignItems: 'stretch',
   alignSelf: 'stretch',
   [theme.breakpoints.down('sm')]: {
@@ -72,12 +89,12 @@ export const StatCard = styled(Box)(() => ({
   flexDirection: 'column',
   justifyContent: 'center',
   gap: 16,
-  padding: 16,
+  padding: 18,
   flex: '1 1 0',
   minWidth: 160,
-  backgroundColor: 'rgba(255, 255, 255, 0.04)',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  borderRadius: 4,
+  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  border: '1px solid rgba(255, 255, 255, 0.14)',
+  borderRadius: 10,
 }));
 
 export const StatCardWide = styled(StatCard)(() => ({
@@ -117,6 +134,8 @@ export const MainPanel = styled(Box)(() => ({
   flexDirection: 'column',
   gap: 16,
   width: '100%',
+  maxWidth: 800,
+  marginInline: 'auto',
 }));
 
 export const TabContentColumn = styled(Box)(() => ({
@@ -124,7 +143,7 @@ export const TabContentColumn = styled(Box)(() => ({
   flexDirection: 'column',
   gap: 16,
   width: '100%',
-  marginTop: 8,
+  marginTop: 4,
 }));
 
 export const PausedBanner = styled(Box)(() => ({
@@ -141,11 +160,11 @@ export const PausedBanner = styled(Box)(() => ({
 export const TabBar = styled(Box)(() => ({
   display: 'flex',
   flexDirection: 'row',
-  justifyContent: 'center',
+  justifyContent: 'stretch',
   alignItems: 'center',
   alignSelf: 'stretch',
   gap: 4,
-  padding: 4,
+  padding: 0,
   width: '100%',
 }));
 
@@ -157,29 +176,30 @@ export const TabBarInner = styled(Box)(() => ({
   gap: 4,
   flex: 1,
   borderRadius: 4,
+  backgroundColor: 'rgba(255, 255, 255, 0.12)',
+  border: '1px solid rgba(255, 255, 255, 0.3)',
+  padding: 4,
 }));
 
 export const TabItem = styled(Button, {
   shouldForwardProp: (prop) => prop !== 'active',
-})<{ active?: boolean }>(({ active, theme }) => ({
+})<{ active?: boolean }>(({ active }) => ({
   flex: 1,
-  minHeight: 38,
+  minHeight: 36,
   padding: '4px 10px',
   borderRadius: 4,
-  textTransform: 'uppercase',
+  textTransform: 'none',
   fontFamily: 'Roboto, sans-serif',
   fontWeight: 500,
   fontSize: 13,
   lineHeight: 1.69,
   letterSpacing: '0.035384616em',
   color: '#FFFFFF',
-  backgroundColor: active ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.12)',
-  border: active
-    ? `1px solid ${theme.palette.primary.main}`
-    : '1px solid rgba(255, 255, 255, 0.12)',
-  boxShadow: active ? `0 0 0 1px rgba(95, 204, 0, 0.35)` : 'none',
+  backgroundColor: 'rgba(255, 255, 255, 0.12)',
+  border: active ? '1px solid rgba(255, 255, 255, 0.3)' : '1px solid transparent',
+  boxShadow: 'none',
   '&:hover': {
-    backgroundColor: active ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.16)',
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
   },
 }));
 
@@ -627,6 +647,64 @@ export const TrSelectable = styled('tr', {
   backgroundColor: selected ? 'rgba(255, 255, 255, 0.06)' : 'transparent',
 }));
 
+export const RequestsList = styled(Box)(() => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 8,
+  width: '100%',
+}));
+
+export const RequestRowCard = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'selected',
+})<{ selected?: boolean }>(({ selected, theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  flexWrap: 'wrap',
+  gap: 16,
+  padding: 16,
+  borderRadius: 4,
+  border: `1px solid ${selected ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
+  backgroundColor: 'rgba(255, 255, 255, 0.04)',
+  cursor: 'pointer',
+  width: '100%',
+  [theme.breakpoints.down('md')]: {
+    gap: 12,
+  },
+}));
+
+export const RequestRowMetric = styled(Box)(() => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 8,
+  minWidth: 90,
+}));
+
+export const RequestRowLabel = styled(Typography)(() => ({
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 400,
+  fontSize: 14,
+  lineHeight: 1.43,
+  letterSpacing: '0.012142857em',
+  color: '#757575',
+}));
+
+export const RequestRowValue = styled(Typography)(() => ({
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 600,
+  fontSize: 15,
+  lineHeight: 1.235,
+  letterSpacing: '0.016666667em',
+  color: '#FFFFFF',
+}));
+
+export const RequestRowActions = styled(Box)(() => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'flex-end',
+  minWidth: 110,
+}));
+
 export const FooterNote = styled(Typography)(() => ({
   marginTop: 32,
   fontFamily: 'Roboto, sans-serif',
@@ -687,6 +765,67 @@ export const DialogActionsStyled = styled(DialogActions)(() => ({
   justifyContent: 'flex-end',
 }));
 
+export const OnboardingHead = styled(Box)(() => ({
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  width: '100%',
+  marginBottom: 8,
+}));
+
+export const OnboardingTitle = styled(Typography)(() => ({
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 500,
+  fontSize: 24,
+  lineHeight: 1,
+  letterSpacing: '0.007083333em',
+  color: '#FFFFFF',
+}));
+
+export const OnboardingText = styled(Typography)(() => ({
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 400,
+  fontSize: 16,
+  lineHeight: 1.5,
+  letterSpacing: '0.010625em',
+  color: '#FFFFFF',
+}));
+
+export const OnboardingHeadingText = styled(OnboardingText)(() => ({
+  marginTop: 16,
+}));
+
+export const OnboardingBodyText = styled(OnboardingText)(() => ({
+  marginTop: 8,
+}));
+
+export const OnboardingStepRow = styled(Box)(() => ({
+  display: 'flex',
+  gap: 8,
+  width: '100%',
+}));
+
+export const OnboardingStepPill = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'active',
+})<{ active?: boolean }>(({ active }) => ({
+  flex: 1,
+  height: 32,
+  borderRadius: 4,
+  border: '1px solid rgba(255,255,255,0.3)',
+  backgroundColor: active ? '#99FF33' : 'rgba(255,255,255,0.2)',
+}));
+
+export const OnboardingCaption = styled(Typography)(() => ({
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 400,
+  fontSize: 16,
+  lineHeight: 1.5,
+  letterSpacing: '0.010625em',
+  color: '#FFFFFF',
+  marginTop: 16,
+  opacity: 0.7,
+}));
+
 export const ErrorText = styled(Typography)(() => ({
   color: '#f44336',
   fontSize: 13,
@@ -716,11 +855,12 @@ export const StakingStartCard = styled(Box)(({ theme }) => ({
   gap: 16,
   boxSizing: 'border-box',
   width: '100%',
-  minHeight: 116,
+  minHeight: 128,
   padding: 24,
-  backgroundColor: 'rgba(255, 255, 255, 0.08)',
-  border: '1px solid rgba(255, 255, 255, 0.3)',
-  borderRadius: 4,
+  background:
+    'linear-gradient(135deg, rgba(95,204,0,0.2) 0%, rgba(255,255,255,0.04) 48%, rgba(255,255,255,0.08) 100%)',
+  border: '1px solid rgba(255, 255, 255, 0.2)',
+  borderRadius: 12,
   [theme.breakpoints.down('sm')]: {
     flexDirection: 'column',
     alignItems: 'stretch',
@@ -739,34 +879,33 @@ export const StakingStartTextCol = styled(Box)(() => ({
 export const StakingStartTitle = styled(Typography)(() => ({
   margin: 0,
   fontFamily: 'Roboto, sans-serif',
-  fontWeight: 400,
-  fontSize: 24,
-  lineHeight: 1.334,
+  fontWeight: 500,
+  fontSize: 28,
+  lineHeight: 1.2,
   color: '#FFFFFF',
 }));
 
 export const StakingStartSubtitle = styled(Typography)(() => ({
   fontFamily: 'Roboto, sans-serif',
   fontWeight: 400,
-  fontSize: 14,
-  lineHeight: 1.43,
-  letterSpacing: '0.012142857em',
-  color: '#A3A3A3',
-  maxWidth: 400,
+  fontSize: 15,
+  lineHeight: 1.5,
+  color: 'rgba(255, 255, 255, 0.74)',
+  maxWidth: 460,
 }));
 
 export const StakingStartCta = styled(Button)(({ theme }) => ({
   flexShrink: 0,
-  borderRadius: 4,
-  minHeight: 32,
-  padding: '4px 10px',
+  borderRadius: 8,
+  minHeight: 40,
+  padding: '8px 14px',
   fontFamily: 'Roboto, sans-serif',
-  fontSize: 13,
+  fontSize: 14,
   fontWeight: 500,
-  lineHeight: 1.75,
-  letterSpacing: '0.028571429em',
+  lineHeight: 1.5,
+  letterSpacing: '0.01em',
   textTransform: 'none',
-  boxShadow: theme.shadows[2],
+  boxShadow: theme.shadows[4],
   [theme.breakpoints.down('sm')]: {
     alignSelf: 'stretch',
     width: '100%',

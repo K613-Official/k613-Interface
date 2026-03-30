@@ -19,8 +19,8 @@ import { Container, IconButton, MobileMenuButton, Tabs, TabsWrapper } from './st
 const TABS = [
   { label: 'Dashboard', href: ROUTES.dashboard },
   { label: 'Markets', href: ROUTES.markets },
+  { label: 'Staking', href: ROUTES.stakingK613 },
   { label: 'FAQ', href: ROUTES.faq },
-  { label: 'Staking K613', href: ROUTES.stakingK613 },
 ];
 
 export default function Header() {

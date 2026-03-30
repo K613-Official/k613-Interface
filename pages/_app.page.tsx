@@ -15,6 +15,7 @@ import { Meta } from 'src/components/Meta';
 import ModalProvider from 'src/components/Modals/ModalProvider';
 import { GasStationProvider } from 'src/components/transactions/GasStation/GasStationProvider';
 import { AppDataProvider } from 'src/hooks/app-data-provider/useAppDataProvider';
+import { ModalContextProvider } from 'src/hooks/useModal';
 import { Web3ContextProvider } from 'src/libs/web3-data-provider/Web3Provider';
 import { useRootStore } from 'src/store/root';
 import { SharedDependenciesProvider } from 'src/ui-config/SharedDependenciesProvider';
@@ -93,9 +94,11 @@ export default function MyApp(props: MyAppProps) {
                       <ModalProvider />
                       <SharedDependenciesProvider>
                         <AppDataProvider>
-                          <GasStationProvider>
-                            {getLayout(<Component {...pageProps} />)}
-                          </GasStationProvider>
+                          <ModalContextProvider>
+                            <GasStationProvider>
+                              {getLayout(<Component {...pageProps} />)}
+                            </GasStationProvider>
+                          </ModalContextProvider>
                         </AppDataProvider>
                       </SharedDependenciesProvider>
                     </AddressBlocked>
