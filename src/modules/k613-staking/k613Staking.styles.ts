@@ -739,8 +739,8 @@ export const StyledDialog = styled(Dialog)(() => ({
     backgroundColor: '#0b0b0b',
     border: '1px solid rgba(255, 255, 255, 0.12)',
     borderRadius: 8,
-    padding: 8,
     minWidth: 320,
+    maxWidth: 500,
   },
 }));
 
@@ -750,6 +750,7 @@ export const DialogTitleStyled = styled(DialogTitle)(() => ({
   fontSize: 18,
   color: '#FFFFFF',
   paddingBottom: 8,
+  backgroundColor: '#FFFFFF0D',
 }));
 
 export const DialogBodyStyled = styled(DialogContent)(() => ({
@@ -803,15 +804,15 @@ export const OnboardingStepRow = styled(Box)(() => ({
   display: 'flex',
   gap: 8,
   width: '100%',
+  marginTop: 24,
 }));
 
 export const OnboardingStepPill = styled(Box, {
   shouldForwardProp: (prop) => prop !== 'active',
 })<{ active?: boolean }>(({ active }) => ({
   flex: 1,
-  height: 32,
+  height: 4,
   borderRadius: 4,
-  border: '1px solid rgba(255,255,255,0.3)',
   backgroundColor: active ? '#99FF33' : 'rgba(255,255,255,0.2)',
 }));
 

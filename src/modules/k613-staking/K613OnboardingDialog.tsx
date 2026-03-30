@@ -57,7 +57,7 @@ export function K613OnboardingDialog({
   const slide = SLIDES[Math.max(0, Math.min(step, SLIDES.length - 1))];
 
   return (
-    <StyledDialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <StyledDialog open={open} onClose={onClose} fullWidth>
       <DialogTitleStyled>
         <OnboardingHead>
           <OnboardingTitle>{slide.title}</OnboardingTitle>
