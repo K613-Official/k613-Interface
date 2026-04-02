@@ -1,3 +1,4 @@
+import { valueToBigNumber } from '@aave/math-utils';
 import { Search as SearchIcon } from '@mui/icons-material';
 import {
   Box,
@@ -15,14 +16,16 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { valueToBigNumber } from '@aave/math-utils';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import Layout from 'src/components/Layout';
 import MaxWidthContainer from 'src/components/MaxWidthContainer';
 import { FormattedNumber } from 'src/components/primitives/FormattedNumber';
 import { Link, ROUTES } from 'src/components/primitives/Link';
-import { ComputedReserveData, useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
+import {
+  ComputedReserveData,
+  useAppDataContext,
+} from 'src/hooks/app-data-provider/useAppDataProvider';
 import { useRootStore } from 'src/store/root';
 import { CustomMarket } from 'src/ui-config/marketsConfig';
 
@@ -38,8 +41,6 @@ import {
   StatItem,
   StatsCard,
   TablePaper,
-  Title,
-  V3Badge,
   VerticalDivider,
 } from './styles';
 
@@ -89,17 +90,7 @@ export default function MarketsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categories, setCategories] = useState<string[]>([]);
   const currentMarket = useRootStore((s) => s.currentMarket) as CustomMarket;
-  const currentMarketData = useRootStore((s) => s.currentMarketData);
-  const currentNetworkConfig = useRootStore((s) => s.currentNetworkConfig);
   const { reserves, loading } = useAppDataContext();
-
-  const headerIconSrc = useMemo(() => {
-    const sym = currentNetworkConfig.wrappedBaseAssetSymbol;
-    if (!sym) {
-      return '/icons/tokens/eth.svg';
-    }
-    return `/icons/tokens/${sym.toLowerCase()}.svg`;
-  }, [currentNetworkConfig.wrappedBaseAssetSymbol]);
 
   const totals = useMemo(() => {
     return reserves.reduce(
@@ -141,26 +132,12 @@ export default function MarketsPage() {
     <Layout>
       <MaxWidthContainer>
         <PageWrapper>
-          <Title>
-            <Typography variant="h4">Markets</Typography>
-          </Title>
-
           <CoreInstanceBlock>
             <CoreInstanceInfo>
-              <Box display="flex" flexDirection="column" gap={2}>
-                <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
-                  <Image src={headerIconSrc} width={32} height={32} alt="" />
-                  <Typography variant="h4">{currentMarketData.marketTitle}</Typography>
-                  {currentMarketData.v3 ? (
-                    <V3Badge>
-                      <Typography variant="caption" component="span">
-                        V3
-                      </Typography>
-                    </V3Badge>
-                  ) : null}
-                </Box>
+              <Box display="flex" flexDirection="column" gap={1}>
+                <Typography variant="h4">K613 Markets</Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {currentMarketData.marketTitle} — live data from the pool on {currentNetworkConfig.name}
+                  Supply assets to earn yield or borrow against collateral
                 </Typography>
               </Box>
             </CoreInstanceInfo>
@@ -238,7 +215,7 @@ export default function MarketsPage() {
             <Box display="flex" gap={2} justifyContent="space-between">
               <Typography variant="h5">Core assets</Typography>
               <FiltersRow>
-                <Box display="flex" gap={2} flexWrap="wrap">
+                <Box display="flex" gap={2} flexWrap="wrap" justifyContent="flex-end">
                   <Select
                     multiple
                     size="small"
@@ -390,7 +367,7 @@ export default function MarketsPage() {
                 </DesktopTable>
               )}
 
-              {!loading && filteredReserves.length > 0 && (
+              {filteredReserves.length > 0 && (
                 <MobileCards>
                   {filteredReserves.map((row) => (
                     <MobileAssetCard key={row.underlyingAsset}>
@@ -403,28 +380,14 @@ export default function MarketsPage() {
                             alt={row.symbol}
                           />
                           <Box>
-                            <Typography variant="body2" color="text.secondary">
-                              {row.name}
-                            </Typography>
+                            <Typography variant="body2">{row.name}</Typography>
                             <Typography variant="body1">{row.symbol}</Typography>
                           </Box>
                         </Box>
-                        <Button
-                          size="small"
-                          variant="contained"
-                          color="inherit"
-                          component={Link}
-                          href={ROUTES.marketAssetDetails(row.underlyingAsset, currentMarket)}
-                          noLinkStyle
-                        >
-                          Details
-                        </Button>
                       </Box>
-                      <Box display="flex" flexDirection="column" gap={1}>
+                      <Box display="flex" flexDirection="column" gap={2}>
                         <Box display="flex" justifyContent="space-between">
-                          <Typography variant="body2" color="text.secondary">
-                            Total supplied
-                          </Typography>
+                          <Typography variant="body2">Total supplied</Typography>
                           <Box textAlign="right">
                             <FormattedNumber value={row.totalLiquidity} variant="body2" compact />
                             <FormattedNumber
@@ -437,9 +400,7 @@ export default function MarketsPage() {
                           </Box>
                         </Box>
                         <Box display="flex" justifyContent="space-between" alignItems="center">
-                          <Typography variant="body2" color="text.secondary">
-                            Supply APY
-                          </Typography>
+                          <Typography variant="body2">Supply APY</Typography>
                           <FormattedNumber
                             value={row.supplyAPY}
                             percent
@@ -448,9 +409,7 @@ export default function MarketsPage() {
                           />
                         </Box>
                         <Box display="flex" justifyContent="space-between">
-                          <Typography variant="body2" color="text.secondary">
-                            Total borrowed
-                          </Typography>
+                          <Typography variant="body2">Total borrowed</Typography>
                           <Box textAlign="right">
                             <FormattedNumber value={row.totalDebt} variant="body2" compact />
                             <FormattedNumber
@@ -463,9 +422,7 @@ export default function MarketsPage() {
                           </Box>
                         </Box>
                         <Box display="flex" justifyContent="space-between" alignItems="center">
-                          <Typography variant="body2" color="text.secondary">
-                            Borrow APY
-                          </Typography>
+                          <Typography variant="body2">Borrow APY</Typography>
                           {row.borrowingEnabled ? (
                             <FormattedNumber
                               value={row.variableBorrowAPY}
@@ -477,6 +434,15 @@ export default function MarketsPage() {
                             <Typography variant="body2">—</Typography>
                           )}
                         </Box>
+                        <Button
+                          variant="outlined"
+                          fullWidth
+                          component={Link}
+                          href={ROUTES.marketAssetDetails(row.underlyingAsset, currentMarket)}
+                          noLinkStyle
+                        >
+                          Details
+                        </Button>
                       </Box>
                     </MobileAssetCard>
                   ))}

@@ -1,11 +1,10 @@
-import { Menu as MenuIcon, Settings } from '@mui/icons-material';
+import { Menu as MenuIcon } from '@mui/icons-material';
 import { Box, Button, Menu, MenuItem, IconButton as MuiIconButton, Tab } from '@mui/material';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 import { AvatarSize } from 'src/components/Avatar';
 import MaxWidthContainer from 'src/components/MaxWidthContainer';
-import SettingsMenu from 'src/components/Modals/SettingsMenu';
 import { ModalType } from 'src/components/Modals/types';
 import { Link, ROUTES } from 'src/components/primitives/Link';
 import { UserDisplay } from 'src/components/UserDisplay';
@@ -14,7 +13,7 @@ import { useDevice } from 'src/hooks';
 import { useModalStore } from 'src/store/useModalStore';
 import { useAccount } from 'wagmi';
 
-import { Container, IconButton, MobileMenuButton, Tabs, TabsWrapper } from './styles';
+import { Container, MobileMenuButton, Tabs, TabsWrapper } from './styles';
 
 const TABS = [
   { label: 'Dashboard', href: ROUTES.dashboard },
@@ -27,7 +26,6 @@ export default function Header() {
   const router = useRouter();
   const { address, isConnected } = useAccount();
   const openModal = useModalStore((s) => s.openModal);
-  const [settingsAnchor, setSettingsAnchor] = useState<HTMLElement | null>(null);
   const [mobileMenuAnchor, setMobileMenuAnchor] = useState<HTMLElement | null>(null);
   const pathname = (router.pathname || router.asPath || '').replace(/\/$/, '') || '/';
   const currentTab = TABS.findIndex((tab) => {
@@ -83,7 +81,7 @@ export default function Header() {
             ) : (
               <ConnectWalletButton />
             )}
-            {isMobile ? (
+            {isMobile && (
               <MobileMenuButton>
                 <MuiIconButton
                   onClick={(e) => setMobileMenuAnchor(e.currentTarget)}
@@ -106,12 +104,7 @@ export default function Header() {
                   ))}
                 </Menu>
               </MobileMenuButton>
-            ) : (
-              <IconButton onClick={(e) => setSettingsAnchor(e.currentTarget)}>
-                <Settings />
-              </IconButton>
             )}
-            <SettingsMenu anchorEl={settingsAnchor} onClose={() => setSettingsAnchor(null)} />
           </Box>
         </Box>
       </MaxWidthContainer>
