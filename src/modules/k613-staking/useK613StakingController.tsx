@@ -77,6 +77,10 @@ export function useK613StakingController() {
   const k613Balance = useK613TokenBalance(k613Address);
   const xk613Balance = useK613TokenBalance(xk613Address);
   const allowance = useK613TokenAllowance(k613Address, stakingAddress as `0x${string}` | undefined);
+  const xk613Allowance = useK613TokenAllowance(
+    xk613Address,
+    stakingAddress as `0x${string}` | undefined
+  );
   const rewardsData = useK613RewardsData(rewardsDistributor);
 
   const { stake, initiateExit, exit, instantExit, cancelExit } = useK613StakingActions();
@@ -251,15 +255,34 @@ export function useK613StakingController() {
 
     setActionPending('initiateExit');
     try {
+      const currentXk613Allowance = BigInt((xk613Allowance.data as bigint | undefined) ?? 0);
+      if (currentXk613Allowance < amount && xk613Address && stakingAddress) {
+        await approve(xk613Address, stakingAddress as `0x${string}`, MAX_UINT256);
+        await xk613Allowance.refetch();
+      }
       await initiateExit(amount);
       setExitAmount('');
       refetch();
+      xk613Balance.refetch();
+      xk613Allowance.refetch();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to create exit request');
     } finally {
       setActionPending(null);
     }
-  }, [exitAmount, exitQueue.length, maxExitSlots, availableToUnstake, initiateExit, refetch]);
+  }, [
+    exitAmount,
+    exitQueue.length,
+    maxExitSlots,
+    availableToUnstake,
+    initiateExit,
+    refetch,
+    xk613Allowance,
+    xk613Address,
+    stakingAddress,
+    approve,
+    xk613Balance,
+  ]);
 
   const handleExit = useCallback(
     async (index: bigint) => {
