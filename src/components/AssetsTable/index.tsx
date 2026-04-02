@@ -5,6 +5,7 @@ import { USD_DECIMALS, valueToBigNumber } from '@aave/math-utils';
 import { Check, MoreHorizOutlined } from '@mui/icons-material';
 import {
   Alert,
+  Box,
   Button,
   CircularProgress,
   IconButton,
@@ -46,7 +47,7 @@ import {
   findAndFilterMintableGhoReserve,
 } from 'src/utils/ghoUtilities';
 
-import { Paper } from './styles';
+import { DesktopTable, MobileAssetCard, MobileCards, MobilePagination, Paper } from './styles';
 
 type SortKey = 'assets' | 'walletBalance' | 'apy';
 
@@ -366,6 +367,7 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
     const start = page * ROWS_PER_PAGE;
     return displayRows.slice(start, start + ROWS_PER_PAGE);
   }, [displayRows, page]);
+  const pageCount = Math.max(1, Math.ceil(displayRows.length / ROWS_PER_PAGE));
 
   const handleRequestSort = (key: SortKey) => {
     if (!isSupply) return;
@@ -386,6 +388,7 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
     user?.totalCollateralMarketReferenceCurrency === '0' &&
     !dataLoading &&
     isAlertShown;
+  const showInitialLoading = Boolean(currentAccount) && dataLoading && displayRows.length === 0;
 
   return (
     <Paper isOpen={isOpen}>
@@ -414,113 +417,274 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
         </Alert>
       )}
 
-      {dataLoading ? (
-        <Stack alignItems="center" py={4}>
-          <CircularProgress size={32} />
-        </Stack>
-      ) : !currentAccount ? (
+      {!currentAccount ? (
         <Typography color="text.secondary" py={2}>
           Connect your wallet to see assets.
         </Typography>
+      ) : showInitialLoading ? (
+        <Stack alignItems="center" py={4}>
+          <CircularProgress size={32} />
+        </Stack>
+      ) : displayRows.length === 0 ? (
+        <Typography color="text.secondary">No assets in this market.</Typography>
       ) : (
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>
-                {isSupply ? (
-                  <TableSortLabel
-                    active={sortKey === 'assets'}
-                    direction={sortKey === 'assets' ? sortDirection : 'asc'}
-                    onClick={() => handleRequestSort('assets')}
-                  >
-                    Assets
-                  </TableSortLabel>
-                ) : (
-                  'Assets'
-                )}
-              </TableCell>
-              <TableCell align="right">
-                {isSupply ? (
-                  <TableSortLabel
-                    active={sortKey === 'walletBalance'}
-                    direction={sortKey === 'walletBalance' ? sortDirection : 'asc'}
-                    onClick={() => handleRequestSort('walletBalance')}
-                  >
-                    Wallet Balance
-                  </TableSortLabel>
-                ) : (
-                  'Available'
-                )}
-              </TableCell>
-              <TableCell align="right">
-                {isSupply ? (
-                  <TableSortLabel
-                    active={sortKey === 'apy'}
-                    direction={sortKey === 'apy' ? sortDirection : 'asc'}
-                    onClick={() => handleRequestSort('apy')}
-                  >
-                    APY
-                  </TableSortLabel>
-                ) : (
-                  'APY, variable'
-                )}
-              </TableCell>
-              {isSupply && <TableCell align="center">Can be collateral</TableCell>}
-              <TableCell />
-            </TableRow>
-          </TableHead>
+        <>
+          <DesktopTable>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>
+                    {isSupply ? (
+                      <TableSortLabel
+                        active={sortKey === 'assets'}
+                        direction={sortKey === 'assets' ? sortDirection : 'asc'}
+                        onClick={() => handleRequestSort('assets')}
+                      >
+                        Assets
+                      </TableSortLabel>
+                    ) : (
+                      'Assets'
+                    )}
+                  </TableCell>
+                  <TableCell align="right">
+                    {isSupply ? (
+                      <TableSortLabel
+                        active={sortKey === 'walletBalance'}
+                        direction={sortKey === 'walletBalance' ? sortDirection : 'asc'}
+                        onClick={() => handleRequestSort('walletBalance')}
+                      >
+                        Wallet Balance
+                      </TableSortLabel>
+                    ) : (
+                      'Available'
+                    )}
+                  </TableCell>
+                  <TableCell align="right">
+                    {isSupply ? (
+                      <TableSortLabel
+                        active={sortKey === 'apy'}
+                        direction={sortKey === 'apy' ? sortDirection : 'asc'}
+                        onClick={() => handleRequestSort('apy')}
+                      >
+                        APY
+                      </TableSortLabel>
+                    ) : (
+                      'APY, variable'
+                    )}
+                  </TableCell>
+                  {isSupply && <TableCell align="center">Can be collateral</TableCell>}
+                  <TableCell />
+                </TableRow>
+              </TableHead>
 
-          <TableBody>
-            {displayRows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={isSupply ? 5 : 4}>
-                  <Typography color="text.secondary">No assets in this market.</Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              paginatedRows.map((row) =>
-                isSupply ? (
-                  <SupplyTableRow
-                    key={(row as SupplyRow).id}
-                    row={row as SupplyRow}
-                    currentMarket={currentMarket}
-                    setMenuAnchor={setMenuAnchor}
-                    openSupply={openSupply}
+              <TableBody>
+                {paginatedRows.map((row) =>
+                  isSupply ? (
+                    <SupplyTableRow
+                      key={(row as SupplyRow).id}
+                      row={row as SupplyRow}
+                      currentMarket={currentMarket}
+                      setMenuAnchor={setMenuAnchor}
+                      openSupply={openSupply}
+                    />
+                  ) : (
+                    <BorrowTableRow
+                      key={(row as BorrowRow).id}
+                      row={row as BorrowRow}
+                      currentMarket={currentMarket as CustomMarket}
+                      openBorrow={openBorrow}
+                    />
+                  )
+                )}
+              </TableBody>
+              <TableFooter>
+                <TableRow>
+                  <TablePagination
+                    colSpan={isSupply ? 5 : 4}
+                    count={displayRows.length}
+                    page={page}
+                    rowsPerPage={ROWS_PER_PAGE}
+                    rowsPerPageOptions={[]}
+                    onPageChange={(_, newPage) => setPage(newPage)}
+                    sx={{ borderBottom: 'none' }}
                   />
-                ) : (
-                  <BorrowTableRow
-                    key={(row as BorrowRow).id}
-                    row={row as BorrowRow}
-                    currentMarket={currentMarket as CustomMarket}
-                    openBorrow={openBorrow}
-                  />
-                )
+                </TableRow>
+              </TableFooter>
+            </Table>
+          </DesktopTable>
+
+          <MobileCards>
+            {paginatedRows.map((row) =>
+              isSupply ? (
+                <SupplyMobileCard
+                  key={(row as SupplyRow).id}
+                  row={row as SupplyRow}
+                  currentMarket={currentMarket}
+                  openSupply={openSupply}
+                />
+              ) : (
+                <BorrowMobileCard
+                  key={(row as BorrowRow).id}
+                  row={row as BorrowRow}
+                  currentMarket={currentMarket as CustomMarket}
+                  openBorrow={openBorrow}
+                />
               )
             )}
-          </TableBody>
-          {displayRows.length > 0 && (
-            <TableFooter>
-              <TableRow>
-                <TablePagination
-                  colSpan={isSupply ? 5 : 4}
-                  count={displayRows.length}
-                  page={page}
-                  rowsPerPage={ROWS_PER_PAGE}
-                  rowsPerPageOptions={[]}
-                  onPageChange={(_, newPage) => setPage(newPage)}
-                  sx={{ borderBottom: 'none' }}
-                />
-              </TableRow>
-            </TableFooter>
-          )}
-        </Table>
+          </MobileCards>
+
+          <MobilePagination>
+            <Button size="small" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
+              Prev
+            </Button>
+            <Typography variant="body2" color="text.secondary">
+              Page {page + 1} / {pageCount}
+            </Typography>
+            <Button
+              size="small"
+              disabled={page >= pageCount - 1}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </Button>
+          </MobilePagination>
+        </>
       )}
 
       <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
-        <MenuItem>Switch</MenuItem>
         <MenuItem>Details</MenuItem>
       </Menu>
     </Paper>
+  );
+}
+
+function SupplyMobileCard({
+  row,
+  currentMarket,
+  openSupply,
+}: {
+  row: SupplyRow;
+  currentMarket: string;
+  openSupply: (
+    underlyingAsset: string,
+    currentMarket: string,
+    name: string,
+    funnel: string
+  ) => void;
+}) {
+  return (
+    <MobileAssetCard>
+      <Box display="flex" alignItems="center" justifyContent="space-between" gap={1}>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <TokenIcon symbol={row.iconSymbol} sx={{ width: 24, height: 24, fontSize: '24px' }} />
+          <Typography variant="body1">{row.symbol}</Typography>
+        </Stack>
+      </Box>
+
+      <Box display="flex" flexDirection="column" gap={1}>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Typography variant="body2">Wallet balance</Typography>
+          <Typography variant="body2">
+            {Number(row.walletBalanceStr).toLocaleString(undefined, { maximumFractionDigits: 6 })}
+          </Typography>
+        </Box>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Typography variant="body2">APY</Typography>
+          <Typography variant="body2">{row.apyPercent.toFixed(2)}%</Typography>
+        </Box>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Typography variant="body2">Can be collateral</Typography>
+          <Typography variant="body2" color={row.canBeCollateral ? 'success.main' : 'text.primary'}>
+            {row.canBeCollateral ? 'Yes' : 'No'}
+          </Typography>
+        </Box>
+      </Box>
+
+      <Stack direction="row" spacing={1}>
+        <Button
+          size="small"
+          variant="contained"
+          color="inherit"
+          fullWidth
+          disabled={row.disableSupply}
+          onClick={() => openSupply(row.underlyingAsset, currentMarket, row.name, 'dashboard')}
+        >
+          Supply
+        </Button>
+        <Button
+          size="small"
+          variant="text"
+          color="secondary"
+          fullWidth
+          component={Link}
+          href={ROUTES.reserveOverview(row.underlyingAsset, currentMarket as CustomMarket)}
+        >
+          Details
+        </Button>
+      </Stack>
+    </MobileAssetCard>
+  );
+}
+
+function BorrowMobileCard({
+  row,
+  currentMarket,
+  openBorrow,
+}: {
+  row: BorrowRow;
+  currentMarket: CustomMarket;
+  openBorrow: (
+    underlyingAsset: string,
+    currentMarket: string,
+    name: string,
+    funnel: string
+  ) => void;
+}) {
+  const apyLabel = row.borrowApyPercent < 0 ? '—' : `${row.borrowApyPercent.toFixed(2)}%`;
+
+  return (
+    <MobileAssetCard>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <TokenIcon symbol={row.iconSymbol} sx={{ width: 24, height: 24, fontSize: '24px' }} />
+        <Typography variant="body1">{row.symbol}</Typography>
+      </Stack>
+
+      <Box display="flex" flexDirection="column" gap={1}>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Typography variant="body2">Available</Typography>
+          <Typography variant="body2">
+            {row.availableBorrows.toLocaleString(undefined, { maximumFractionDigits: 6 })}
+          </Typography>
+        </Box>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Typography variant="body2">APY, variable</Typography>
+          <Typography variant="body2">{apyLabel}</Typography>
+        </Box>
+      </Box>
+
+      <Stack direction="row" spacing={1}>
+        <Button
+          size="small"
+          variant="contained"
+          color="inherit"
+          fullWidth
+          disabled={row.disableBorrow}
+          onClick={() => openBorrow(row.underlyingAsset, currentMarket, row.name, 'dashboard')}
+        >
+          Borrow
+        </Button>
+        <Button
+          variant="text"
+          size="small"
+          color="secondary"
+          fullWidth
+          component={Link}
+          href={ROUTES.reserveOverview(row.underlyingAsset, currentMarket)}
+        >
+          Details
+        </Button>
+      </Stack>
+    </MobileAssetCard>
   );
 }
 

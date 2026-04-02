@@ -164,8 +164,8 @@ export const MobileAssetCard = styled(Box)(({ theme }) => ({
   gap: 12,
   padding: 16,
   border: `1px solid ${theme.palette.text.secondary}`,
-  borderRadius: 4,
-  backgroundColor: theme.palette.background.paper,
+  borderRadius: 12,
+  backgroundColor: '#333333',
 }));
 
 export const DesktopTable = styled(Box)(({ theme }) => ({
