@@ -28,7 +28,7 @@ export function K613StakingStatsGrid() {
         </StatCard>
         <StatCard>
           <StatInner>
-            <StatLabel>Locked for Staking</StatLabel>
+            <StatLabel>In Exit Queue (xK613)</StatLabel>
             <StatValue>{formatted.lockedInExit}</StatValue>
           </StatInner>
         </StatCard>
