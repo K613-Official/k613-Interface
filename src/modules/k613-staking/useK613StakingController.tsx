@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ConnectWalletButton } from 'src/components/WalletConnection/ConnectWalletButton';
 import {
   formatExitRequestId,
-  formatLockPeriodMonths,
+  formatStakeLockPeriod,
   formatUnlockCountdown,
   parseStakingDepositsRead,
   useK613Approve,
@@ -128,7 +128,7 @@ export function useK613StakingController() {
       stakedPosition: formatTokenAmount(stakedAmount),
       pendingRewards: formatTokenAmount(pendingRewardsAmount),
       exitSlots: `${exitQueue.length} / ${maxExitSlots}`,
-      lockPeriodShort: formatLockPeriodMonths(lockDurationSeconds),
+      lockPeriodShort: formatStakeLockPeriod(lockDurationSeconds),
       penaltyPercent,
     }),
     [

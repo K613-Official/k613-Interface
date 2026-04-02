@@ -2,7 +2,7 @@
 
 import { CircularProgress } from '@mui/material';
 import InputAdornment from '@mui/material/InputAdornment';
-import { formatLockPeriodMonths } from 'src/hooks/useK613Staking';
+import { formatStakeLockPeriod } from 'src/hooks/useK613Staking';
 import { parseUnits } from 'viem';
 
 import {
@@ -98,7 +98,7 @@ export function K613LockStakeTab() {
       </RewardRow>
       <RewardRow>
         <ExitCellLabel>Staking Period</ExitCellLabel>
-        <ExitCellValue>{formatLockPeriodMonths(lockDurationSeconds)}</ExitCellValue>
+        <ExitCellValue>{formatStakeLockPeriod(lockDurationSeconds)}</ExitCellValue>
       </RewardRow>
 
       <CtaButton

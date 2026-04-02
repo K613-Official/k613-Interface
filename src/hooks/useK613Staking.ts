@@ -316,18 +316,20 @@ export function useK613RewardsActions(rewardsDistributorAddress: `0x${string}` |
 
 export function formatLockDuration(seconds: bigint | undefined): string {
   if (!seconds) return '—';
-  const days = Number(seconds) / 86400;
-  if (days >= 1) return `${days} дн.`;
-  const hours = Number(seconds) / 3600;
-  if (hours >= 1) return `${hours} ч.`;
-  return `${Number(seconds)} сек.`;
+  const s = Number(seconds);
+  if (s >= 86400) return `${Math.floor(s / 86400)}d`;
+  if (s >= 3600) return `${Math.floor(s / 3600)}h`;
+  if (s >= 60) return `${Math.floor(s / 60)}m`;
+  return `${s}s`;
 }
 
-export function formatLockPeriodMonths(seconds: bigint | undefined): string {
-  if (!seconds) return '—';
+export function formatStakeLockPeriod(seconds: bigint | undefined): string {
+  if (!seconds || seconds <= 0n) return '—';
   const s = Number(seconds);
-  const months = Math.max(1, Math.round(s / (30 * 24 * 3600)));
-  return `${months} month${months === 1 ? '' : 's'}`;
+  if (!Number.isFinite(s) || s <= 0) return '—';
+  if (s < 86400) return `${s} s`;
+  const days = Math.floor(s / 86400);
+  return `${days} day${days === 1 ? '' : 's'}`;
 }
 
 export function formatUnlockCountdown(
