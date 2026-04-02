@@ -26,7 +26,6 @@ export default function Header() {
   const router = useRouter();
   const { address, isConnected } = useAccount();
   const openModal = useModalStore((s) => s.openModal);
-  const [settingsAnchor, setSettingsAnchor] = useState<HTMLElement | null>(null);
   const [mobileMenuAnchor, setMobileMenuAnchor] = useState<HTMLElement | null>(null);
   const pathname = (router.pathname || router.asPath || '').replace(/\/$/, '') || '/';
   const currentTab = TABS.findIndex((tab) => {
