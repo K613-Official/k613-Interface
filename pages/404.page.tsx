@@ -1,59 +1,32 @@
-import { Trans } from '@lingui/macro';
-import { Box, Button, Paper, Typography, useTheme } from '@mui/material';
-import Link from 'next/link';
-import { useEffect } from 'react';
-import { ContentContainer } from 'src/components/ContentContainer';
-import { TopInfoPanel } from 'src/components/TopInfoPanel/TopInfoPanel';
-import { MainLayout } from 'src/layouts/MainLayout';
-import { useRootStore } from 'src/store/root';
+import { Box, Button, Typography } from '@mui/material';
+import Image from 'next/image';
+import Layout from 'src/components/Layout';
 
-export default function Aave404Page() {
-  const theme = useTheme();
-  const trackEvent = useRootStore((store) => store.trackEvent);
-
-  useEffect(() => {
-    trackEvent('Page Viewed', {
-      'Page Name': '404 Error',
-    });
-  }, [trackEvent]);
+export default function NotFound() {
   return (
-    <>
-      <TopInfoPanel />
-      <ContentContainer>
-        <Paper
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            textAlign: 'center',
-            p: 4,
-            flex: 1,
-            backgroundColor: theme.palette.mode === 'dark' ? 'transparent' : '',
-          }}
-        >
-          <Box sx={{ maxWidth: 444, m: '0 auto' }}>
-            <img width="100%" height="auto" src="/404/404.svg" alt="404 - Page not found" />
-          </Box>
-          <Typography variant="body1" sx={{ mt: 2 }}>
-            <Trans>Page not found</Trans>
-          </Typography>
-          <Typography sx={{ mt: 3, mb: 5, maxWidth: 480 }}>
-            <Trans>Sorry, we couldn&apos;t find the page you were looking for.</Trans>
+    <Layout>
+      <Box
+        display="flex"
+        flexDirection="column"
+        gap={3}
+        alignItems="center"
+        justifyContent="center"
+        width="100%"
+        flexGrow={1}
+      >
+        <Image src="/404/404.png" width={100} height={100} alt="404" />
+        <Box display="flex" flexDirection="column" gap={1} textAlign="center" maxWidth={340}>
+          <Typography fontSize={24}>Page not found</Typography>
+          <Typography fontSize={14} color="secondary.main">
+            Sorry, we couldn&apos;t find the page you were looking for.
             <br />
-            <Trans>We suggest you go back to the Dashboard.</Trans>
+            We suggest you go back to the home page
           </Typography>
-          <Link href="/" passHref>
-            <Button variant="outlined" color="primary">
-              <Trans>Back to Dashboard</Trans>
-            </Button>
-          </Link>
-        </Paper>
-      </ContentContainer>
-    </>
+        </Box>
+        <Button href="/" variant="contained">
+          BACK HOME
+        </Button>
+      </Box>
+    </Layout>
   );
 }
-
-Aave404Page.getLayout = function getLayout(page: React.ReactElement) {
-  return <MainLayout>{page}</MainLayout>;
-};

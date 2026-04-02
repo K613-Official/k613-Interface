@@ -24,4 +24,5 @@ export const Actions = styled(Box)({
   justifyContent: 'flex-end',
   gap: 8,
   padding: '8px 16px',
+  color: '#000',
 });

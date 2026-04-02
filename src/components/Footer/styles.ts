@@ -4,6 +4,8 @@ export const Container = styled(Box)(({ theme }) => ({
   width: '100%',
   backgroundColor: theme.palette.background.default,
   paddingBlock: 24,
+  marginTop: 'auto',
+  marginBottom: 0,
 }));
 
 export const Wrapper = styled(Box)(({ theme }) => ({
