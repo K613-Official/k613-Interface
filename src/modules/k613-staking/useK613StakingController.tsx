@@ -51,6 +51,14 @@ export function useK613StakingController() {
   const [actionPending, setActionPending] = useState<string | null>(null);
   const [infoDialog, setInfoDialog] = useState<K613InfoDialogKind>(null);
   const [manageSelectedIndex, setManageSelectedIndex] = useState(0);
+  const [unlockCountdownTick, setUnlockCountdownTick] = useState(0);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setUnlockCountdownTick((n) => n + 1);
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, []);
 
   const {
     stakingAddress,
@@ -365,10 +373,19 @@ export function useK613StakingController() {
     }
     if (best === null) return 'Ready';
     const s = Number(best);
-    const h = Math.floor(s / 3600);
-    const m = Math.floor((s % 3600) / 60);
+    if (s < 60) return `${s}s`;
+    if (s < 3600) {
+      const mm = Math.floor(s / 60);
+      const ss = s % 60;
+      return `${mm}m ${String(ss).padStart(2, '0')}s`;
+    }
+    const d = Math.floor(s / 86400);
+    const rem = s % 86400;
+    const h = Math.floor(rem / 3600);
+    const m = Math.floor((rem % 3600) / 60);
+    if (d > 0) return `${d}d ${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
     return `${h}h ${String(m).padStart(2, '0')}m`;
-  }, [exitQueue, lockDurationSeconds]);
+  }, [exitQueue, lockDurationSeconds, unlockCountdownTick]);
 
   const totalQueuedFormatted = formatTokenAmount(queuedTotal);
 

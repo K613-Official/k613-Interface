@@ -340,12 +340,21 @@ export function formatUnlockCountdown(
   const now = Math.floor(Date.now() / 1000);
   let remaining = unlockAt - now;
   if (remaining <= 0) return 'Ready';
+  if (remaining < 60) return `${remaining}s`;
+  if (remaining < 3600) {
+    const mm = Math.floor(remaining / 60);
+    const ss = remaining % 60;
+    return `${mm}m ${String(ss).padStart(2, '0')}s`;
+  }
   const d = Math.floor(remaining / 86400);
   remaining %= 86400;
   const h = Math.floor(remaining / 3600);
   remaining %= 3600;
   const m = Math.floor(remaining / 60);
-  return `${d}d ${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
+  if (d > 0) {
+    return `${d}d ${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
+  }
+  return `${h}h ${String(m).padStart(2, '0')}m`;
 }
 
 export function formatExitRequestId(index: number): string {
