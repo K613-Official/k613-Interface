@@ -245,7 +245,7 @@ export function useK613StakingController() {
       return;
     }
     if (amount > availableToUnstake) {
-      setError('Amount exceeds available staked balance');
+      setError('Amount exceeds available xK613 (staked, not already in exit queue)');
       return;
     }
 

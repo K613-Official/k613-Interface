@@ -99,8 +99,8 @@ export function K613ClaimUnstakeTab() {
           <RewardCard>
             <PanelHeading>Request Unstake</PanelHeading>
             <PanelCaptionLeft>
-              Create an exit request. Tokens will move into the exit queue and unlock by request
-              timer
+              Create an exit request in xK613 (your staked receipt). The contract escrows xK613,
+              then after the lock timer you can exit to receive K613
             </PanelCaptionLeft>
             <PanelSection>
               <FieldLabel>Amount</FieldLabel>
@@ -115,7 +115,7 @@ export function K613ClaimUnstakeTab() {
                   InputProps={{
                     endAdornment: (
                       <InputAdornment position="end">
-                        <InputSuffix>K613</InputSuffix>
+                        <InputSuffix>xK613</InputSuffix>
                       </InputAdornment>
                     ),
                   }}
@@ -123,7 +123,9 @@ export function K613ClaimUnstakeTab() {
               </AmountFieldWrap>
             </PanelSection>
             <BalanceRow>
-              <BalanceCaption>Available balance: {availableToUnstakeFormatted} K613</BalanceCaption>
+              <BalanceCaption>
+                Available to queue: {availableToUnstakeFormatted} xK613
+              </BalanceCaption>
               <MaxLink type="button" disabled={paused || queueFull} onClick={setMaxExit}>
                 MAX
               </MaxLink>
