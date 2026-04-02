@@ -1,5 +1,4 @@
-import { Badge, Button, Typography } from '@mui/material';
-import Image from 'next/image';
+import { Button, Typography } from '@mui/material';
 import { useState } from 'react';
 import AssetsTable from 'src/components/AssetsTable';
 import { ConnectWalletPaper } from 'src/components/ConnectWalletPaper';
@@ -24,7 +23,6 @@ import {
   TableSwitchContainer,
   TitleContainer,
   TitleRow,
-  V3,
 } from './styles';
 
 export default function DashboardPage() {
@@ -41,14 +39,10 @@ export default function DashboardPage() {
           <LeftContainer>
             <TitleContainer>
               <TitleRow>
-                <Image src="/icons/networks/ethereum.svg" width={32} height={32} alt="ethereum" />
-                <Typography variant="h4">Core Instance</Typography>
-                <V3>
-                  <Badge>V3</Badge>
-                </V3>
+                <Typography variant="h4">K613 Dashboard</Typography>
               </TitleRow>
               <Typography variant="body2" color="#BDBDBD">
-                Main Ethereum market with the largest selection of assets and yield options
+                Track your portfolio, rewards, and lending activity in one place
               </Typography>
             </TitleContainer>
           </LeftContainer>

@@ -21,10 +21,10 @@ export default function ClaimRewardsModal({ open, onClose }: Props) {
       </Content>
 
       <Actions>
-        <Button variant="text" color="secondary" onClick={onClose}>
+        <Button variant="text" color="info" onClick={onClose}>
           close
         </Button>
-        <Button variant="text" color="primary">
+        <Button variant="text" color="inherit">
           Claim
         </Button>
       </Actions>
