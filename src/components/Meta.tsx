@@ -8,11 +8,9 @@ type MetaProps = {
 };
 
 export function Meta({ title, description, imageUrl, timestamp }: MetaProps) {
-  const formattedTitle = `Aave - ${title}`;
   return (
     <Head>
-      <title>{formattedTitle}</title>{' '}
-      <meta name="description" content={description} key="description" />
+      <title>{title}</title> <meta name="description" content={description} key="description" />
       <meta property="og:title" content={`Aave - ${title}`} key="title" />
       <meta property="og:description" content={description} key="ogdescription" />
       {imageUrl && <meta property="og:image" content={imageUrl} key="ogimage" />}
@@ -34,10 +32,14 @@ export function Meta({ title, description, imageUrl, timestamp }: MetaProps) {
         key="keywords"
         content="Decentralized Finance, DeFi, lending, borrowing, stablecoins, Ethereum, assets, erc-20, smart contracts, open finance, trustless"
       />
-      <link rel="apple-touch-icon" href="/aave_180.png" />
       <meta name="apple-mobile-web-app-title" content={`Aave`} />
       <meta name="mobile-web-app-capable" content="yes" />
       <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+      <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+      <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+      <link rel="shortcut icon" href="/favicon.ico" />
+      <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+      <link rel="manifest" href="/site.webmanifest" />
     </Head>
   );
 }
