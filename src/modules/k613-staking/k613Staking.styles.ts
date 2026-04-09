@@ -1,10 +1,13 @@
 import {
   Box,
   Button,
+  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Tab as MuiTab,
+  Tabs as MuiTabs,
   Typography,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
@@ -52,31 +55,92 @@ export const SubtitleMuted = styled(Typography)(() => ({
 export const PanelShell = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
-  gap: 16,
+  gap: 0,
   width: '100%',
   maxWidth: 800,
   marginInline: 'auto',
-  padding: 16,
-  borderRadius: 8,
-  backgroundColor: 'transparent',
-  border: 'none',
   [theme.breakpoints.down('sm')]: {
     padding: 0,
   },
 }));
+
+/* ─── Main tab bar (MUI Tabs, primary underline style) ─── */
+
+export const MainTabs = styled(MuiTabs)(() => ({
+  width: '100%',
+  minHeight: 48,
+  borderBottom: '1px solid rgba(255,255,255,0.12)',
+  '& .MuiTabs-indicator': {
+    height: 3,
+    borderRadius: '100px 100px 0 0',
+    backgroundColor: '#5fcc00',
+  },
+  '& .MuiTabs-flexContainer': {
+    gap: 0,
+  },
+}));
+
+export const MainTab = styled(MuiTab)(() => ({
+  flex: 1,
+  minHeight: 48,
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 500,
+  fontSize: 14,
+  lineHeight: '20px',
+  letterSpacing: '0.1px',
+  textTransform: 'none',
+  color: '#bdbdbd',
+  opacity: 0.5,
+  padding: '14px 16px',
+  '&.Mui-selected': {
+    color: '#5fcc00',
+    opacity: 1,
+  },
+}));
+
+/* ─── Per-tab section: heading + stats ─── */
+
+export const TabSectionHeader = styled(Box)(() => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 8,
+  paddingTop: 64,
+  paddingBottom: 16,
+}));
+
+export const TabSectionTitle = styled(Typography)(() => ({
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 400,
+  fontSize: 32,
+  lineHeight: 1.235,
+  letterSpacing: '0.25px',
+  color: '#FFFFFF',
+}));
+
+export const TabSectionSubtitle = styled(Typography)(() => ({
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 400,
+  fontSize: 14,
+  lineHeight: 1.43,
+  letterSpacing: '0.17px',
+  color: '#BDBDBD',
+}));
+
+/* ─── Stats grids ─── */
 
 export const StatsOuter = styled(Box)(() => ({
   display: 'flex',
   flexDirection: 'column',
   gap: 8,
   alignSelf: 'stretch',
+  paddingBottom: 12,
 }));
 
 export const StatsRow = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'row',
   flexWrap: 'wrap',
-  gap: 10,
+  gap: 8,
   alignItems: 'stretch',
   alignSelf: 'stretch',
   [theme.breakpoints.down('sm')]: {
@@ -84,17 +148,27 @@ export const StatsRow = styled(Box)(({ theme }) => ({
   },
 }));
 
+export const StatsCaption = styled(Typography)(() => ({
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 400,
+  fontSize: 12,
+  lineHeight: 1.66,
+  letterSpacing: '0.4px',
+  color: 'rgba(255, 255, 255, 0.6)',
+  paddingTop: 4,
+}));
+
 export const StatCard = styled(Box)(() => ({
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'center',
-  gap: 16,
-  padding: 18,
+  gap: 8,
+  padding: 16,
   flex: '1 1 0',
-  minWidth: 160,
-  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-  border: '1px solid rgba(255, 255, 255, 0.14)',
-  borderRadius: 10,
+  minWidth: 120,
+  backgroundColor: 'rgba(255, 255, 255, 0.04)',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+  borderRadius: 4,
 }));
 
 export const StatCardWide = styled(StatCard)(() => ({
@@ -112,7 +186,7 @@ export const StatLabel = styled(Typography)(() => ({
   fontWeight: 400,
   fontSize: 14,
   lineHeight: 1.43,
-  letterSpacing: '0.012142857em',
+  letterSpacing: '0.17px',
   color: '#757575',
 }));
 
@@ -121,7 +195,7 @@ export const StatValue = styled(Typography)(() => ({
   fontWeight: 600,
   fontSize: 24,
   lineHeight: 1.235,
-  letterSpacing: '0.010416667em',
+  letterSpacing: '0.25px',
   color: '#FFFFFF',
 }));
 
@@ -129,21 +203,66 @@ export const StatValueAccent = styled(StatValue)(({ theme }) => ({
   color: theme.palette.primary.main,
 }));
 
-export const MainPanel = styled(Box)(() => ({
+/* ─── Sub-tab bar (segmented buttons) ─── */
+
+export const TabBar = styled(Box)(() => ({
   display: 'flex',
-  flexDirection: 'column',
-  gap: 16,
+  flexDirection: 'row',
+  justifyContent: 'stretch',
+  alignItems: 'center',
+  alignSelf: 'stretch',
+  gap: 4,
+  padding: 0,
   width: '100%',
-  maxWidth: 800,
-  marginInline: 'auto',
+  marginTop: 64,
 }));
+
+export const TabBarInner = styled(Box)(() => ({
+  display: 'flex',
+  flexDirection: 'row',
+  justifyContent: 'center',
+  alignItems: 'stretch',
+  gap: 4,
+  flex: 1,
+  height: 38,
+  borderRadius: 4,
+  backgroundColor: 'rgba(255, 255, 255, 0.12)',
+  border: '1px solid rgba(255, 255, 255, 0.3)',
+  padding: 4,
+}));
+
+export const TabItem = styled(Button, {
+  shouldForwardProp: (prop) => prop !== 'active',
+})<{ active?: boolean }>(({ active }) => ({
+  flex: 1,
+  minHeight: 0,
+  height: '100%',
+  padding: '4px 10px',
+  borderRadius: 4,
+  textTransform: 'uppercase',
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 500,
+  fontSize: 13,
+  lineHeight: '22px',
+  letterSpacing: '0.46px',
+  color: '#FFFFFF',
+  backgroundColor: active ? 'rgba(255, 255, 255, 0.12)' : 'transparent',
+  border: active ? '1px solid rgba(255, 255, 255, 0.3)' : '1px solid transparent',
+  boxShadow: 'none',
+  '&:hover': {
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    boxShadow: 'none',
+  },
+}));
+
+/* ─── Content section spacing ─── */
 
 export const TabContentColumn = styled(Box)(() => ({
   display: 'flex',
   flexDirection: 'column',
   gap: 16,
   width: '100%',
-  marginTop: 4,
+  marginTop: 16,
 }));
 
 export const PausedBanner = styled(Box)(() => ({
@@ -157,116 +276,18 @@ export const PausedBanner = styled(Box)(() => ({
   fontSize: 14,
 }));
 
-export const TabBar = styled(Box)(() => ({
-  display: 'flex',
-  flexDirection: 'row',
-  justifyContent: 'stretch',
-  alignItems: 'center',
-  alignSelf: 'stretch',
-  gap: 4,
-  padding: 0,
-  width: '100%',
-}));
+/* ─── Main panel ─── */
 
-export const TabBarInner = styled(Box)(() => ({
-  display: 'flex',
-  flexDirection: 'row',
-  justifyContent: 'center',
-  alignItems: 'stretch',
-  gap: 4,
-  flex: 1,
-  borderRadius: 4,
-  backgroundColor: 'rgba(255, 255, 255, 0.12)',
-  border: '1px solid rgba(255, 255, 255, 0.3)',
-  padding: 4,
-}));
-
-export const TabItem = styled(Button, {
-  shouldForwardProp: (prop) => prop !== 'active',
-})<{ active?: boolean }>(({ active }) => ({
-  flex: 1,
-  minHeight: 36,
-  padding: '4px 10px',
-  borderRadius: 4,
-  textTransform: 'none',
-  fontFamily: 'Roboto, sans-serif',
-  fontWeight: 500,
-  fontSize: 13,
-  lineHeight: 1.69,
-  letterSpacing: '0.035384616em',
-  color: '#FFFFFF',
-  backgroundColor: 'rgba(255, 255, 255, 0.12)',
-  border: active ? '1px solid rgba(255, 255, 255, 0.3)' : '1px solid transparent',
-  boxShadow: 'none',
-  '&:hover': {
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
-  },
-}));
-
-export const StepStrip = styled(Box)(() => ({
-  display: 'flex',
-  flexDirection: 'row',
-  gap: 7,
-  width: '100%',
-}));
-
-export const StepRow = styled(Box)(() => ({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: 8,
-  padding: 16,
-  flex: 1,
-  backgroundColor: 'rgba(255, 255, 255, 0.04)',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  borderRadius: 4,
-}));
-
-export const StepCircle = styled(Box, {
-  shouldForwardProp: (prop) => prop !== 'active',
-})<{ active?: boolean }>(({ active, theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: 32,
-  height: 32,
-  borderRadius: '50%',
-  flexShrink: 0,
-  fontFamily: 'Roboto, sans-serif',
-  fontWeight: 500,
-  fontSize: 15,
-  lineHeight: 1.73,
-  letterSpacing: '0.030666667em',
-  textTransform: 'uppercase',
-  backgroundColor: active ? theme.palette.primary.main : 'rgba(255, 255, 255, 0.12)',
-  color: active ? 'rgba(0, 0, 0, 0.87)' : 'rgba(255, 255, 255, 0.3)',
-}));
-
-export const StepTextCol = styled(Box)(() => ({
+export const MainPanel = styled(Box)(() => ({
   display: 'flex',
   flexDirection: 'column',
-  gap: 0,
-  flex: 1,
-  minWidth: 0,
+  gap: 16,
+  width: '100%',
+  maxWidth: 800,
+  marginInline: 'auto',
 }));
 
-export const StepTitle = styled(Typography)(() => ({
-  fontFamily: 'Roboto, sans-serif',
-  fontWeight: 500,
-  fontSize: 14,
-  lineHeight: 1.714,
-  letterSpacing: '0.012142857em',
-  color: '#FFFFFF',
-}));
-
-export const StepCaption = styled(Typography)(() => ({
-  fontFamily: 'Roboto, sans-serif',
-  fontWeight: 500,
-  fontSize: 12,
-  lineHeight: 1.5,
-  letterSpacing: '0.014166667em',
-  color: 'rgba(255, 255, 255, 0.5)',
-}));
+/* ─── Form card ─── */
 
 export const PanelCard = styled(Box)(() => ({
   display: 'flex',
@@ -289,8 +310,8 @@ export const PanelHeading = styled(Typography)(() => ({
   fontFamily: 'Roboto, sans-serif',
   fontWeight: 500,
   fontSize: 14,
-  lineHeight: 1.714,
-  letterSpacing: '0.012142857em',
+  lineHeight: '24px',
+  letterSpacing: '0.17px',
   color: '#FFFFFF',
 }));
 
@@ -299,7 +320,7 @@ export const PanelCaption = styled(Typography)(() => ({
   fontWeight: 400,
   fontSize: 12,
   lineHeight: 1.66,
-  letterSpacing: '0.033333333em',
+  letterSpacing: '0.4px',
   textAlign: 'center',
   color: 'rgba(255, 255, 255, 0.7)',
 }));
@@ -312,8 +333,8 @@ export const FieldLabel = styled(Typography)(() => ({
   fontFamily: 'Roboto, sans-serif',
   fontWeight: 500,
   fontSize: 14,
-  lineHeight: 1.714,
-  letterSpacing: '0.012142857em',
+  lineHeight: '24px',
+  letterSpacing: '0.17px',
   color: '#FFFFFF',
 }));
 
@@ -341,9 +362,10 @@ export const StyledAmountField = styled(TextField)(() => ({
   '& .MuiInputBase-input': {
     fontFamily: 'Roboto, sans-serif',
     fontSize: 16,
-    lineHeight: 1.5,
-    letterSpacing: '0.009375em',
+    lineHeight: '24px',
+    letterSpacing: '0.15px',
     paddingBlock: 16,
+    color: 'rgba(255, 255, 255, 0.7)',
   },
 }));
 
@@ -354,7 +376,7 @@ export const BalanceRow = styled(Box)(() => ({
   alignItems: 'center',
   alignSelf: 'stretch',
   gap: 10,
-  padding: '8px 0',
+  paddingBlock: 8,
 }));
 
 export const BalanceCaption = styled(Typography)(() => ({
@@ -362,8 +384,12 @@ export const BalanceCaption = styled(Typography)(() => ({
   fontWeight: 400,
   fontSize: 12,
   lineHeight: 1.66,
-  letterSpacing: '0.033333333em',
+  letterSpacing: '0.4px',
   color: 'rgba(255, 255, 255, 0.7)',
+  '& strong': {
+    color: '#FFFFFF',
+    fontWeight: 600,
+  },
 }));
 
 export const MaxLink = styled('button')(({ theme }) => ({
@@ -375,7 +401,7 @@ export const MaxLink = styled('button')(({ theme }) => ({
   fontWeight: 400,
   fontSize: 12,
   lineHeight: 1.66,
-  letterSpacing: '0.033333333em',
+  letterSpacing: '0.4px',
   color: theme.palette.primary.main,
   textTransform: 'uppercase',
   '&:disabled': {
@@ -384,26 +410,280 @@ export const MaxLink = styled('button')(({ theme }) => ({
   },
 }));
 
-export const CtaButton = styled(Button)(() => ({
+export const CtaButton = styled(Button)(({ theme }) => ({
   width: '100%',
-  minHeight: 48,
+  minHeight: 42,
   borderRadius: 4,
   textTransform: 'uppercase',
   fontFamily: 'Roboto, sans-serif',
   fontWeight: 500,
   fontSize: 15,
-  lineHeight: 1.73,
-  letterSpacing: '0.030666667em',
+  lineHeight: '26px',
+  letterSpacing: '0.46px',
+  backgroundColor: theme.palette.primary.main,
+  color: 'rgba(0, 0, 0, 0.87)',
+  boxShadow:
+    '0px 3px 1px -2px rgba(0,0,0,0.2), 0px 2px 2px 0px rgba(0,0,0,0.14), 0px 1px 5px 0px rgba(0,0,0,0.12)',
+  '&:hover': {
+    backgroundColor: theme.palette.primary.dark,
+  },
+  '&.Mui-disabled': {
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    color: 'rgba(255, 255, 255, 0.3)',
+    boxShadow: 'none',
+  },
 }));
 
-export const CtaOutlined = styled(CtaButton)(() => ({
+export const CtaOutlined = styled(Button)(() => ({
+  width: '100%',
+  minHeight: 42,
+  borderRadius: 4,
+  textTransform: 'uppercase',
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 500,
+  fontSize: 15,
+  lineHeight: '26px',
+  letterSpacing: '0.46px',
   backgroundColor: 'rgba(255, 255, 255, 0.12)',
   color: '#FFFFFF',
   border: '1px solid rgba(255, 255, 255, 0.12)',
   '&:hover': {
     backgroundColor: 'rgba(255, 255, 255, 0.18)',
   },
+  '&.Mui-disabled': {
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    color: 'rgba(255, 255, 255, 0.3)',
+  },
 }));
+
+/* ─── Rewards stats row (horizontal key-value pair cards) ─── */
+
+export const RewardStatsRow = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'row',
+  gap: 8,
+  width: '100%',
+  [theme.breakpoints.down('sm')]: {
+    flexDirection: 'column',
+  },
+}));
+
+export const RewardStatCard = styled(Box)(() => ({
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  flex: '1 1 0',
+  padding: 16,
+  backgroundColor: 'rgba(255, 255, 255, 0.04)',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+  borderRadius: 4,
+  gap: 16,
+}));
+
+export const RewardStatLabel = styled(Typography)(() => ({
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 400,
+  fontSize: 14,
+  lineHeight: 1.43,
+  letterSpacing: '0.17px',
+  color: '#757575',
+  whiteSpace: 'nowrap',
+}));
+
+export const RewardStatValue = styled(Typography)(() => ({
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 600,
+  fontSize: 24,
+  lineHeight: 1.235,
+  letterSpacing: '0.25px',
+  color: '#FFFFFF',
+  whiteSpace: 'nowrap',
+}));
+
+/* ─── Instant exit checkbox ─── */
+
+export const InstantExitRow = styled(Box)(() => ({
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 8,
+}));
+
+export const StyledCheckbox = styled(Checkbox)(({ theme }) => ({
+  padding: 0,
+  color: 'rgba(255, 255, 255, 0.23)',
+  '&.Mui-checked': {
+    color: theme.palette.primary.main,
+  },
+  '& .MuiSvgIcon-root': {
+    fontSize: 18,
+  },
+}));
+
+export const InstantExitLabel = styled(Typography)(() => ({
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 400,
+  fontSize: 14,
+  lineHeight: 1.43,
+  letterSpacing: '0.17px',
+  color: '#FFFFFF',
+  cursor: 'pointer',
+}));
+
+/* ─── Exit queue section ─── */
+
+export const ExitQueueSection = styled(Box)(() => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 0,
+  marginTop: 0,
+  backgroundColor: 'rgba(255, 255, 255, 0.04)',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+  borderRadius: 4,
+  overflow: 'hidden',
+}));
+
+export const ExitQueueHeader = styled(Box)(() => ({
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  padding: '12px 16px',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+}));
+
+export const ExitQueueTitle = styled(Typography)(() => ({
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 500,
+  fontSize: 14,
+  lineHeight: '24px',
+  letterSpacing: '0.17px',
+  color: '#FFFFFF',
+}));
+
+export const ExitQueueCount = styled(Typography)(() => ({
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 400,
+  fontSize: 12,
+  lineHeight: 1.66,
+  letterSpacing: '0.4px',
+  color: 'rgba(255, 255, 255, 0.6)',
+}));
+
+export const ExitQueueSubtitle = styled(Typography)(() => ({
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 400,
+  fontSize: 12,
+  lineHeight: 1.66,
+  letterSpacing: '0.4px',
+  color: 'rgba(255, 255, 255, 0.6)',
+  paddingInline: 16,
+  paddingBottom: 8,
+  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+}));
+
+export const ExitQueueTableHead = styled(Box)(() => ({
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr 1fr 1fr auto',
+  gap: 0,
+  paddingInline: 16,
+  paddingBlock: '8px',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+}));
+
+export const ExitQueueTableRow = styled(Box)(() => ({
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr 1fr 1fr auto',
+  gap: 0,
+  paddingInline: 16,
+  paddingBlock: '12px',
+  alignItems: 'center',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+  '&:last-child': {
+    borderBottom: 'none',
+  },
+}));
+
+export const ExitQueueThCell = styled(Box)(() => ({
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 500,
+  fontSize: 12,
+  lineHeight: '16px',
+  letterSpacing: '0.17px',
+  color: 'rgba(255, 255, 255, 0.5)',
+  paddingRight: 8,
+}));
+
+export const ExitQueueTdCell = styled(Box)(() => ({
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 400,
+  fontSize: 14,
+  lineHeight: '20px',
+  letterSpacing: '0.17px',
+  color: '#FFFFFF',
+  paddingRight: 8,
+}));
+
+export const StatusChip = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'ready',
+})<{ ready?: boolean }>(({ ready, theme }) => ({
+  display: 'inline-flex',
+  alignItems: 'center',
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 400,
+  fontSize: 12,
+  lineHeight: 1,
+  letterSpacing: '0.17px',
+  color: ready ? theme.palette.primary.main : theme.palette.primary.main,
+}));
+
+export const QueueCancelButton = styled(Button)(() => ({
+  textTransform: 'uppercase',
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 500,
+  fontSize: 13,
+  lineHeight: '22px',
+  letterSpacing: '0.46px',
+  color: '#FFFFFF',
+  border: '1px solid rgba(255, 255, 255, 0.23)',
+  borderRadius: 4,
+  padding: '4px 10px',
+  minWidth: 0,
+  whiteSpace: 'nowrap',
+  '&:hover': {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    border: '1px solid rgba(255, 255, 255, 0.3)',
+  },
+  '&.Mui-disabled': {
+    color: 'rgba(255, 255, 255, 0.3)',
+    border: '1px solid rgba(255, 255, 255, 0.12)',
+  },
+}));
+
+export const QueueExitButton = styled(Button)(({ theme }) => ({
+  textTransform: 'uppercase',
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 500,
+  fontSize: 13,
+  lineHeight: '22px',
+  letterSpacing: '0.46px',
+  color: 'rgba(0, 0, 0, 0.87)',
+  backgroundColor: theme.palette.primary.main,
+  borderRadius: 4,
+  padding: '4px 10px',
+  minWidth: 0,
+  whiteSpace: 'nowrap',
+  '&:hover': {
+    backgroundColor: theme.palette.primary.dark,
+  },
+  '&.Mui-disabled': {
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    color: 'rgba(255, 255, 255, 0.3)',
+  },
+}));
+
+/* ─── Legacy / misc ─── */
 
 export const SuccessBanner = styled(Box)(() => ({
   display: 'flex',
@@ -436,66 +716,6 @@ export const SuccessSubtitle = styled(Typography)(({ theme }) => ({
   color: theme.palette.primary.main,
 }));
 
-export const MiniStatsRow = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'row',
-  flexWrap: 'wrap',
-  gap: 8,
-  width: '100%',
-  [theme.breakpoints.down('sm')]: {
-    flexDirection: 'column',
-  },
-}));
-
-export const SendPanel = styled(Box)(() => ({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  gap: 24,
-  padding: 16,
-  width: '100%',
-  backgroundColor: 'rgba(255, 255, 255, 0.04)',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  borderRadius: 4,
-}));
-
-export const ClaimTwoCol = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'row',
-  gap: 16,
-  width: '100%',
-  flexWrap: 'wrap',
-  [theme.breakpoints.down('md')]: {
-    flexDirection: 'column',
-  },
-}));
-
-export const ClaimCol = styled(Box)(() => ({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 16,
-  flex: '1 1 280px',
-  minWidth: 0,
-}));
-
-export const RewardCard = styled(Box)(() => ({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 16,
-  padding: 16,
-  backgroundColor: 'rgba(255, 255, 255, 0.04)',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  borderRadius: 4,
-}));
-
-export const RewardRow = styled(Box)(() => ({
-  display: 'flex',
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  gap: 16,
-}));
-
 export const QueueNotice = styled(Typography)(() => ({
   fontFamily: 'Roboto, sans-serif',
   fontWeight: 500,
@@ -506,214 +726,25 @@ export const QueueNotice = styled(Typography)(() => ({
   textTransform: 'lowercase',
 }));
 
-export const ExitQueueSection = styled(Box)(() => ({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 16,
-  marginTop: 8,
-}));
-
-export const ExitQueueHeading = styled(Typography)(() => ({
-  fontFamily: 'Roboto, sans-serif',
-  fontWeight: 500,
-  fontSize: 14,
-  lineHeight: 1.714,
-  color: '#FFFFFF',
-}));
-
-export const ExitQueueCaption = styled(Typography)(() => ({
-  fontFamily: 'Roboto, sans-serif',
-  fontWeight: 400,
-  fontSize: 12,
-  lineHeight: 1.66,
-  color: 'rgba(255, 255, 255, 0.7)',
-}));
-
-export const ExitCard = styled(Box)(() => ({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 16,
-  padding: 16,
-  backgroundColor: 'rgba(255, 255, 255, 0.04)',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  borderRadius: 4,
-}));
-
-export const ExitCardHeader = styled(Box)(() => ({
-  display: 'flex',
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-}));
-
-export const ExitBadge = styled(Box)(() => ({
-  fontFamily: 'Roboto, sans-serif',
-  fontWeight: 500,
-  fontSize: 12,
-  color: '#FFFFFF',
-  padding: '4px 8px',
-  borderRadius: 4,
-  backgroundColor: 'rgba(255, 255, 255, 0.08)',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-}));
-
-export const ExitGridFixed = styled(Box)(({ theme }) => ({
-  display: 'grid',
-  gridTemplateColumns: '1fr 1fr',
-  gap: 12,
-  [theme.breakpoints.down('sm')]: {
-    gridTemplateColumns: '1fr',
-  },
-}));
-
-export const ExitCellLabel = styled(Typography)(() => ({
-  fontFamily: 'Roboto, sans-serif',
-  fontSize: 12,
-  lineHeight: 1.66,
-  color: '#757575',
-}));
-
-export const ExitCellValue = styled(Typography)(() => ({
-  fontFamily: 'Roboto, sans-serif',
-  fontWeight: 500,
-  fontSize: 14,
-  color: '#FFFFFF',
-}));
-
-export const SmallActionButton = styled(Button)(() => ({
-  textTransform: 'uppercase',
+export const ErrorText = styled(Typography)(() => ({
+  color: '#f44336',
   fontSize: 13,
-  fontWeight: 500,
-  borderRadius: 4,
-}));
-
-export const ManageSummaryRow = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'row',
-  flexWrap: 'wrap',
-  gap: 8,
-  width: '100%',
-  [theme.breakpoints.down('sm')]: {
-    flexDirection: 'column',
-  },
-}));
-
-export const InstantPanel = styled(Box)(() => ({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 16,
-  padding: 16,
   marginTop: 8,
-  backgroundColor: 'rgba(255, 255, 255, 0.04)',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  borderRadius: 4,
 }));
 
-export const TableWrap = styled(Box)(() => ({
-  width: '100%',
-  overflowX: 'auto',
-}));
-
-export const TableRoot = styled('table')(() => ({
-  width: '100%',
-  borderCollapse: 'collapse',
-  minWidth: 640,
-}));
-
-export const ThCell = styled('th')(() => ({
-  textAlign: 'left',
-  padding: '10px 16px',
+export const InputSuffix = styled('span')(() => ({
   fontFamily: 'Roboto, sans-serif',
-  fontWeight: 500,
-  fontSize: 14,
-  lineHeight: 1.714,
-  color: '#FFFFFF',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
+  fontSize: 16,
+  lineHeight: 1.5,
+  letterSpacing: '0.009375em',
+  color: 'rgba(255, 255, 255, 0.7)',
+  marginLeft: 8,
 }));
 
-export const TdCell = styled('td')(() => ({
-  padding: '12px 16px',
-  fontFamily: 'Roboto, sans-serif',
-  fontSize: 14,
-  lineHeight: 1.43,
-  color: '#FFFFFF',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-}));
-
-export const TrSelectable = styled('tr', {
-  shouldForwardProp: (prop) => prop !== 'selected',
-})<{ selected?: boolean }>(({ selected }) => ({
-  cursor: 'pointer',
-  backgroundColor: selected ? 'rgba(255, 255, 255, 0.06)' : 'transparent',
-}));
-
-export const RequestsList = styled(Box)(() => ({
+export const LoadingBox = styled(Box)(() => ({
   display: 'flex',
-  flexDirection: 'column',
-  gap: 8,
-  width: '100%',
-}));
-
-export const RequestRowCard = styled(Box, {
-  shouldForwardProp: (prop) => prop !== 'selected',
-})<{ selected?: boolean }>(({ selected, theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  flexWrap: 'wrap',
-  gap: 16,
-  padding: 16,
-  borderRadius: 4,
-  border: `1px solid ${selected ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
-  backgroundColor: 'rgba(255, 255, 255, 0.04)',
-  cursor: 'pointer',
-  width: '100%',
-  [theme.breakpoints.down('md')]: {
-    gap: 12,
-  },
-}));
-
-export const RequestRowMetric = styled(Box)(() => ({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 8,
-  minWidth: 90,
-}));
-
-export const RequestRowLabel = styled(Typography)(() => ({
-  fontFamily: 'Roboto, sans-serif',
-  fontWeight: 400,
-  fontSize: 14,
-  lineHeight: 1.43,
-  letterSpacing: '0.012142857em',
-  color: '#757575',
-}));
-
-export const RequestRowValue = styled(Typography)(() => ({
-  fontFamily: 'Roboto, sans-serif',
-  fontWeight: 600,
-  fontSize: 15,
-  lineHeight: 1.235,
-  letterSpacing: '0.016666667em',
-  color: '#FFFFFF',
-}));
-
-export const RequestRowActions = styled(Box)(() => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'flex-end',
-  minWidth: 110,
-}));
-
-export const FooterNote = styled(Typography)(() => ({
-  marginTop: 32,
-  fontFamily: 'Roboto, sans-serif',
-  fontWeight: 400,
-  fontSize: 12,
-  lineHeight: 1.66,
-  letterSpacing: '0.033333333em',
-  textAlign: 'center',
-  color: 'rgba(255, 255, 255, 0.6)',
+  justifyContent: 'center',
+  padding: 24,
 }));
 
 export const StatePaper = styled(Box)(() => ({
@@ -827,25 +858,15 @@ export const OnboardingCaption = styled(Typography)(() => ({
   opacity: 0.7,
 }));
 
-export const ErrorText = styled(Typography)(() => ({
-  color: '#f44336',
-  fontSize: 13,
-  marginTop: 8,
-}));
-
-export const InputSuffix = styled('span')(() => ({
+export const FooterNote = styled(Typography)(() => ({
+  marginTop: 32,
   fontFamily: 'Roboto, sans-serif',
-  fontSize: 16,
-  lineHeight: 1.5,
-  letterSpacing: '0.009375em',
-  color: 'rgba(255, 255, 255, 0.7)',
-  marginLeft: 8,
-}));
-
-export const LoadingBox = styled(Box)(() => ({
-  display: 'flex',
-  justifyContent: 'center',
-  padding: 24,
+  fontWeight: 400,
+  fontSize: 12,
+  lineHeight: 1.66,
+  letterSpacing: '0.033333333em',
+  textAlign: 'center',
+  color: 'rgba(255, 255, 255, 0.6)',
 }));
 
 export const StakingStartCard = styled(Box)(({ theme }) => ({
@@ -911,4 +932,112 @@ export const StakingStartCta = styled(Button)(({ theme }) => ({
     alignSelf: 'stretch',
     width: '100%',
   },
+}));
+
+/* ─── Step strip (kept for backward compat with onboarding) ─── */
+
+export const StepStrip = styled(Box)(() => ({
+  display: 'flex',
+  flexDirection: 'row',
+  gap: 7,
+  width: '100%',
+}));
+
+export const StepRow = styled(Box)(() => ({
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 8,
+  padding: 16,
+  flex: 1,
+  backgroundColor: 'rgba(255, 255, 255, 0.04)',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+  borderRadius: 4,
+}));
+
+export const StepCircle = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'active',
+})<{ active?: boolean }>(({ active, theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: 32,
+  height: 32,
+  borderRadius: '50%',
+  flexShrink: 0,
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 500,
+  fontSize: 15,
+  lineHeight: 1.73,
+  letterSpacing: '0.030666667em',
+  textTransform: 'uppercase',
+  backgroundColor: active ? theme.palette.primary.main : 'rgba(255, 255, 255, 0.12)',
+  color: active ? 'rgba(0, 0, 0, 0.87)' : 'rgba(255, 255, 255, 0.3)',
+}));
+
+export const StepTextCol = styled(Box)(() => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 0,
+  flex: 1,
+  minWidth: 0,
+}));
+
+export const StepTitle = styled(Typography)(() => ({
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 500,
+  fontSize: 14,
+  lineHeight: 1.714,
+  letterSpacing: '0.012142857em',
+  color: '#FFFFFF',
+}));
+
+export const StepCaption = styled(Typography)(() => ({
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 500,
+  fontSize: 12,
+  lineHeight: 1.5,
+  letterSpacing: '0.014166667em',
+  color: 'rgba(255, 255, 255, 0.5)',
+}));
+
+/* ─── Misc cards kept for dialog compatibility ─── */
+
+export const RewardCard = styled(Box)(() => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 16,
+  padding: 16,
+  backgroundColor: 'rgba(255, 255, 255, 0.04)',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+  borderRadius: 4,
+}));
+
+export const RewardRow = styled(Box)(() => ({
+  display: 'flex',
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  gap: 16,
+}));
+
+export const ExitCellLabel = styled(Typography)(() => ({
+  fontFamily: 'Roboto, sans-serif',
+  fontSize: 12,
+  lineHeight: 1.66,
+  color: '#757575',
+}));
+
+export const ExitCellValue = styled(Typography)(() => ({
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 500,
+  fontSize: 14,
+  color: '#FFFFFF',
+}));
+
+export const SmallActionButton = styled(Button)(() => ({
+  textTransform: 'uppercase',
+  fontSize: 13,
+  fontWeight: 500,
+  borderRadius: 4,
 }));

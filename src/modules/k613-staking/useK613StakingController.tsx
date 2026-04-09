@@ -19,7 +19,12 @@ import { formatUnits, parseUnits } from 'viem';
 import { useAccount, useSwitchChain } from 'wagmi';
 
 import { CtaButton, StatePaper, StateText } from './k613Staking.styles';
-import type { K613InfoDialogKind, K613StakingMainTab, LockStakePhase } from './k613Staking.types';
+import type {
+  K613InfoDialogKind,
+  K613LockExitSubTab,
+  K613MainTab,
+  K613RewardPoolSubTab,
+} from './k613Staking.types';
 
 const MAX_UINT256 = BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
 const K613_STAKING_CHAIN_ID = 421614;
@@ -43,14 +48,19 @@ export function useK613StakingController() {
   const { address: userAddress, chainId } = useAccount();
   const { switchChainAsync, isPending: isSwitchChainPending } = useSwitchChain();
 
-  const [mainTab, setMainTab] = useState<K613StakingMainTab>('lockStake');
+  const [mainTab, setMainTab] = useState<K613MainTab>('rewardPool');
+  const [rewardPoolSubTab, setRewardPoolSubTab] = useState<K613RewardPoolSubTab>('claimRewards');
+  const [lockExitSubTab, setLockExitSubTab] = useState<K613LockExitSubTab>('lock');
+
   const [stakeAmount, setStakeAmount] = useState('');
   const [exitAmount, setExitAmount] = useState('');
-  const [lockPhase, setLockPhase] = useState<LockStakePhase>('enterAmount');
+  const [depositAmount, setDepositAmount] = useState('');
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [instantExitMode, setInstantExitMode] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState<string | null>(null);
   const [infoDialog, setInfoDialog] = useState<K613InfoDialogKind>(null);
-  const [manageSelectedIndex, setManageSelectedIndex] = useState(0);
   const [unlockCountdownTick, setUnlockCountdownTick] = useState(0);
 
   useEffect(() => {
@@ -70,6 +80,7 @@ export function useK613StakingController() {
     paused,
     rewardsDistributor,
     maxExitRequests,
+    totalBacking,
     isLoading,
     refetch,
   } = useK613StakingData();
@@ -81,11 +92,20 @@ export function useK613StakingController() {
     xk613Address,
     stakingAddress as `0x${string}` | undefined
   );
+  const xk613AllowanceForDistributor = useK613TokenAllowance(
+    xk613Address,
+    rewardsDistributor as `0x${string}` | undefined
+  );
   const rewardsData = useK613RewardsData(rewardsDistributor);
 
   const { stake, initiateExit, exit, instantExit, cancelExit } = useK613StakingActions();
   const { approve, isPending: isApprovePending } = useK613Approve();
-  const { claimRewards, isPending: isClaimPending } = useK613RewardsActions(rewardsDistributor);
+  const {
+    claimRewards,
+    deposit,
+    withdraw,
+    isPending: isClaimPending,
+  } = useK613RewardsActions(rewardsDistributor);
 
   const depositData = parseStakingDepositsRead(deposits.data);
   const stakedAmount = depositData?.amount ?? BigInt(0);
@@ -104,6 +124,13 @@ export function useK613StakingController() {
     typeof rewardsData.pendingRewardsOf.data === 'bigint'
       ? rewardsData.pendingRewardsOf.data
       : BigInt(0);
+  const userPoolBalance =
+    typeof rewardsData.userPoolBalance === 'bigint' ? rewardsData.userPoolBalance : BigInt(0);
+  const totalPoolDeposits =
+    typeof rewardsData.totalDeposits === 'bigint' ? rewardsData.totalDeposits : BigInt(0);
+  const poolPendingRewards =
+    typeof rewardsData.poolPendingRewards === 'bigint' ? rewardsData.poolPendingRewards : BigInt(0);
+  const protocolTVL = typeof totalBacking === 'bigint' ? totalBacking : BigInt(0);
 
   const queuedTotal = useMemo(
     () => exitQueue.reduce((acc, row) => acc + row.amount, BigInt(0)),
@@ -142,6 +169,10 @@ export function useK613StakingController() {
       exitSlots: `${exitQueue.length} / ${maxExitSlots}`,
       lockPeriodShort: formatStakeLockPeriod(lockDurationSeconds),
       penaltyPercent,
+      userPoolBalance: formatTokenAmount(userPoolBalance),
+      totalPoolDeposits: formatTokenAmount(totalPoolDeposits),
+      poolPendingRewards: formatTokenAmount(poolPendingRewards),
+      protocolTVL: formatTokenAmount(protocolTVL),
     }),
     [
       walletK613,
@@ -153,6 +184,10 @@ export function useK613StakingController() {
       maxExitSlots,
       lockDurationSeconds,
       penaltyPercent,
+      userPoolBalance,
+      totalPoolDeposits,
+      poolPendingRewards,
+      protocolTVL,
     ]
   );
 
@@ -164,12 +199,7 @@ export function useK613StakingController() {
     [lockDurationSeconds]
   );
 
-  const resetLockFlow = useCallback(() => {
-    setLockPhase('enterAmount');
-    setStakeAmount('');
-  }, []);
-
-  const handleLockTokens = useCallback(async () => {
+  const handleLock = useCallback(async () => {
     setError(null);
     const amount = parseUnits(stakeAmount || '0', 18);
     if (amount <= 0n) {
@@ -186,56 +216,20 @@ export function useK613StakingController() {
       const currentAllowance = BigInt((allowance.data as bigint | undefined) ?? 0);
       if (currentAllowance < amount && k613Address && stakingAddress) {
         await approve(k613Address, stakingAddress as `0x${string}`, MAX_UINT256);
-        allowance.refetch();
-      }
-      setLockPhase('tokensPrepared');
-      setInfoDialog('tokensLocked');
-      k613Balance.refetch();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Approval failed');
-    } finally {
-      setActionPending(null);
-    }
-  }, [stakeAmount, walletK613, allowance, k613Address, stakingAddress, approve, k613Balance]);
-
-  const handleSendToStaking = useCallback(async () => {
-    setError(null);
-    const amount = parseUnits(stakeAmount || '0', 18);
-    if (amount <= 0n) {
-      setError('Enter an amount');
-      return;
-    }
-
-    setActionPending('stake');
-    try {
-      const currentAllowance = BigInt((allowance.data as bigint | undefined) ?? 0);
-      if (currentAllowance < amount && k613Address && stakingAddress) {
-        await approve(k613Address, stakingAddress as `0x${string}`, MAX_UINT256);
       }
       await stake(amount);
-      resetLockFlow();
+      setStakeAmount('');
       refetch();
       k613Balance.refetch();
       xk613Balance.refetch();
       allowance.refetch();
       setInfoDialog('stakingActivated');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Stake failed');
+      setError(e instanceof Error ? e.message : 'Lock failed');
     } finally {
       setActionPending(null);
     }
-  }, [
-    stakeAmount,
-    stake,
-    resetLockFlow,
-    refetch,
-    k613Balance,
-    xk613Balance,
-    allowance,
-    k613Address,
-    stakingAddress,
-    approve,
-  ]);
+  }, [stakeAmount, walletK613, allowance, k613Address, stakingAddress, approve, stake, refetch, k613Balance, xk613Balance]);
 
   const handleInitiateExit = useCallback(async () => {
     setError(null);
@@ -249,7 +243,7 @@ export function useK613StakingController() {
       return;
     }
     if (amount > availableToUnstake) {
-      setError('Amount exceeds available xK613 (staked, not already in exit queue)');
+      setError('Amount exceeds available xK613');
       return;
     }
 
@@ -261,10 +255,17 @@ export function useK613StakingController() {
         await xk613Allowance.refetch();
       }
       await initiateExit(amount);
+
+      if (instantExitMode && !instantExitRequiresDistributor) {
+        const newIndex = BigInt(exitQueue.length);
+        await instantExit(newIndex);
+      }
+
       setExitAmount('');
       refetch();
       xk613Balance.refetch();
       xk613Allowance.refetch();
+      k613Balance.refetch();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to create exit request');
     } finally {
@@ -276,12 +277,16 @@ export function useK613StakingController() {
     maxExitSlots,
     availableToUnstake,
     initiateExit,
+    instantExit,
+    instantExitMode,
+    instantExitRequiresDistributor,
     refetch,
     xk613Allowance,
     xk613Address,
     stakingAddress,
     approve,
     xk613Balance,
+    k613Balance,
   ]);
 
   const handleExit = useCallback(
@@ -292,13 +297,14 @@ export function useK613StakingController() {
       try {
         await exit(index);
         refetch();
+        k613Balance.refetch();
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Exit failed');
       } finally {
         setActionPending(null);
       }
     },
-    [exit, refetch]
+    [exit, refetch, k613Balance]
   );
 
   const handleInstantExit = useCallback(
@@ -327,13 +333,14 @@ export function useK613StakingController() {
       try {
         await cancelExit(index);
         refetch();
+        xk613Balance.refetch();
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Cancel failed');
       } finally {
         setActionPending(null);
       }
     },
-    [cancelExit, refetch]
+    [cancelExit, refetch, xk613Balance]
   );
 
   const handleClaimRewards = useCallback(async () => {
@@ -368,21 +375,104 @@ export function useK613StakingController() {
     xk613Balance,
   ]);
 
-  const setMaxStake = useCallback(() => {
-    if (walletK613 <= 0n) {
-      setStakeAmount('0');
+  const handleDeposit = useCallback(async () => {
+    setError(null);
+    const amount = parseUnits(depositAmount || '0', 18);
+    if (amount <= 0n) {
+      setError('Enter an amount');
       return;
     }
-    setStakeAmount(formatUnits(walletK613, 18));
+    if (amount > walletXk613) {
+      setError('Insufficient xK613 balance');
+      return;
+    }
+    if (!rewardsDistributor || isZeroAddress) {
+      setError('Rewards distributor is not configured');
+      return;
+    }
+
+    setActionPending('deposit');
+    try {
+      const currentAllowance = BigInt((xk613AllowanceForDistributor.data as bigint | undefined) ?? 0);
+      if (currentAllowance < amount && xk613Address && rewardsDistributor) {
+        await approve(xk613Address, rewardsDistributor as `0x${string}`, MAX_UINT256);
+        await xk613AllowanceForDistributor.refetch();
+      }
+      await deposit(amount);
+      setDepositAmount('');
+      rewardsData.refetch();
+      xk613Balance.refetch();
+      xk613AllowanceForDistributor.refetch();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Deposit failed');
+    } finally {
+      setActionPending(null);
+    }
+  }, [
+    depositAmount,
+    walletXk613,
+    rewardsDistributor,
+    isZeroAddress,
+    xk613AllowanceForDistributor,
+    xk613Address,
+    approve,
+    deposit,
+    rewardsData,
+    xk613Balance,
+  ]);
+
+  const handleWithdraw = useCallback(async () => {
+    setError(null);
+    const amount = parseUnits(withdrawAmount || '0', 18);
+    if (amount <= 0n) {
+      setError('Enter an amount');
+      return;
+    }
+    if (amount > userPoolBalance) {
+      setError('Insufficient pool balance');
+      return;
+    }
+    if (!rewardsDistributor || isZeroAddress) {
+      setError('Rewards distributor is not configured');
+      return;
+    }
+
+    setActionPending('withdraw');
+    try {
+      await withdraw(amount);
+      setWithdrawAmount('');
+      rewardsData.refetch();
+      xk613Balance.refetch();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Withdraw failed');
+    } finally {
+      setActionPending(null);
+    }
+  }, [
+    withdrawAmount,
+    userPoolBalance,
+    rewardsDistributor,
+    isZeroAddress,
+    withdraw,
+    rewardsData,
+    xk613Balance,
+  ]);
+
+  const setMaxStake = useCallback(() => {
+    setStakeAmount(walletK613 <= 0n ? '0' : formatUnits(walletK613, 18));
   }, [walletK613]);
 
   const setMaxExit = useCallback(() => {
-    if (availableToUnstake <= 0n) {
-      setExitAmount('0');
-      return;
-    }
-    setExitAmount(formatUnits(availableToUnstake, 18));
+    setExitAmount(availableToUnstake <= 0n ? '0' : formatUnits(availableToUnstake, 18));
   }, [availableToUnstake]);
+
+  const setMaxDeposit = useCallback(() => {
+    setDepositAmount(walletXk613 <= 0n ? '0' : formatUnits(walletXk613, 18));
+  }, [walletXk613]);
+
+  const setMaxWithdraw = useCallback(() => {
+    setWithdrawAmount(userPoolBalance <= 0n ? '0' : formatUnits(userPoolBalance, 18));
+  }, [userPoolBalance]);
 
   const earliestUnlockRemaining = useMemo(() => {
     if (exitQueue.length === 0) return '—';
@@ -409,24 +499,6 @@ export function useK613StakingController() {
     if (d > 0) return `${d}d ${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
     return `${h}h ${String(m).padStart(2, '0')}m`;
   }, [exitQueue, lockDurationSeconds, unlockCountdownTick]);
-
-  const totalQueuedFormatted = formatTokenAmount(queuedTotal);
-
-  useEffect(() => {
-    if (exitQueue.length === 0) {
-      setManageSelectedIndex(0);
-      return;
-    }
-    setManageSelectedIndex((i) => Math.min(i, exitQueue.length - 1));
-  }, [exitQueue.length]);
-
-  const selectedRow = exitQueue[manageSelectedIndex];
-  const selectedReceive =
-    selectedRow && penaltyBps < 10000
-      ? formatTokenAmount((selectedRow.amount * BigInt(10000 - penaltyBps)) / BigInt(10000))
-      : selectedRow
-      ? formatTokenAmount(selectedRow.amount)
-      : '0';
 
   const gate = useMemo(() => {
     if (!userAddress) {
@@ -474,43 +546,49 @@ export function useK613StakingController() {
     setError,
     mainTab,
     setMainTab,
+    rewardPoolSubTab,
+    setRewardPoolSubTab,
+    lockExitSubTab,
+    setLockExitSubTab,
     stakeAmount,
     setStakeAmount,
     exitAmount,
     setExitAmount,
-    lockPhase,
-    resetLockFlow,
+    depositAmount,
+    setDepositAmount,
+    withdrawAmount,
+    setWithdrawAmount,
+    instantExitMode,
+    setInstantExitMode,
     infoDialog,
     setInfoDialog,
-    manageSelectedIndex,
-    setManageSelectedIndex,
     formatted,
     displayApy,
     lockDurationSeconds,
     exitQueue,
     maxExitSlots,
     availableToUnstakeFormatted: formatTokenAmount(availableToUnstake),
-    totalQueuedFormatted,
     earliestUnlockRemaining,
     penaltyPercent,
     hasStakingActivity,
     instantExitRequiresDistributor,
     pendingRewardsAmount,
     lastAccrualDisplay,
-    selectedRow,
-    selectedReceive,
     actionPending,
     isApprovePending,
     isClaimPending,
     handleClaimRewards,
-    handleLockTokens,
-    handleSendToStaking,
+    handleLock,
     handleInitiateExit,
     handleExit,
     handleInstantExit,
     handleCancelExit,
+    handleDeposit,
+    handleWithdraw,
     setMaxStake,
     setMaxExit,
+    setMaxDeposit,
+    setMaxWithdraw,
     isLockDurationPassed,
     formatUnlockCountdown,
     formatExitRequestId,

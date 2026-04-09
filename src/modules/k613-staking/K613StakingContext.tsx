@@ -5,10 +5,7 @@ import { createContext, useContext } from 'react';
 
 import type { useK613StakingController } from './useK613StakingController';
 
-export type K613StakingContextValue = Omit<
-  ReturnType<typeof useK613StakingController>,
-  'gate'
->;
+export type K613StakingContextValue = Omit<ReturnType<typeof useK613StakingController>, 'gate'>;
 
 const K613StakingContext = createContext<K613StakingContextValue | null>(null);
 
