@@ -123,6 +123,12 @@ export function useK613StakingData() {
     functionName: 'MAX_EXIT_REQUESTS',
   });
 
+  const totalBacking = useReadContract({
+    address: stakingAddress as `0x${string}` | undefined,
+    abi: STAKING_ABI,
+    functionName: 'totalBacking',
+  });
+
   return {
     stakingAddress,
     userAddress,
@@ -134,6 +140,7 @@ export function useK613StakingData() {
     paused: paused.data,
     rewardsDistributor: rewardsDistributor.data as `0x${string}` | undefined,
     maxExitRequests: maxExitRequests.data as bigint | undefined,
+    totalBacking: totalBacking.data as bigint | undefined,
     isLoading:
       deposits.isLoading ||
       lockDuration.isLoading ||
@@ -152,6 +159,7 @@ export function useK613StakingData() {
       paused.refetch();
       rewardsDistributor.refetch();
       maxExitRequests.refetch();
+      totalBacking.refetch();
     },
   };
 }
@@ -282,15 +290,46 @@ export function useK613RewardsData(rewardsDistributorAddress: `0x${string}` | un
     functionName: 'nextEpochAt',
   });
 
+  const userPoolBalance = useReadContract({
+    address: rewardsDistributorAddress,
+    abi: REWARDS_DISTRIBUTOR_ABI,
+    functionName: 'balanceOf',
+    args: userAddress ? [userAddress] : undefined,
+  });
+
+  const totalDeposits = useReadContract({
+    address: rewardsDistributorAddress,
+    abi: REWARDS_DISTRIBUTOR_ABI,
+    functionName: 'totalDeposits',
+  });
+
+  const poolPendingRewards = useReadContract({
+    address: rewardsDistributorAddress,
+    abi: REWARDS_DISTRIBUTOR_ABI,
+    functionName: 'pendingRewards',
+  });
+
   return {
     pendingRewardsOf,
     lastEpochFlushAt: lastEpochFlushAt.data as bigint | undefined,
     nextEpochAt: nextEpochAt.data as bigint | undefined,
-    isLoading: pendingRewardsOf.isLoading || lastEpochFlushAt.isLoading || nextEpochAt.isLoading,
+    userPoolBalance: userPoolBalance.data as bigint | undefined,
+    totalDeposits: totalDeposits.data as bigint | undefined,
+    poolPendingRewards: poolPendingRewards.data as bigint | undefined,
+    isLoading:
+      pendingRewardsOf.isLoading ||
+      lastEpochFlushAt.isLoading ||
+      nextEpochAt.isLoading ||
+      userPoolBalance.isLoading ||
+      totalDeposits.isLoading ||
+      poolPendingRewards.isLoading,
     refetch: () => {
       pendingRewardsOf.refetch();
       lastEpochFlushAt.refetch();
       nextEpochAt.refetch();
+      userPoolBalance.refetch();
+      totalDeposits.refetch();
+      poolPendingRewards.refetch();
     },
   };
 }
@@ -308,8 +347,30 @@ export function useK613RewardsActions(rewardsDistributorAddress: `0x${string}` |
     });
   };
 
+  const deposit = async (amount: bigint) => {
+    if (!rewardsDistributorAddress) throw new Error('Rewards distributor not configured');
+    return writeContractAsync({
+      address: rewardsDistributorAddress,
+      abi: REWARDS_DISTRIBUTOR_ABI,
+      functionName: 'deposit',
+      args: [amount],
+    });
+  };
+
+  const withdraw = async (amount: bigint) => {
+    if (!rewardsDistributorAddress) throw new Error('Rewards distributor not configured');
+    return writeContractAsync({
+      address: rewardsDistributorAddress,
+      abi: REWARDS_DISTRIBUTOR_ABI,
+      functionName: 'withdraw',
+      args: [amount],
+    });
+  };
+
   return {
     claimRewards,
+    deposit,
+    withdraw,
     isPending,
   };
 }
