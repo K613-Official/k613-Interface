@@ -1,4 +1,3 @@
-import { Trans } from '@lingui/macro';
 import { Button } from '@mui/material';
 import { ConnectKitButton } from 'connectkit';
 import { useRootStore } from 'src/store/root';
@@ -35,7 +34,7 @@ export const ConnectWalletButton: React.FC<ConnectWalletProps> = ({ funnel }) =>
                   titleProps={{ variant: 'button' }}
                 />
               ) : (
-                <Trans>CONNECT WALLET</Trans>
+                'CONNECT WALLET'
               )}
             </Button>
           );
