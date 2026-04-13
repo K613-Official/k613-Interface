@@ -1,13 +1,26 @@
-import { Button, Typography } from '@mui/material';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { useState } from 'react';
 import AssetsTable from 'src/components/AssetsTable';
 import { ConnectWalletPaper } from 'src/components/ConnectWalletPaper';
+import { HealthFactorNumber } from 'src/components/HealthFactorNumber';
 import InfoCard from 'src/components/InfoCard';
 import Layout from 'src/components/Layout';
 import MaxWidthContainer from 'src/components/MaxWidthContainer';
 import { ModalType } from 'src/components/Modals/types';
 import { useDevice } from 'src/hooks';
+import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
+import { LiquidationRiskParametresInfoModal } from 'src/modules/dashboard/LiquidationRiskParametresModal/LiquidationRiskParametresModal';
 import { useModalStore } from 'src/store/useModalStore';
 
 import { DASHBOARD_TABLES } from './const';
@@ -27,10 +40,22 @@ import {
 
 export default function DashboardPage() {
   const openModal = useModalStore((s) => s.openModal);
+  const { user, loading } = useAppDataContext();
   const { isTablet } = useDevice();
   const [table, setTable] = useState<DASHBOARD_TABLES>(DASHBOARD_TABLES.SUPPLY);
+  const [riskDetailsOpen, setRiskDetailsOpen] = useState(false);
+  const [notifyOpen, setNotifyOpen] = useState(false);
 
   const { currentAccount } = useWeb3Context();
+  const loanToValue =
+    user?.totalCollateralMarketReferenceCurrency === '0'
+      ? '0'
+      : Number(user?.totalCollateralMarketReferenceCurrency || '0') === 0
+      ? '0'
+      : (
+          Number(user?.totalBorrowsMarketReferenceCurrency || '0') /
+          Number(user?.totalCollateralMarketReferenceCurrency || '1')
+        ).toString();
 
   return (
     <Layout>
@@ -64,8 +89,56 @@ export default function DashboardPage() {
             </StatBlock>
             <HorizontalDivider />
             <StatBlock>
+              <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Health factor
+                </Typography>
+                <Tooltip title="If your health factor goes below 1, your collateral may be liquidated.">
+                  <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
+                    <InfoOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                  </Box>
+                </Tooltip>
+              </Box>
+
+              {currentAccount && user?.healthFactor ? (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                  <HealthFactorNumber value={user.healthFactor} variant="h6" sx={{ ml: 0 }} />
+                  <Button
+                    variant="contained"
+                    size="small"
+                    disabled={loading}
+                    onClick={() => setRiskDetailsOpen(true)}
+                    sx={{ minWidth: 'unset' }}
+                  >
+                    RISK DETAILS
+                  </Button>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    disabled={loading}
+                    onClick={() => setNotifyOpen(true)}
+                    sx={{
+                      minWidth: 'unset',
+                      backgroundColor: (theme) => theme.palette.grey[300],
+                      color: 'black',
+                      '&:hover': {
+                        backgroundColor: (theme) => theme.palette.grey[400],
+                      },
+                    }}
+                  >
+                    NOTIFY
+                  </Button>
+                </Box>
+              ) : (
+                <Typography variant="h6" color="text.secondary">
+                  –
+                </Typography>
+              )}
+            </StatBlock>
+            <HorizontalDivider />
+            <StatBlock>
               <Typography variant="body2" color="text.secondary">
-                Net worth
+                Rewards
               </Typography>
               <RewardsRow>
                 <Typography variant="h6">$ 0</Typography>
@@ -80,6 +153,28 @@ export default function DashboardPage() {
             </StatBlock>
           </RightContainer>
         </FirstBlock>
+
+        <LiquidationRiskParametresInfoModal
+          open={riskDetailsOpen}
+          setOpen={setRiskDetailsOpen}
+          healthFactor={user?.healthFactor || '-1'}
+          loanToValue={loanToValue}
+          currentLoanToValue={user?.currentLoanToValue || '0'}
+          currentLiquidationThreshold={user?.currentLiquidationThreshold || '0'}
+        />
+        <Dialog open={notifyOpen} onClose={() => setNotifyOpen(false)} maxWidth="xs" fullWidth>
+          <DialogTitle>Notify</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" color="text.secondary">
+              Notifications for health factor changes are not configured yet.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setNotifyOpen(false)} variant="contained" size="small">
+              OK
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         {currentAccount ? (
           <>
