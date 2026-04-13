@@ -1,10 +1,4 @@
-export type ChartRange = '1w' | '1m' | '6m';
+import { ChartRange } from './types';
 
-export type EmodeRow = { label: string; value: string };
-
-export type EmodeCategory = {
-  title: string;
-  collateral: 'yes' | 'no';
-  borrowable: 'yes' | 'no';
-  rows: EmodeRow[];
-};
+export const CHART_RANGES: readonly ChartRange[] = ['1w', '1m', '6m'] as const;
+export const DEFAULT_CHART_RANGE: ChartRange = '1w';

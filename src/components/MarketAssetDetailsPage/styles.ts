@@ -1,4 +1,5 @@
-import { Box, Paper as PaperBase, styled } from '@mui/material';
+import { Check } from '@mui/icons-material';
+import { Box, Button, Paper as PaperBase, Skeleton, styled, Typography } from '@mui/material';
 
 export const PageWrapper = styled(Box)(({ theme }) => ({
   marginTop: 64,
@@ -312,3 +313,79 @@ export const EmodeCategoryCard = styled(Box)(({ theme }) => ({
     paddingBottom: 0,
   },
 }));
+
+export const InstanceTitle = styled(Typography)(({ theme }) => ({
+  ...theme.typography.h6,
+  lineHeight: theme.typography.h6.lineHeight,
+  [theme.breakpoints.down('sm')]: {
+    ...theme.typography.h4,
+    lineHeight: 1.2,
+  },
+}));
+
+export const FlagOkIcon = styled(Check)(({ theme }) => ({
+  fontSize: 20,
+  color: theme.palette.primary.main,
+}));
+
+export const FlagOffDot = styled('span')(({ theme }) => ({
+  width: 20,
+  height: 20,
+  borderRadius: '50%',
+  border: '1px solid',
+  borderColor: theme.palette.text.disabled,
+  display: 'inline-block',
+  flexShrink: 0,
+}));
+
+export const OracleStatCell = styled(StatCell)({
+  minWidth: 200,
+});
+
+export const OracleActionsLayout = styled(OracleActions)(({ theme }) => ({
+  flexDirection: 'row',
+  alignItems: 'center',
+  [theme.breakpoints.down('sm')]: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+  },
+}));
+
+export const ActionButtonsRow = styled(Box)({
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: 8,
+});
+
+export const ApyRangeButton = styled(Button)({
+  minWidth: 44,
+  paddingInline: 12,
+});
+
+export const ChartSvg = styled('svg')({
+  width: '100%',
+  height: '100%',
+  opacity: 0.85,
+});
+
+export const DonutPct = styled(Typography)({
+  fontWeight: 600,
+});
+
+export const GraphHost = styled(Box)({
+  width: '100%',
+  '& > *:first-of-type': {
+    marginTop: 16,
+    marginBottom: 16,
+  },
+});
+
+export const LoadingSkeletonRow = styled(Box)({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 12,
+});
+
+export const SkeletonStatValue = styled(Skeleton)({
+  marginTop: 4,
+});
