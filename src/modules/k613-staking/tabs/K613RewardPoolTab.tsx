@@ -1,6 +1,6 @@
 'use client';
 
-import { CircularProgress } from '@mui/material';
+import { Alert, CircularProgress, Snackbar } from '@mui/material';
 import InputAdornment from '@mui/material/InputAdornment';
 
 import {
@@ -12,8 +12,8 @@ import {
   FieldLabel,
   InputSuffix,
   MaxLink,
-  PanelCard,
   PanelCaptionLeft,
+  PanelCard,
   PanelHeading,
   PanelSection,
   QueueNotice,
@@ -21,13 +21,13 @@ import {
   RewardStatLabel,
   RewardStatsRow,
   RewardStatValue,
-  StatsCaption,
   StatCard,
   StatInner,
   StatLabel,
-  StatValue,
+  StatsCaption,
   StatsOuter,
   StatsRow,
+  StatValue,
   StyledAmountField,
   TabBar,
   TabBarInner,
@@ -46,6 +46,8 @@ export function K613RewardPoolTab() {
     setDepositAmount,
     withdrawAmount,
     setWithdrawAmount,
+    claimAmount,
+    setClaimAmount,
     actionPending,
     isClaimPending,
     error,
@@ -56,11 +58,19 @@ export function K613RewardPoolTab() {
     handleWithdraw,
     setMaxDeposit,
     setMaxWithdraw,
+    setMaxClaim,
+    successMessage,
+    setSuccessMessage,
   } = useK613StakingPage();
 
   const claimBusy = actionPending === 'claimRewards' || isClaimPending;
   const depositBusy = actionPending === 'deposit';
   const withdrawBusy = actionPending === 'withdraw';
+
+  const claimParsedPositive =
+    claimAmount.trim() !== '' &&
+    !Number.isNaN(parseFloat(claimAmount)) &&
+    parseFloat(claimAmount) > 0;
 
   const depositParsedPositive =
     depositAmount.trim() !== '' &&
@@ -150,8 +160,9 @@ export function K613RewardPoolTab() {
                   fullWidth
                   variant="outlined"
                   placeholder="0.00"
-                  value={formatted.pendingRewards}
-                  disabled
+                  value={claimAmount}
+                  disabled={paused || pendingRewardsAmount <= 0n}
+                  onChange={(e) => setClaimAmount(e.target.value)}
                   InputProps={{
                     endAdornment: (
                       <InputAdornment position="end">
@@ -163,10 +174,13 @@ export function K613RewardPoolTab() {
               </AmountFieldWrap>
               <BalanceRow>
                 <BalanceCaption>
-                  Available to claim:{' '}
-                  <strong>{formatted.pendingRewards} xK613</strong>
+                  Available to claim: <strong>{formatted.pendingRewards} xK613</strong>
                 </BalanceCaption>
-                <MaxLink type="button" disabled>
+                <MaxLink
+                  type="button"
+                  disabled={paused || pendingRewardsAmount <= 0n}
+                  onClick={setMaxClaim}
+                >
                   MAX
                 </MaxLink>
               </BalanceRow>
@@ -174,7 +188,7 @@ export function K613RewardPoolTab() {
 
             <CtaButton
               variant="contained"
-              disabled={paused || claimBusy || pendingRewardsAmount <= 0n}
+              disabled={paused || claimBusy || !claimParsedPositive || pendingRewardsAmount <= 0n}
               onClick={handleClaimRewards}
             >
               {claimBusy ? <CircularProgress color="inherit" size={22} /> : 'Claim rewards'}
@@ -287,6 +301,22 @@ export function K613RewardPoolTab() {
           </PanelCard>
         )}
       </TabContentColumn>
+
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={8000}
+        onClose={() => setSuccessMessage(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSuccessMessage(null)}
+          severity="success"
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {successMessage}
+        </Alert>
+      </Snackbar>
     </>
   );
 }

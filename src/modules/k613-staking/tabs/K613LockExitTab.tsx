@@ -1,6 +1,6 @@
 'use client';
 
-import { CircularProgress } from '@mui/material';
+import { Alert, CircularProgress, Snackbar } from '@mui/material';
 import InputAdornment from '@mui/material/InputAdornment';
 
 import {
@@ -15,16 +15,16 @@ import {
   ExitQueueSubtitle,
   ExitQueueTableHead,
   ExitQueueTableRow,
-  ExitQueueThCell,
   ExitQueueTdCell,
+  ExitQueueThCell,
   ExitQueueTitle,
   FieldLabel,
   InputSuffix,
   InstantExitLabel,
   InstantExitRow,
   MaxLink,
-  PanelCard,
   PanelCaptionLeft,
+  PanelCard,
   PanelHeading,
   PanelSection,
   QueueCancelButton,
@@ -33,10 +33,10 @@ import {
   StatCard,
   StatInner,
   StatLabel,
-  StatValue,
   StatsOuter,
   StatsRow,
   StatusChip,
+  StatValue,
   StyledAmountField,
   StyledCheckbox,
   TabBar,
@@ -78,6 +78,8 @@ export function K613LockExitTab() {
     formatUnlockCountdown,
     formatExitRequestId,
     formatTokenAmount,
+    successMessage,
+    setSuccessMessage,
   } = useK613StakingPage();
 
   const lockBusy = actionPending === 'lock' || isApprovePending;
@@ -90,9 +92,7 @@ export function K613LockExitTab() {
     parseFloat(stakeAmount) > 0;
 
   const exitParsedPositive =
-    exitAmount.trim() !== '' &&
-    !Number.isNaN(parseFloat(exitAmount)) &&
-    parseFloat(exitAmount) > 0;
+    exitAmount.trim() !== '' && !Number.isNaN(parseFloat(exitAmount)) && parseFloat(exitAmount) > 0;
 
   return (
     <>
@@ -131,16 +131,10 @@ export function K613LockExitTab() {
       {/* Sub-tab bar */}
       <TabBar>
         <TabBarInner>
-          <TabItem
-            active={lockExitSubTab === 'lock'}
-            onClick={() => setLockExitSubTab('lock')}
-          >
+          <TabItem active={lockExitSubTab === 'lock'} onClick={() => setLockExitSubTab('lock')}>
             Lock
           </TabItem>
-          <TabItem
-            active={lockExitSubTab === 'exit'}
-            onClick={() => setLockExitSubTab('exit')}
-          >
+          <TabItem active={lockExitSubTab === 'exit'} onClick={() => setLockExitSubTab('exit')}>
             Exit
           </TabItem>
         </TabBarInner>
@@ -251,9 +245,7 @@ export function K613LockExitTab() {
                 />
                 <InstantExitLabel>
                   Instant Exit
-                  {instantExitMode && penaltyPercent !== '0.0'
-                    ? ` (${penaltyPercent}% fee)`
-                    : ''}
+                  {instantExitMode && penaltyPercent !== '0.0' ? ` (${penaltyPercent}% fee)` : ''}
                 </InstantExitLabel>
               </InstantExitRow>
 
@@ -272,6 +264,8 @@ export function K613LockExitTab() {
               >
                 {initiateBusy ? (
                   <CircularProgress color="inherit" size={22} />
+                ) : instantExitMode ? (
+                  'Instant Exit'
                 ) : (
                   'Request Exit'
                 )}
@@ -314,9 +308,7 @@ export function K613LockExitTab() {
                       <ExitQueueTdCell>{formatTokenAmount(item.amount)} xK613</ExitQueueTdCell>
                       <ExitQueueTdCell>{timer}</ExitQueueTdCell>
                       <ExitQueueTdCell>
-                        <StatusChip ready={canExit}>
-                          {canExit ? 'Ready' : 'In queue'}
-                        </StatusChip>
+                        <StatusChip ready={canExit}>{canExit ? 'Ready' : 'In queue'}</StatusChip>
                       </ExitQueueTdCell>
                       <ExitQueueTdCell>
                         {canExit ? (
@@ -325,11 +317,7 @@ export function K613LockExitTab() {
                             disabled={paused || anyBusy}
                             onClick={() => handleExit(BigInt(index))}
                           >
-                            {exitBusy ? (
-                              <CircularProgress size={14} color="inherit" />
-                            ) : (
-                              'Exit'
-                            )}
+                            {exitBusy ? <CircularProgress size={14} color="inherit" /> : 'Exit'}
                           </QueueExitButton>
                         ) : (
                           <QueueCancelButton
@@ -353,6 +341,22 @@ export function K613LockExitTab() {
           </>
         )}
       </TabContentColumn>
+
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={8000}
+        onClose={() => setSuccessMessage(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSuccessMessage(null)}
+          severity="success"
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {successMessage}
+        </Alert>
+      </Snackbar>
     </>
   );
 }

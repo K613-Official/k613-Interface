@@ -58,7 +58,9 @@ export function useK613StakingController() {
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [instantExitMode, setInstantExitMode] = useState(false);
 
+  const [claimAmount, setClaimAmount] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState<string | null>(null);
   const [infoDialog, setInfoDialog] = useState<K613InfoDialogKind>(null);
   const [unlockCountdownTick, setUnlockCountdownTick] = useState(0);
@@ -201,6 +203,7 @@ export function useK613StakingController() {
 
   const handleLock = useCallback(async () => {
     setError(null);
+    setSuccessMessage(null);
     const amount = parseUnits(stakeAmount || '0', 18);
     if (amount <= 0n) {
       setError('Enter an amount');
@@ -229,10 +232,22 @@ export function useK613StakingController() {
     } finally {
       setActionPending(null);
     }
-  }, [stakeAmount, walletK613, allowance, k613Address, stakingAddress, approve, stake, refetch, k613Balance, xk613Balance]);
+  }, [
+    stakeAmount,
+    walletK613,
+    allowance,
+    k613Address,
+    stakingAddress,
+    approve,
+    stake,
+    refetch,
+    k613Balance,
+    xk613Balance,
+  ]);
 
   const handleInitiateExit = useCallback(async () => {
     setError(null);
+    setSuccessMessage(null);
     const amount = parseUnits(exitAmount || '0', 18);
     if (amount <= 0n) {
       setError('Enter an amount');
@@ -247,6 +262,13 @@ export function useK613StakingController() {
       return;
     }
 
+    if (instantExitMode && !instantExitRequiresDistributor) {
+      const confirmed = window.confirm(
+        `Instant exit will incur a ${penaltyPercent}% fee. Continue?`
+      );
+      if (!confirmed) return;
+    }
+
     setActionPending('initiateExit');
     try {
       const currentXk613Allowance = BigInt((xk613Allowance.data as bigint | undefined) ?? 0);
@@ -259,13 +281,26 @@ export function useK613StakingController() {
       if (instantExitMode && !instantExitRequiresDistributor) {
         const newIndex = BigInt(exitQueue.length);
         await instantExit(newIndex);
+        setExitAmount('');
+        await Promise.all([
+          refetch(),
+          xk613Balance.refetch(),
+          xk613Allowance.refetch(),
+          k613Balance.refetch(),
+        ]);
+        setSuccessMessage('Instant exit completed successfully.');
+      } else {
+        setExitAmount('');
+        await Promise.all([
+          refetch(),
+          xk613Balance.refetch(),
+          xk613Allowance.refetch(),
+          k613Balance.refetch(),
+        ]);
+        setSuccessMessage(
+          'Exit request created. Your tokens are now in the exit queue. You can track status below or cancel the exit request.'
+        );
       }
-
-      setExitAmount('');
-      refetch();
-      xk613Balance.refetch();
-      xk613Allowance.refetch();
-      k613Balance.refetch();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to create exit request');
     } finally {
@@ -276,6 +311,7 @@ export function useK613StakingController() {
     exitQueue.length,
     maxExitSlots,
     availableToUnstake,
+    penaltyPercent,
     initiateExit,
     instantExit,
     instantExitMode,
@@ -345,6 +381,7 @@ export function useK613StakingController() {
 
   const handleClaimRewards = useCallback(async () => {
     setError(null);
+    setSuccessMessage(null);
     if (!rewardsDistributor || isZeroAddress) {
       setError('Rewards distributor is not configured');
       return;
@@ -353,13 +390,24 @@ export function useK613StakingController() {
       setError('No rewards to claim');
       return;
     }
+    const requestedAmount = parseUnits(claimAmount || '0', 18);
+    if (requestedAmount <= 0n) {
+      setError('Enter an amount');
+      return;
+    }
+    if (requestedAmount > pendingRewardsAmount) {
+      setError('Amount exceeds available rewards');
+      return;
+    }
 
     setActionPending('claimRewards');
     try {
       await claimRewards();
+      setClaimAmount('');
       rewardsData.refetch();
       refetch();
       xk613Balance.refetch();
+      setSuccessMessage('Rewards claimed successfully.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Claim failed');
     } finally {
@@ -369,6 +417,7 @@ export function useK613StakingController() {
     rewardsDistributor,
     isZeroAddress,
     pendingRewardsAmount,
+    claimAmount,
     claimRewards,
     rewardsData,
     refetch,
@@ -377,6 +426,7 @@ export function useK613StakingController() {
 
   const handleDeposit = useCallback(async () => {
     setError(null);
+    setSuccessMessage(null);
     const amount = parseUnits(depositAmount || '0', 18);
     if (amount <= 0n) {
       setError('Enter an amount');
@@ -393,7 +443,9 @@ export function useK613StakingController() {
 
     setActionPending('deposit');
     try {
-      const currentAllowance = BigInt((xk613AllowanceForDistributor.data as bigint | undefined) ?? 0);
+      const currentAllowance = BigInt(
+        (xk613AllowanceForDistributor.data as bigint | undefined) ?? 0
+      );
       if (currentAllowance < amount && xk613Address && rewardsDistributor) {
         await approve(xk613Address, rewardsDistributor as `0x${string}`, MAX_UINT256);
         await xk613AllowanceForDistributor.refetch();
@@ -403,6 +455,7 @@ export function useK613StakingController() {
       rewardsData.refetch();
       xk613Balance.refetch();
       xk613AllowanceForDistributor.refetch();
+      setSuccessMessage('Deposit completed successfully.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Deposit failed');
     } finally {
@@ -423,6 +476,7 @@ export function useK613StakingController() {
 
   const handleWithdraw = useCallback(async () => {
     setError(null);
+    setSuccessMessage(null);
     const amount = parseUnits(withdrawAmount || '0', 18);
     if (amount <= 0n) {
       setError('Enter an amount');
@@ -443,6 +497,7 @@ export function useK613StakingController() {
       setWithdrawAmount('');
       rewardsData.refetch();
       xk613Balance.refetch();
+      setSuccessMessage('Withdrawal completed successfully.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Withdraw failed');
     } finally {
@@ -473,6 +528,10 @@ export function useK613StakingController() {
   const setMaxWithdraw = useCallback(() => {
     setWithdrawAmount(userPoolBalance <= 0n ? '0' : formatUnits(userPoolBalance, 18));
   }, [userPoolBalance]);
+
+  const setMaxClaim = useCallback(() => {
+    setClaimAmount(pendingRewardsAmount <= 0n ? '0' : formatUnits(pendingRewardsAmount, 18));
+  }, [pendingRewardsAmount]);
 
   const earliestUnlockRemaining = useMemo(() => {
     if (exitQueue.length === 0) return '—';
@@ -544,6 +603,8 @@ export function useK613StakingController() {
     isLoading: combinedLoading,
     error,
     setError,
+    successMessage,
+    setSuccessMessage,
     mainTab,
     setMainTab,
     rewardPoolSubTab,
@@ -558,6 +619,8 @@ export function useK613StakingController() {
     setDepositAmount,
     withdrawAmount,
     setWithdrawAmount,
+    claimAmount,
+    setClaimAmount,
     instantExitMode,
     setInstantExitMode,
     infoDialog,
@@ -589,6 +652,7 @@ export function useK613StakingController() {
     setMaxExit,
     setMaxDeposit,
     setMaxWithdraw,
+    setMaxClaim,
     isLockDurationPassed,
     formatUnlockCountdown,
     formatExitRequestId,
