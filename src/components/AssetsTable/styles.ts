@@ -1,4 +1,4 @@
-import { Box, Paper as PaperBase, styled } from '@mui/material';
+import { Box, Link, Paper as PaperBase, styled } from '@mui/material';
 
 export const Paper = styled(PaperBase, {
   shouldForwardProp: (prop) => prop !== 'isOpen',
@@ -51,4 +51,9 @@ export const MobilePagination = styled(Box)(({ theme }) => ({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+}));
+
+export const LinkItem = styled(Link)(({ theme }) => ({
+  color: theme.palette.common.white,
+  textDecoration: 'none',
 }));

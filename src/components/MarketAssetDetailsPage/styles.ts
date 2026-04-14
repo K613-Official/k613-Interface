@@ -1,5 +1,15 @@
-import { Check } from '@mui/icons-material';
-import { Box, Button, Paper as PaperBase, Skeleton, styled, Typography } from '@mui/material';
+import { Check, CreditCard } from '@mui/icons-material';
+import {
+  Box,
+  Button,
+  IconButton,
+  Paper as PaperBase,
+  Skeleton,
+  styled,
+  Tab,
+  Tabs,
+  Typography,
+} from '@mui/material';
 
 export const PageWrapper = styled(Box)(({ theme }) => ({
   marginTop: 64,
@@ -61,47 +71,76 @@ export const V3Badge = styled(Box)(({ theme }) => ({
 
 export const StatsStrip = styled(Box)(({ theme }) => ({
   display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'stretch',
-  flexWrap: 'nowrap',
+  flexDirection: 'column',
   gap: 0,
-  paddingBlock: 16,
-  paddingInline: 12,
-  backgroundColor:
-    theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : theme.palette.grey[100],
-  border: `1px solid ${theme.palette.divider}`,
-  borderRadius: 4,
-  overflowX: 'auto',
-  WebkitOverflowScrolling: 'touch',
+
   [theme.breakpoints.up('sm')]: {
-    paddingInline: 20,
-  },
-  [theme.breakpoints.up('md')]: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.palette.action.hover,
+    border: `1px solid ${theme.palette.divider}`,
+    borderRadius: 4,
+    paddingBlock: 24,
     paddingInline: 24,
+    overflowX: 'auto',
+    WebkitOverflowScrolling: 'touch',
+  },
+
+  [theme.breakpoints.up('md')]: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    justifyContent: 'space-between',
+    paddingInline: 40,
+    overflowX: 'visible',
   },
 }));
 
 export const StatCell = styled(Box)(({ theme }) => ({
   display: 'flex',
-  flexDirection: 'column',
-  gap: 4,
-  paddingInline: 12,
-  flex: '1 1 auto',
-  minWidth: 120,
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 8,
+
   [theme.breakpoints.up('sm')]: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+    gap: 8,
     paddingInline: 16,
+    flex: '1 1 auto',
+    minWidth: 120,
   },
+
   [theme.breakpoints.up('md')]: {
-    paddingInline: 20,
+    paddingInline: 0,
+    flex: 'none',
+    minWidth: 'auto',
   },
 }));
 
 export const StatDivider = styled(Box)(({ theme }) => ({
-  width: 1,
-  alignSelf: 'stretch',
-  minHeight: 40,
-  backgroundColor: theme.palette.divider,
+  height: 1,
+  width: '100%',
+  backgroundColor: 'rgba(255, 255, 255, 0.1)',
   flexShrink: 0,
+
+  [theme.breakpoints.up('sm')]: {
+    height: 'auto',
+    width: 1,
+    alignSelf: 'stretch',
+    minHeight: 40,
+    backgroundColor: theme.palette.divider,
+  },
+
+  [theme.breakpoints.up('md')]: {
+    height: 1,
+    width: '100%',
+    alignSelf: 'auto',
+    minHeight: 'auto',
+    marginBlock: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
 }));
 
 export const OracleActions = styled(Box)({
@@ -357,6 +396,34 @@ export const ActionButtonsRow = styled(Box)({
   gap: 8,
 });
 
+export const StatValueGroup = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'baseline',
+  ...theme.typography.h4,
+  fontWeight: 600,
+  color: theme.palette.text.primary,
+}));
+
+export const OracleValueRow = styled(Box)({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  width: '100%',
+  gap: 8,
+});
+
+export const SmallIconButton = styled(IconButton)(({ theme }) => ({
+  width: 30,
+  height: 30,
+  borderRadius: 4,
+  backgroundColor: 'rgba(255, 255, 255, 0.12)',
+  border: `1px solid ${theme.palette.divider}`,
+  color: theme.palette.text.primary,
+  '&:hover': {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+})) as typeof IconButton;
+
 export const ApyRangeButton = styled(Button)({
   minWidth: 44,
   paddingInline: 12,
@@ -389,3 +456,125 @@ export const LoadingSkeletonRow = styled(Box)({
 export const SkeletonStatValue = styled(Skeleton)({
   marginTop: 4,
 });
+
+export const StatsAndInfoRow = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 16,
+  [theme.breakpoints.up('md')]: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: 16,
+    '& > *:first-of-type': {
+      flex: 1,
+      minWidth: 0,
+    },
+  },
+}));
+
+export const YourInfoContainer = styled(Box)(({ theme }) => ({
+  backdropFilter: 'blur(100px)',
+  backgroundColor: theme.palette.action.hover,
+  border: `1px solid ${theme.palette.divider}`,
+  borderRadius: 4,
+  padding: 24,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 16,
+  alignItems: 'center',
+  justifyContent: 'center',
+  [theme.breakpoints.up('md')]: {
+    width: 500,
+    flexShrink: 0,
+  },
+}));
+
+export const YourInfoHeader = styled(Box)({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  width: '100%',
+});
+
+export const YourInfoDivider = styled(Box)({
+  height: 1,
+  width: '100%',
+  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+});
+
+export const WalletBalanceRow = styled(Box)({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  width: '100%',
+});
+
+export const WalletIconBox = styled(Box)({
+  width: 44,
+  height: 44,
+  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  borderRadius: 4,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexShrink: 0,
+});
+
+export const YourInfoActionRow = styled(Box)({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 16,
+  width: '100%',
+});
+
+export const YourInfoActionInfo = styled(Box)({
+  display: 'flex',
+  flexDirection: 'column',
+  flex: 1,
+  minWidth: 0,
+});
+
+export const InfoMutedText = styled(Typography)({
+  opacity: 0.5,
+});
+
+export const InfoSymbol = styled('span')({
+  opacity: 0.5,
+});
+
+export const YourInfoTabs = styled(Tabs)(({ theme }) => ({
+  width: '100%',
+  minHeight: 'auto',
+  '& .MuiTabs-indicator': {
+    backgroundColor: theme.palette.primary.main,
+    height: 2,
+  },
+}));
+
+export const YourInfoTab = styled(Tab)(({ theme }) => ({
+  flex: 1,
+  minHeight: 'auto',
+  padding: '9px 16px',
+  textTransform: 'uppercase',
+  fontWeight: theme.typography.fontWeightMedium,
+  fontSize: '0.875rem',
+  letterSpacing: '0.4px',
+  lineHeight: '24px',
+  color: theme.palette.text.secondary,
+  '&.Mui-selected': {
+    color: theme.palette.primary.main,
+  },
+}));
+
+export const YourInfoCloseButton = styled(IconButton)({
+  width: 30,
+  height: 30,
+  borderRadius: 4,
+});
+
+export const WalletCardIcon = styled(CreditCard)(({ theme }) => ({
+  opacity: 0.5,
+  fontSize: 24,
+  color: theme.palette.text.primary,
+}));

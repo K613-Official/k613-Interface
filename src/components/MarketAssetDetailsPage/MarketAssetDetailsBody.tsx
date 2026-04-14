@@ -1,10 +1,9 @@
 import { valueToBigNumber } from '@aave/math-utils';
 import { OpenInNew, StarBorder } from '@mui/icons-material';
-import { Box, Button, IconButton, Link as MuiLink, Typography } from '@mui/material';
+import { Box, IconButton, Link as MuiLink, Typography } from '@mui/material';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { FormattedNumber } from 'src/components/primitives/FormattedNumber';
-import { Link, ROUTES } from 'src/components/primitives/Link';
 import { getEmodeMessage } from 'src/components/transactions/Emode/EmodeNaming';
 import { ComputedReserveData } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { useAssetCaps } from 'src/hooks/useAssetCaps';
@@ -18,7 +17,6 @@ import { DEFAULT_CHART_RANGE } from './const';
 import { EmodeBlock } from './EmodeBlock';
 import { StatusFlag } from './StatusFlag';
 import {
-  ActionButtonsRow,
   AssetIdentity,
   AssetTitleRow,
   CardBlockTitle,
@@ -33,21 +31,24 @@ import {
   MetricCell,
   MetricDivider,
   MetricsRow,
-  OracleActionsLayout,
-  OracleStatCell,
+  OracleValueRow,
   PageWrapper,
   ParamRow,
   ParamRows,
   SectionShell,
   SectionTitle,
+  SmallIconButton,
   StatCell,
   StatDivider,
+  StatsAndInfoRow,
   StatsStrip,
+  StatValueGroup,
   Subsection,
   SupplyBorrowMain,
   TopRows,
 } from './styles';
 import { ChartRange, EmodeCategory as EmodeCategoryType } from './types';
+import { YourInfoPanel } from './YourInfoPanel';
 
 function formatLiveApyCaption(value: string | number) {
   const pct = valueToBigNumber(value).multipliedBy(100).toFixed(2);
@@ -121,89 +122,79 @@ export function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveDa
         </AssetTitleRow>
       </TopRows>
 
-      <StatsStrip>
-        <StatCell>
-          <Typography variant="body2" color="text.secondary">
-            Reserve Size
-          </Typography>
-          <Box display="flex" alignItems="baseline" gap={0.5}>
+      <StatsAndInfoRow>
+        <StatsStrip>
+          <StatCell>
             <Typography variant="body2" color="text.secondary">
-              $
+              Reserve Size
             </Typography>
-            <FormattedNumber
-              value={Math.max(Number(reserve.totalLiquidityUSD), 0)}
-              variant="h6"
-              compact
-            />
-          </Box>
-        </StatCell>
-        <StatDivider />
-        <StatCell>
-          <Typography variant="body2" color="text.secondary">
-            Available liquidity
-          </Typography>
-          <Box display="flex" alignItems="baseline" gap={0.5}>
-            <Typography variant="body2" color="text.secondary">
-              $
-            </Typography>
-            <FormattedNumber
-              value={Math.max(Number(reserve.availableLiquidityUSD), 0)}
-              variant="h6"
-              compact
-            />
-          </Box>
-        </StatCell>
-        <StatDivider />
-        <StatCell>
-          <Typography variant="body2" color="text.secondary">
-            Utilization Rate
-          </Typography>
-          <FormattedNumber
-            value={reserve.borrowUsageRatio}
-            percent
-            variant="h6"
-            visibleDecimals={2}
-          />
-        </StatCell>
-        <StatDivider />
-        <OracleStatCell>
-          <Typography variant="body2" color="text.secondary">
-            Oracle price
-          </Typography>
-          <OracleActionsLayout>
-            <Box display="flex" alignItems="baseline" gap={0.5}>
-              <Typography variant="body2" color="text.secondary">
+            <StatValueGroup>
+              <Typography variant="inherit" color="text.secondary">
                 $
               </Typography>
-              <FormattedNumber value={reserve.priceInUSD} variant="h6" visibleDecimals={2} />
-            </Box>
-            <ActionButtonsRow>
-              <Button
-                component={MuiLink}
+              <FormattedNumber
+                value={Math.max(Number(reserve.totalLiquidityUSD), 0)}
+                variant="inherit"
+                compact
+              />
+            </StatValueGroup>
+          </StatCell>
+          <StatDivider />
+          <StatCell>
+            <Typography variant="body2" color="text.secondary">
+              Available liquidity
+            </Typography>
+            <StatValueGroup>
+              <Typography variant="inherit" color="text.secondary">
+                $
+              </Typography>
+              <FormattedNumber
+                value={Math.max(Number(reserve.availableLiquidityUSD), 0)}
+                variant="inherit"
+                compact
+              />
+            </StatValueGroup>
+          </StatCell>
+          <StatDivider />
+          <StatCell>
+            <Typography variant="body2" color="text.secondary">
+              Utilization Rate
+            </Typography>
+            <StatValueGroup>
+              <FormattedNumber
+                value={reserve.borrowUsageRatio}
+                percent
+                variant="inherit"
+                visibleDecimals={2}
+              />
+            </StatValueGroup>
+          </StatCell>
+          <StatDivider />
+          <StatCell>
+            <Typography variant="body2" color="text.secondary">
+              Oracle price
+            </Typography>
+            <OracleValueRow>
+              <StatValueGroup>
+                <Typography variant="inherit" color="text.secondary">
+                  $
+                </Typography>
+                <FormattedNumber value={reserve.priceInUSD} variant="inherit" visibleDecimals={2} />
+              </StatValueGroup>
+              <SmallIconButton
                 href={oracleExplorerUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 size="small"
-                variant="outlined"
-                color="primary"
-                startIcon={<OpenInNew fontSize="small" />}
               >
-                Oracle
-              </Button>
-              <Button
-                component={Link}
-                href={ROUTES.markets}
-                noLinkStyle
-                variant="outlined"
-                color="inherit"
-                size="small"
-              >
-                Go back
-              </Button>
-            </ActionButtonsRow>
-          </OracleActionsLayout>
-        </OracleStatCell>
-      </StatsStrip>
+                <OpenInNew fontSize="small" />
+              </SmallIconButton>
+            </OracleValueRow>
+          </StatCell>
+        </StatsStrip>
+
+        <YourInfoPanel reserve={reserve} />
+      </StatsAndInfoRow>
 
       <SectionShell elevation={0}>
         <SectionTitle>

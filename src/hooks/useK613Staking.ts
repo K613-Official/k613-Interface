@@ -44,7 +44,7 @@ export function parseStakingDepositsRead(data: unknown): StakingDepositView | un
     if (Array.isArray(rawQueue)) {
       for (const row of rawQueue) {
         const parsed = parseExitRequestRow(row);
-        if (parsed) exitQueue.push(parsed);
+        if (parsed && parsed.amount > 0n) exitQueue.push(parsed);
       }
     }
     return { amount, exitQueue };
@@ -56,7 +56,7 @@ export function parseStakingDepositsRead(data: unknown): StakingDepositView | un
     if (Array.isArray(record.exitQueue)) {
       for (const row of record.exitQueue) {
         const parsed = parseExitRequestRow(row);
-        if (parsed) exitQueue.push(parsed);
+        if (parsed && parsed.amount > 0n) exitQueue.push(parsed);
       }
     }
     return { amount: record.amount, exitQueue };

@@ -20,8 +20,8 @@ const COPY: Record<
     confirm: 'Got it',
   },
   stakingActivated: {
-    title: 'Staking activated',
-    body: 'Your tokens are now staked for the configured lock period. Rewards are accruing',
+    title: 'Lock successful! xK613 minted',
+    body: 'Deposit your xK613 into the rewards pool to start earning',
     confirm: 'Got it',
   },
 };

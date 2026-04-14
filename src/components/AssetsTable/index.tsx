@@ -25,7 +25,7 @@ import {
 } from '@mui/material';
 import { BigNumber } from 'bignumber.js';
 import { useEffect, useMemo, useState } from 'react';
-import { Link, ROUTES } from 'src/components/primitives/Link';
+import { ROUTES } from 'src/components/primitives/Link';
 import { TokenIcon } from 'src/components/primitives/TokenIcon';
 import {
   ComputedReserveData,
@@ -103,6 +103,7 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [isOpen, setIsOpen] = useState(true);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+  const [menuRow, setMenuRow] = useState<SupplyRow | null>(null);
   const [isAlertShown, setIsAlertShown] = useState(true);
   const [page, setPage] = useState(0);
 
@@ -485,6 +486,7 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
                       row={row as SupplyRow}
                       currentMarket={currentMarket}
                       setMenuAnchor={setMenuAnchor}
+                      setMenuRow={setMenuRow}
                       openSupply={openSupply}
                     />
                   ) : (
@@ -551,8 +553,25 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
         </>
       )}
 
-      <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
-        <MenuItem>Details</MenuItem>
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={() => setMenuAnchor(null)}
+        onClick={() => setMenuAnchor(null)}
+      >
+        <Button
+          size="small"
+          variant="text"
+          color="secondary"
+          fullWidth
+          href={
+            menuRow
+              ? ROUTES.marketAssetDetails(menuRow.underlyingAsset, currentMarket as CustomMarket)
+              : '#'
+          }
+        >
+          Details
+        </Button>
       </Menu>
     </Paper>
   );
@@ -616,8 +635,7 @@ function SupplyMobileCard({
           variant="text"
           color="secondary"
           fullWidth
-          component={Link}
-          href={ROUTES.reserveOverview(row.underlyingAsset, currentMarket as CustomMarket)}
+          href={ROUTES.marketAssetDetails(row.underlyingAsset, currentMarket as CustomMarket)}
         >
           Details
         </Button>
@@ -674,12 +692,11 @@ function BorrowMobileCard({
           Borrow
         </Button>
         <Button
-          variant="text"
           size="small"
+          variant="text"
           color="secondary"
           fullWidth
-          component={Link}
-          href={ROUTES.reserveOverview(row.underlyingAsset, currentMarket)}
+          href={ROUTES.marketAssetDetails(row.underlyingAsset, currentMarket)}
         >
           Details
         </Button>
@@ -692,11 +709,13 @@ function SupplyTableRow({
   row,
   currentMarket,
   setMenuAnchor,
+  setMenuRow,
   openSupply,
 }: {
   row: SupplyRow;
   currentMarket: string;
   setMenuAnchor: (el: HTMLElement | null) => void;
+  setMenuRow: (row: SupplyRow) => void;
   openSupply: (
     underlyingAsset: string,
     currentMarket: string,
@@ -737,7 +756,13 @@ function SupplyTableRow({
           >
             Supply
           </Button>
-          <IconButton size="small" onClick={(e) => setMenuAnchor(e.currentTarget)}>
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              setMenuRow(row);
+              setMenuAnchor(e.currentTarget);
+            }}
+          >
             <MoreHorizOutlined fontSize="small" />
           </IconButton>
         </Stack>
@@ -788,11 +813,11 @@ function BorrowTableRow({
             Borrow
           </Button>
           <Button
-            variant="text"
             size="small"
+            variant="text"
             color="secondary"
-            component={Link}
-            href={ROUTES.reserveOverview(row.underlyingAsset, currentMarket)}
+            fullWidth
+            href={ROUTES.marketAssetDetails(row.underlyingAsset, currentMarket)}
           >
             Details
           </Button>
