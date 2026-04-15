@@ -334,13 +334,14 @@ export function useK613StakingController() {
         await exit(index);
         refetch();
         k613Balance.refetch();
+        setSuccessMessage('Exit completed. Tokens have been credited to your wallet.');
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Exit failed');
       } finally {
         setActionPending(null);
       }
     },
-    [exit, refetch, k613Balance]
+    [exit, refetch, k613Balance, setSuccessMessage]
   );
 
   const handleInstantExit = useCallback(
