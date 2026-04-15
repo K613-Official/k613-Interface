@@ -21,7 +21,7 @@ const COPY: Record<
   },
   stakingActivated: {
     title: 'Lock successful! xK613 minted',
-    body: 'Deposit your xK613 into the rewards pool to start earning',
+    body: 'Deposit your xK613 into the rewards pool to start earning rewards',
     confirm: 'Got it',
   },
 };
