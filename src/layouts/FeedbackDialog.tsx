@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { BasicModal } from 'src/components/primitives/BasicModal';
 import { Link } from 'src/components/primitives/Link';
 import { BaseSuccessView } from 'src/components/transactions/FlowCommons/BaseSuccess';
+import { API_BASEURL } from 'src/const';
 import { useRootStore } from 'src/store/root';
 import { useShallow } from 'zustand/shallow';
 
@@ -55,7 +56,7 @@ export const FeedbackModal = () => {
 
     setIsLoading(true);
 
-    const url = process.env.NEXT_PUBLIC_API_BASEURL + '/feedback';
+    const url = API_BASEURL + '/feedback';
 
     const payload = {
       text: value,

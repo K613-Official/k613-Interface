@@ -1,8 +1,4 @@
-import {
-  addresses_arbitrum_sepolia,
-  addresses_mainnet,
-  addresses_testnet,
-} from 'src/const';
+import { addresses_arbitrum_sepolia, addresses_mainnet, addresses_testnet } from 'src/const';
 
 export const addressesByChainId = (chainId: number) => {
   switch (chainId) {
