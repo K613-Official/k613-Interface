@@ -13,5 +13,3 @@ export const MODAL_COMPONENTS: { [K in ModalType]: React.LazyExoticComponent<Mod
     [ModalType.Borrow]: lazy(() => import('./BorrowModal')),
     [ModalType.Repay]: lazy(() => import('./RepayModal')),
   };
-
-export const WALLET_ADDRESS = '0x5678901234567890123456789012345678906810';

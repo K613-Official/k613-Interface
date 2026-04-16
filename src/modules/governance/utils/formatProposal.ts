@@ -15,7 +15,25 @@ import {
 import { EnhancedPayload } from 'src/services/GovernanceV3Service';
 import invariant from 'tiny-invariant';
 
-import { isDifferentialReached, isQuorumReached } from '../helpers';
+const isQuorumReached = (forVotes: string, quorum: string, precisionDivider: string) => {
+  return valueToBigNumber(forVotes).gte(valueToBigNumber(quorum).multipliedBy(precisionDivider));
+};
+
+const isDifferentialReached = (
+  forVotes: string,
+  againstVotes: string,
+  differential: string,
+  precisionDivider: string
+) => {
+  const forVotesBN = valueToBigNumber(forVotes);
+  const againstVotesBN = valueToBigNumber(againstVotes);
+  return (
+    forVotesBN.gte(againstVotesBN) &&
+    forVotesBN
+      .minus(againstVotesBN)
+      .gt(valueToBigNumber(differential).multipliedBy(precisionDivider))
+  );
+};
 
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 

@@ -12,7 +12,6 @@ import { MarketDataType } from 'src/ui-config/marketsConfig';
 import { fetchIconSymbolAndName, IconMapInterface } from 'src/ui-config/reservePatches';
 import { getNetworkConfig, NetworkConfig } from 'src/utils/marketsAndNetworksConfig';
 
-import { selectBaseCurrencyData, selectReserves } from './selectors';
 import { usePoolsEModes } from './usePoolEModes';
 import { usePoolsReservesHumanized } from './usePoolReserves';
 import { usePoolsReservesIncentivesHumanized } from './usePoolReservesIncentives';
@@ -32,8 +31,8 @@ const formatReserves = memoize(
     poolsEModesData: EmodeDataHumanized[],
     networkConfig: NetworkConfig
   ) => {
-    const reserves = selectReserves(reservesData);
-    const baseCurrencyData = selectBaseCurrencyData(reservesData);
+    const reserves = reservesData.reservesData;
+    const baseCurrencyData = reservesData.baseCurrencyData;
     return formatReservesAndIncentives({
       reserves,
       currentTimestamp: dayjs().unix(),
