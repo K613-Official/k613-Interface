@@ -1,9 +1,10 @@
 import { valueToBigNumber } from '@aave/math-utils';
-import { OpenInNew } from '@mui/icons-material';
-import { Box, Link as MuiLink, Typography } from '@mui/material';
+import { ArrowBack, OpenInNew } from '@mui/icons-material';
+import { Box, Button, Link as MuiLink, Typography } from '@mui/material';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { FormattedNumber } from 'src/components/primitives/FormattedNumber';
+import { Link, ROUTES } from 'src/components/primitives/Link';
 import { getEmodeMessage } from 'src/components/transactions/Emode/EmodeNaming';
 import { ComputedReserveData } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { useAssetCaps } from 'src/hooks/useAssetCaps';
@@ -14,7 +15,6 @@ import { useShallow } from 'zustand/shallow';
 
 import { ApyChartPanel } from './ApyChartPanel';
 import { DEFAULT_CHART_RANGE } from './const';
-import { EmodeBlock } from './EmodeBlock';
 import { StatusFlag } from './StatusFlag';
 import {
   AssetIdentity,
@@ -25,7 +25,6 @@ import {
   DonutInner,
   DonutPct,
   DonutRing,
-  EmodeStack,
   FlagRow,
   GraphHost,
   MetricCell,
@@ -47,7 +46,7 @@ import {
   SupplyBorrowMain,
   TopRows,
 } from './styles';
-import { ChartRange, EmodeCategory as EmodeCategoryType } from './types';
+import { ChartRange } from './types';
 import { YourInfoPanel } from './YourInfoPanel';
 
 function formatLiveApyCaption(value: string | number) {
@@ -105,6 +104,17 @@ export function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveDa
 
   return (
     <PageWrapper>
+      <Button
+        component={Link}
+        href={ROUTES.markets}
+        noLinkStyle
+        startIcon={<ArrowBack />}
+        color="secondary"
+        size="small"
+      >
+        Back to Markets
+      </Button>
+
       <TopRows>
         <AssetTitleRow>
           <AssetIdentity>
@@ -519,38 +529,24 @@ export function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveDa
         {reserve.eModes.length > 0 ? (
           <ConfigCard>
             <CardBlockTitle>
-              <Typography variant="body1">E-Mode info</Typography>
+              <Typography variant="body1">E-Mode categories</Typography>
             </CardBlockTitle>
-            <EmodeStack>
-              {reserve.eModes.map((e) => {
-                const category: EmodeCategoryType = {
-                  title: getEmodeMessage(e.eMode.label),
-                  collateral: e.collateralEnabled ? 'yes' : 'no',
-                  borrowable: e.borrowingEnabled ? 'yes' : 'no',
-                  rows: [
-                    {
-                      label: 'Max LTV',
-                      value: `${valueToBigNumber(e.eMode.formattedLtv)
-                        .multipliedBy(100)
-                        .toFixed(2)}%`,
-                    },
-                    {
-                      label: 'Liquidation threshold',
-                      value: `${valueToBigNumber(e.eMode.formattedLiquidationThreshold)
-                        .multipliedBy(100)
-                        .toFixed(2)}%`,
-                    },
-                    {
-                      label: 'Liquidation penalty',
-                      value: `${valueToBigNumber(e.eMode.formattedLiquidationBonus)
-                        .multipliedBy(100)
-                        .toFixed(2)}%`,
-                    },
-                  ],
-                };
-                return <EmodeBlock key={e.id} category={category} />;
-              })}
-            </EmodeStack>
+            <Box display="flex" flexDirection="column" gap={1.5}>
+              {reserve.eModes.map((e) => (
+                <Box key={e.id} display="flex" alignItems="center" gap={2} flexWrap="wrap">
+                  <Typography variant="body2" sx={{ fontWeight: 500, minWidth: 120 }}>
+                    {getEmodeMessage(e.eMode.label)}
+                  </Typography>
+                  <FlagRow>
+                    <StatusFlag ok={e.collateralEnabled} label="Collateral" />
+                    <StatusFlag ok={e.borrowingEnabled} label="Borrowable" />
+                  </FlagRow>
+                  <Typography variant="body2" color="text.secondary">
+                    LTV {valueToBigNumber(e.eMode.formattedLtv).multipliedBy(100).toFixed(0)}%
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
           </ConfigCard>
         ) : null}
       </SectionShell>
