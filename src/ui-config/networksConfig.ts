@@ -1,4 +1,5 @@
 import { ChainId } from '@aave/contract-helpers';
+import { API_BASEURL } from 'src/const';
 import {
   arbitrum,
   arbitrumSepolia,
@@ -73,7 +74,7 @@ export type NetworkConfig = {
 
 export type BaseNetworkConfig = Omit<NetworkConfig, 'explorerLinkBuilder'>;
 
-const ratesHistoryApiUrl = `${process.env.NEXT_PUBLIC_API_BASEURL}/data/rates-history`;
+const ratesHistoryApiUrl = `${API_BASEURL}/data/rates-history`;
 
 export const testnetConfig: Record<string, BaseNetworkConfig> = {
   [ChainId.sepolia]: {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { API_BASEURL } from 'src/const';
 
 import { usePolling } from './usePolling';
 
@@ -11,7 +12,7 @@ const TWO_MINUTES = 2 * 60 * 1000;
 export const useAddressAllowed = (address: string): AddressAllowedResult => {
   const [isAllowed, setIsAllowed] = useState(true);
 
-  const screeningUrl = `${process.env.NEXT_PUBLIC_API_BASEURL}/addresses/status`;
+  const screeningUrl = `${API_BASEURL}/addresses/status`;
   const queryParams = `?address=${address}`;
 
   const getIsAddressAllowed = async () => {
