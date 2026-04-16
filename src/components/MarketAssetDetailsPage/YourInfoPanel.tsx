@@ -1,6 +1,5 @@
 import { API_ETH_MOCK_ADDRESS } from '@aave/contract-helpers';
 import { USD_DECIMALS, valueToBigNumber } from '@aave/math-utils';
-import { Close } from '@mui/icons-material';
 import { Box, Button, Skeleton, Stack, Typography } from '@mui/material';
 import { BigNumber } from 'bignumber.js';
 import { useState } from 'react';
@@ -31,7 +30,6 @@ import {
   WalletIconBox,
   YourInfoActionInfo,
   YourInfoActionRow,
-  YourInfoCloseButton,
   YourInfoContainer,
   YourInfoDivider,
   YourInfoHeader,
@@ -56,7 +54,6 @@ interface YourInfoPanelProps {
 }
 
 export function YourInfoPanel({ reserve }: YourInfoPanelProps) {
-  const [isOpen, setIsOpen] = useState(true);
   const [selectedAsset, setSelectedAsset] = useState(reserve.symbol);
 
   const { currentAccount } = useWeb3Context();
@@ -123,10 +120,6 @@ export function YourInfoPanel({ reserve }: YourInfoPanelProps) {
     reserve,
   });
 
-  if (!isOpen) {
-    return null;
-  }
-
   const handleSupplyClick = () => {
     if (reserve.isWrappedBaseAsset && selectedAsset === baseAssetSymbol) {
       openSupply(API_ETH_MOCK_ADDRESS.toLowerCase(), currentMarket, reserve.name, 'reserve', true);
@@ -145,9 +138,6 @@ export function YourInfoPanel({ reserve }: YourInfoPanelProps) {
     <YourInfoContainer>
       <YourInfoHeader>
         <Typography variant="h5">Your info</Typography>
-        <YourInfoCloseButton size="small" onClick={() => setIsOpen(false)}>
-          <Close fontSize="small" />
-        </YourInfoCloseButton>
       </YourInfoHeader>
 
       {!currentAccount ? (
@@ -189,8 +179,7 @@ export function YourInfoPanel({ reserve }: YourInfoPanelProps) {
                   value={balance?.amount || '0'}
                   variant="inherit"
                   component="span"
-                />
-                {' '}
+                />{' '}
                 <InfoSymbol>{selectedAsset}</InfoSymbol>
               </Typography>
             </Box>
@@ -203,20 +192,11 @@ export function YourInfoPanel({ reserve }: YourInfoPanelProps) {
               <YourInfoActionInfo>
                 <InfoMutedText variant="body2">Available to supply</InfoMutedText>
                 <Typography variant="h6">
-                  <FormattedNumber
-                    value={maxAmountToSupply}
-                    variant="inherit"
-                    component="span"
-                  />
-                  {' '}
+                  <FormattedNumber value={maxAmountToSupply} variant="inherit" component="span" />{' '}
                   <InfoSymbol>{selectedAsset}</InfoSymbol>
                 </Typography>
                 <InfoMutedText variant="body2">
-                  <FormattedNumber
-                    value={maxAmountToSupplyUsd}
-                    variant="inherit"
-                    symbol="USD"
-                  />
+                  <FormattedNumber value={maxAmountToSupplyUsd} variant="inherit" symbol="USD" />
                 </InfoMutedText>
               </YourInfoActionInfo>
               <Button
@@ -234,20 +214,11 @@ export function YourInfoPanel({ reserve }: YourInfoPanelProps) {
               <YourInfoActionInfo>
                 <InfoMutedText variant="body2">Available to borrow</InfoMutedText>
                 <Typography variant="h6">
-                  <FormattedNumber
-                    value={maxAmountToBorrow}
-                    variant="inherit"
-                    component="span"
-                  />
-                  {' '}
+                  <FormattedNumber value={maxAmountToBorrow} variant="inherit" component="span" />{' '}
                   <InfoSymbol>{reserve.symbol}</InfoSymbol>
                 </Typography>
                 <InfoMutedText variant="body2">
-                  <FormattedNumber
-                    value={maxAmountToBorrowUsd}
-                    variant="inherit"
-                    symbol="USD"
-                  />
+                  <FormattedNumber value={maxAmountToBorrowUsd} variant="inherit" symbol="USD" />
                 </InfoMutedText>
               </YourInfoActionInfo>
               <Button
