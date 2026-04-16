@@ -1,6 +1,6 @@
 import { valueToBigNumber } from '@aave/math-utils';
-import { OpenInNew, StarBorder } from '@mui/icons-material';
-import { Box, IconButton, Link as MuiLink, Typography } from '@mui/material';
+import { OpenInNew } from '@mui/icons-material';
+import { Box, Link as MuiLink, Typography } from '@mui/material';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { FormattedNumber } from 'src/components/primitives/FormattedNumber';
@@ -116,9 +116,6 @@ export function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveDa
               <Typography variant="h6">{reserve.name}</Typography>
             </Box>
           </AssetIdentity>
-          <IconButton size="small" color="inherit" aria-label="Favorite">
-            <StarBorder />
-          </IconButton>
         </AssetTitleRow>
       </TopRows>
 
