@@ -73,13 +73,12 @@ export const networkConfigs = Object.keys(_networkConfigs).reduce((acc, value) =
  */
 
 export const marketsData = Object.keys(_marketsData).reduce((acc, value) => {
-  acc[value] = _marketsData[value as keyof typeof CustomMarket];
-  if (
-    FORK_ENABLED &&
-    _marketsData[value as keyof typeof CustomMarket].chainId === FORK_BASE_CHAIN_ID
-  ) {
+  const entry = _marketsData[value as keyof typeof CustomMarket];
+  if (!entry) return acc;
+  acc[value] = entry;
+  if (FORK_ENABLED && entry.chainId === FORK_BASE_CHAIN_ID) {
     acc[`fork_${value}`] = {
-      ..._marketsData[value as keyof typeof CustomMarket],
+      ...entry,
       chainId: FORK_CHAIN_ID,
       isFork: true,
     };

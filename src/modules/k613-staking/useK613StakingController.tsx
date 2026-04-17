@@ -100,10 +100,17 @@ export function useK613StakingController() {
   );
   const rewardsData = useK613RewardsData(rewardsDistributor);
 
-  const { stake, initiateExit, exit, instantExit, cancelExit } = useK613StakingActions();
+  const {
+    stake,
+    initiateExit,
+    exit,
+    instantExit,
+    cancelExit,
+    redeemRewards,
+    isPending: isStakingActionPending,
+  } = useK613StakingActions();
   const { approve, isPending: isApprovePending } = useK613Approve();
   const {
-    claimRewards,
     deposit,
     withdraw,
     isPending: isClaimPending,
@@ -383,10 +390,6 @@ export function useK613StakingController() {
   const handleClaimRewards = useCallback(async () => {
     setError(null);
     setSuccessMessage(null);
-    if (!rewardsDistributor || isZeroAddress) {
-      setError('Rewards distributor is not configured');
-      return;
-    }
     if (pendingRewardsAmount <= 0n) {
       setError('No rewards to claim');
       return;
@@ -403,11 +406,12 @@ export function useK613StakingController() {
 
     setActionPending('claimRewards');
     try {
-      await claimRewards();
+      await redeemRewards(requestedAmount);
       setClaimAmount('');
       rewardsData.refetch();
       refetch();
       xk613Balance.refetch();
+      k613Balance.refetch();
       setSuccessMessage('Rewards claimed successfully.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Claim failed');
@@ -415,14 +419,13 @@ export function useK613StakingController() {
       setActionPending(null);
     }
   }, [
-    rewardsDistributor,
-    isZeroAddress,
     pendingRewardsAmount,
     claimAmount,
-    claimRewards,
+    redeemRewards,
     rewardsData,
     refetch,
     xk613Balance,
+    k613Balance,
   ]);
 
   const handleDeposit = useCallback(async () => {
@@ -640,7 +643,7 @@ export function useK613StakingController() {
     lastAccrualDisplay,
     actionPending,
     isApprovePending,
-    isClaimPending,
+    isClaimPending: isStakingActionPending || isClaimPending,
     handleClaimRewards,
     handleLock,
     handleInitiateExit,
