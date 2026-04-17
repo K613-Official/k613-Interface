@@ -115,9 +115,14 @@ export function getSupportedChainIds(): number[] {
  * selectable markets (markets in a available network + forks when enabled)
  */
 
-export const availableMarkets = Object.keys(marketsData).filter((key) =>
+const detectedAvailableMarkets = Object.keys(marketsData).filter((key) =>
   getSupportedChainIds().includes(marketsData[key as keyof typeof CustomMarket].chainId)
 ) as CustomMarket[];
+
+export const availableMarkets =
+  detectedAvailableMarkets.length > 0
+    ? detectedAvailableMarkets
+    : (Object.keys(marketsData) as CustomMarket[]);
 
 const linkBuilder =
   ({ baseUrl, addressPrefix = 'address', txPrefix = 'tx' }: ExplorerLinkBuilderConfig) =>
