@@ -120,7 +120,7 @@ export function useK613StakingData() {
   const maxExitRequests = useReadContract({
     address: stakingAddress as `0x${string}` | undefined,
     abi: STAKING_ABI,
-    functionName: 'MAX_EXIT_REQUESTS',
+    functionName: 'maxExitRequests',
   });
 
   const totalBacking = useReadContract({
@@ -243,12 +243,23 @@ export function useK613StakingActions() {
     });
   };
 
+  const redeemRewards = async (amount: bigint) => {
+    if (!stakingAddress) throw new Error('Staking contract not configured');
+    return writeContractAsync({
+      address: stakingAddress as `0x${string}`,
+      abi: STAKING_ABI,
+      functionName: 'redeemRewards',
+      args: [amount],
+    });
+  };
+
   return {
     stake,
     initiateExit,
     exit,
     instantExit,
     cancelExit,
+    redeemRewards,
     isPending,
   };
 }
