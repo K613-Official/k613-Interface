@@ -58,10 +58,10 @@ export function useK613StakingController() {
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [instantExitMode, setInstantExitMode] = useState(false);
 
-  const [claimAmount, setClaimAmount] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState<string | null>(null);
+  const [pendingRedeemAmount, setPendingRedeemAmount] = useState<bigint | null>(null);
   const [infoDialog, setInfoDialog] = useState<K613InfoDialogKind>(null);
   const [unlockCountdownTick, setUnlockCountdownTick] = useState(0);
 
@@ -106,6 +106,7 @@ export function useK613StakingController() {
     exit,
     instantExit,
     cancelExit,
+    redeemRewards,
     isPending: isStakingActionPending,
   } = useK613StakingActions();
   const { approve, isPending: isApprovePending } = useK613Approve();
@@ -387,6 +388,49 @@ export function useK613StakingController() {
     [cancelExit, refetch, xk613Balance]
   );
 
+  const refetchAllRewardsState = useCallback(() => {
+    rewardsData.refetch();
+    refetch();
+    xk613Balance.refetch();
+    k613Balance.refetch();
+    xk613Allowance.refetch();
+  }, [rewardsData, refetch, xk613Balance, k613Balance, xk613Allowance]);
+
+  const handleRetryRedeem = useCallback(async () => {
+    if (pendingRedeemAmount === null || pendingRedeemAmount <= 0n) return;
+    setError(null);
+    setSuccessMessage(null);
+    setActionPending('claimRewards:redeem');
+    try {
+      const currentAllowance = BigInt((xk613Allowance.data as bigint | undefined) ?? 0);
+      if (currentAllowance < pendingRedeemAmount && xk613Address && stakingAddress) {
+        await approve(xk613Address, stakingAddress as `0x${string}`, MAX_UINT256);
+        await xk613Allowance.refetch();
+      }
+      await redeemRewards(pendingRedeemAmount);
+      const redeemed = pendingRedeemAmount;
+      setPendingRedeemAmount(null);
+      refetchAllRewardsState();
+      setSuccessMessage(`Claimed ${formatTokenAmount(redeemed)} K613.`);
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? `Redeem failed: ${e.message}. xK613 is in your wallet — retry to swap for K613.`
+          : 'Redeem failed'
+      );
+    } finally {
+      setActionPending(null);
+    }
+  }, [
+    pendingRedeemAmount,
+    xk613Allowance,
+    xk613Address,
+    stakingAddress,
+    approve,
+    redeemRewards,
+    refetchAllRewardsState,
+  ]);
+
   const handleClaimRewards = useCallback(async () => {
     setError(null);
     setSuccessMessage(null);
@@ -394,22 +438,55 @@ export function useK613StakingController() {
       setError('No rewards to claim');
       return;
     }
+    if (!stakingAddress || !xk613Address) {
+      setError('Staking contract not configured');
+      return;
+    }
 
-    setActionPending('claimRewards');
+    const amount = pendingRewardsAmount;
+    setActionPending('claimRewards:approve');
     try {
+      const currentAllowance = BigInt((xk613Allowance.data as bigint | undefined) ?? 0);
+      if (currentAllowance < amount) {
+        await approve(xk613Address, stakingAddress as `0x${string}`, MAX_UINT256);
+        await xk613Allowance.refetch();
+      }
+
+      setActionPending('claimRewards:claim');
       await claimRewards();
-      setClaimAmount('');
-      rewardsData.refetch();
-      refetch();
-      xk613Balance.refetch();
-      k613Balance.refetch();
-      setSuccessMessage('Rewards claimed successfully.');
+
+      setActionPending('claimRewards:redeem');
+      try {
+        await redeemRewards(amount);
+      } catch (redeemErr) {
+        setPendingRedeemAmount(amount);
+        refetchAllRewardsState();
+        setError(
+          redeemErr instanceof Error
+            ? `Rewards received as xK613. Retry to redeem for K613 (${redeemErr.message}).`
+            : 'Rewards received as xK613. Retry to redeem for K613.'
+        );
+        return;
+      }
+
+      setPendingRedeemAmount(null);
+      refetchAllRewardsState();
+      setSuccessMessage(`Claimed ${formatTokenAmount(amount)} K613.`);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Claim failed');
     } finally {
       setActionPending(null);
     }
-  }, [pendingRewardsAmount, claimRewards, rewardsData, refetch, xk613Balance, k613Balance]);
+  }, [
+    pendingRewardsAmount,
+    stakingAddress,
+    xk613Address,
+    xk613Allowance,
+    approve,
+    claimRewards,
+    redeemRewards,
+    refetchAllRewardsState,
+  ]);
 
   const handleDeposit = useCallback(async () => {
     setError(null);
@@ -516,10 +593,6 @@ export function useK613StakingController() {
     setWithdrawAmount(userPoolBalance <= 0n ? '0' : formatUnits(userPoolBalance, 18));
   }, [userPoolBalance]);
 
-  const setMaxClaim = useCallback(() => {
-    setClaimAmount(pendingRewardsAmount <= 0n ? '0' : formatUnits(pendingRewardsAmount, 18));
-  }, [pendingRewardsAmount]);
-
   const earliestUnlockRemaining = useMemo(() => {
     if (exitQueue.length === 0) return '—';
     const now = BigInt(Math.floor(Date.now() / 1000));
@@ -606,8 +679,6 @@ export function useK613StakingController() {
     setDepositAmount,
     withdrawAmount,
     setWithdrawAmount,
-    claimAmount,
-    setClaimAmount,
     instantExitMode,
     setInstantExitMode,
     infoDialog,
@@ -628,6 +699,8 @@ export function useK613StakingController() {
     isApprovePending,
     isClaimPending: isStakingActionPending || isClaimPending,
     handleClaimRewards,
+    handleRetryRedeem,
+    pendingRedeemAmount,
     handleLock,
     handleInitiateExit,
     handleExit,
@@ -639,7 +712,6 @@ export function useK613StakingController() {
     setMaxExit,
     setMaxDeposit,
     setMaxWithdraw,
-    setMaxClaim,
     isLockDurationPassed,
     formatUnlockCountdown,
     formatExitRequestId,

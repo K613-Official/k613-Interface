@@ -46,31 +46,40 @@ export function K613RewardPoolTab() {
     setDepositAmount,
     withdrawAmount,
     setWithdrawAmount,
-    claimAmount,
-    setClaimAmount,
     actionPending,
     isClaimPending,
     error,
     pendingRewardsAmount,
     displayApy,
     handleClaimRewards,
+    handleRetryRedeem,
+    pendingRedeemAmount,
     handleDeposit,
     handleWithdraw,
     setMaxDeposit,
     setMaxWithdraw,
-    setMaxClaim,
     successMessage,
     setSuccessMessage,
   } = useK613StakingPage();
 
-  const claimBusy = actionPending === 'claimRewards' || isClaimPending;
+  const claimBusy =
+    isClaimPending ||
+    actionPending === 'claimRewards:approve' ||
+    actionPending === 'claimRewards:claim' ||
+    actionPending === 'claimRewards:redeem';
+  const claimButtonLabel =
+    actionPending === 'claimRewards:approve'
+      ? 'Approving xK613…'
+      : actionPending === 'claimRewards:claim'
+      ? 'Claiming rewards…'
+      : actionPending === 'claimRewards:redeem'
+      ? 'Redeeming to K613…'
+      : pendingRedeemAmount !== null
+      ? 'Retry redeem'
+      : 'Claim rewards';
+  const onClaimClick = pendingRedeemAmount !== null ? handleRetryRedeem : handleClaimRewards;
   const depositBusy = actionPending === 'deposit';
   const withdrawBusy = actionPending === 'withdraw';
-
-  const claimParsedPositive =
-    claimAmount.trim() !== '' &&
-    !Number.isNaN(parseFloat(claimAmount)) &&
-    parseFloat(claimAmount) > 0;
 
   const depositParsedPositive =
     depositAmount.trim() !== '' &&
@@ -154,44 +163,17 @@ export function K613RewardPoolTab() {
             </RewardStatsRow>
 
             <PanelSection>
-              <FieldLabel>Amount</FieldLabel>
-              <AmountFieldWrap>
-                <StyledAmountField
-                  fullWidth
-                  variant="outlined"
-                  placeholder="0.00"
-                  value={claimAmount}
-                  disabled={paused || pendingRewardsAmount <= 0n}
-                  onChange={(e) => setClaimAmount(e.target.value)}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <InputSuffix>xK613</InputSuffix>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </AmountFieldWrap>
-              <BalanceRow>
-                <BalanceCaption>
-                  Available to claim: <strong>{formatted.pendingRewards} xK613</strong>
-                </BalanceCaption>
-                <MaxLink
-                  type="button"
-                  disabled={paused || pendingRewardsAmount <= 0n}
-                  onClick={setMaxClaim}
-                >
-                  MAX
-                </MaxLink>
-              </BalanceRow>
+              <BalanceCaption>
+                Available to claim: <strong>{formatted.pendingRewards} xK613</strong> → K613 1:1
+              </BalanceCaption>
             </PanelSection>
 
             <CtaButton
               variant="contained"
-              disabled={paused || claimBusy || !claimParsedPositive || pendingRewardsAmount <= 0n}
-              onClick={handleClaimRewards}
+              disabled={paused || claimBusy || pendingRewardsAmount <= 0n}
+              onClick={onClaimClick}
             >
-              {claimBusy ? <CircularProgress color="inherit" size={22} /> : 'Claim rewards'}
+              {claimBusy ? <CircularProgress color="inherit" size={22} /> : claimButtonLabel}
             </CtaButton>
 
             {error && <ErrorText>{error}</ErrorText>}
