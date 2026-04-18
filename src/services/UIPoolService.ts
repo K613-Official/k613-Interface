@@ -7,7 +7,6 @@ import {
 } from '@aave/contract-helpers';
 import { Provider } from '@ethersproject/providers';
 import { MarketDataType } from 'src/ui-config/marketsConfig';
-import { ENABLE_TESTNET } from 'src/utils/marketsAndNetworksConfig';
 
 export type UserReservesDataHumanized = {
   userReserves: UserReserveDataHumanized[];
@@ -15,7 +14,7 @@ export type UserReservesDataHumanized = {
 };
 
 export class UiPoolService {
-  constructor(private readonly getProvider: (chainId: number) => Provider) {}
+  constructor(private readonly getProvider: (chainId: number) => Provider) { }
 
   private async getUiPoolDataService(marketData: MarketDataType) {
     const provider = this.getProvider(marketData.chainId);
@@ -34,13 +33,9 @@ export class UiPoolService {
     }
   }
 
-  private useLegacyUiPoolDataProvider(marketData: MarketDataType) {
-    if (ENABLE_TESTNET || !marketData.v3) {
-      // it's a v2 market, or it does not have v3.1 upgrade
-      return true;
-    }
+  private useLegacyUiPoolDataProvider(_marketData: MarketDataType) {
 
-    return false;
+    return true;
   }
 
   async getReservesHumanized(marketData: MarketDataType): Promise<ReservesDataHumanized> {
