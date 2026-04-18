@@ -92,22 +92,10 @@ export function getDefaultChainId() {
 
 export function getSupportedChainIds(): number[] {
   return Array.from(
-    Object.keys(marketsData)
-      .filter((value) => {
-        const isTestnet =
-          networkConfigs[marketsData[value as keyof typeof CustomMarket].chainId].isTestnet;
-
-        // If this is a staging environment, or the testnet toggle is on, only show testnets
-        if (STAGING_ENV || ENABLE_TESTNET) {
-          return isTestnet;
-        }
-
-        return !isTestnet;
-      })
-      .reduce(
-        (acc, value) => acc.add(marketsData[value as keyof typeof CustomMarket].chainId),
-        new Set<number>()
-      )
+    Object.keys(marketsData).reduce(
+      (acc, value) => acc.add(marketsData[value as keyof typeof CustomMarket].chainId),
+      new Set<number>()
+    )
   );
 }
 
