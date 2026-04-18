@@ -25,7 +25,8 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "incremental": true,
-    "useUnknownInCatchVariables": false
+    "useUnknownInCatchVariables": false,
+    "types": []
   },
   "exclude": [
     "dist",

@@ -106,11 +106,11 @@ export function useK613StakingController() {
     exit,
     instantExit,
     cancelExit,
-    redeemRewards,
     isPending: isStakingActionPending,
   } = useK613StakingActions();
   const { approve, isPending: isApprovePending } = useK613Approve();
   const {
+    claimRewards,
     deposit,
     withdraw,
     isPending: isClaimPending,
@@ -394,19 +394,10 @@ export function useK613StakingController() {
       setError('No rewards to claim');
       return;
     }
-    const requestedAmount = parseUnits(claimAmount || '0', 18);
-    if (requestedAmount <= 0n) {
-      setError('Enter an amount');
-      return;
-    }
-    if (requestedAmount > pendingRewardsAmount) {
-      setError('Amount exceeds available rewards');
-      return;
-    }
 
     setActionPending('claimRewards');
     try {
-      await redeemRewards(requestedAmount);
+      await claimRewards();
       setClaimAmount('');
       rewardsData.refetch();
       refetch();
@@ -418,15 +409,7 @@ export function useK613StakingController() {
     } finally {
       setActionPending(null);
     }
-  }, [
-    pendingRewardsAmount,
-    claimAmount,
-    redeemRewards,
-    rewardsData,
-    refetch,
-    xk613Balance,
-    k613Balance,
-  ]);
+  }, [pendingRewardsAmount, claimRewards, rewardsData, refetch, xk613Balance, k613Balance]);
 
   const handleDeposit = useCallback(async () => {
     setError(null);
