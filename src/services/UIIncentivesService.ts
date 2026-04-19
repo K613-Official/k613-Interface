@@ -23,16 +23,24 @@ export class UiIncentivesService {
     if (!marketData.enabledFeatures?.incentives) return [];
 
     const uiIncentiveDataProvider = this.getUiIncentiveDataProvider(marketData);
-    return uiIncentiveDataProvider.getReservesIncentivesDataHumanized({
-      lendingPoolAddressProvider: marketData.addresses.LENDING_POOL_ADDRESS_PROVIDER,
-    });
+    try {
+      return await uiIncentiveDataProvider.getReservesIncentivesDataHumanized({
+        lendingPoolAddressProvider: marketData.addresses.LENDING_POOL_ADDRESS_PROVIDER,
+      });
+    } catch {
+      return [];
+    }
   }
   async getUserReservesIncentivesData(marketData: MarketDataType, user: string) {
     if (!marketData.enabledFeatures?.incentives) return [];
     const uiIncentiveDataProvider = this.getUiIncentiveDataProvider(marketData);
-    return uiIncentiveDataProvider.getUserReservesIncentivesDataHumanized({
-      user,
-      lendingPoolAddressProvider: marketData.addresses.LENDING_POOL_ADDRESS_PROVIDER,
-    });
+    try {
+      return await uiIncentiveDataProvider.getUserReservesIncentivesDataHumanized({
+        user,
+        lendingPoolAddressProvider: marketData.addresses.LENDING_POOL_ADDRESS_PROVIDER,
+      });
+    } catch {
+      return [];
+    }
   }
 }
