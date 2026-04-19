@@ -9,6 +9,7 @@ import { ConnectKitProvider } from 'connectkit';
 import { NextPage } from 'next';
 import { AppProps } from 'next/app';
 import Head from 'next/head';
+import dynamic from 'next/dynamic';
 import { ReactNode, useEffect, useState } from 'react';
 import { AddressBlocked } from 'src/components/AddressBlocked';
 import { Meta } from 'src/components/Meta';
@@ -16,6 +17,30 @@ import ModalProvider from 'src/components/Modals/ModalProvider';
 import { GasStationProvider } from 'src/components/transactions/GasStation/GasStationProvider';
 import { AppDataProvider } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { ModalContextProvider } from 'src/hooks/useModal';
+
+const SupplyModal = dynamic(() =>
+  import('src/components/transactions/Supply/SupplyModal').then((m) => m.SupplyModal)
+);
+const BorrowModal = dynamic(() =>
+  import('src/components/transactions/Borrow/BorrowModal').then((m) => m.BorrowModal)
+);
+const WithdrawModal = dynamic(() =>
+  import('src/components/transactions/Withdraw/WithdrawModal').then((m) => m.WithdrawModal)
+);
+const RepayModal = dynamic(() =>
+  import('src/components/transactions/Repay/RepayModal').then((m) => m.RepayModal)
+);
+const CollateralChangeModal = dynamic(() =>
+  import('src/components/transactions/CollateralChange/CollateralChangeModal').then(
+    (m) => m.CollateralChangeModal
+  )
+);
+const EmodeModal = dynamic(() =>
+  import('src/components/transactions/Emode/EmodeModal').then((m) => m.EmodeModal)
+);
+const FaucetModal = dynamic(() =>
+  import('src/components/transactions/Faucet/FaucetModal').then((m) => m.FaucetModal)
+);
 import { Web3ContextProvider } from 'src/libs/web3-data-provider/Web3Provider';
 import { useRootStore } from 'src/store/root';
 import { SharedDependenciesProvider } from 'src/ui-config/SharedDependenciesProvider';
@@ -96,6 +121,13 @@ export default function MyApp(props: MyAppProps) {
                           <ModalContextProvider>
                             <GasStationProvider>
                               {getLayout(<Component {...pageProps} />)}
+                              <SupplyModal />
+                              <BorrowModal />
+                              <WithdrawModal />
+                              <RepayModal />
+                              <CollateralChangeModal />
+                              <EmodeModal />
+                              <FaucetModal />
                             </GasStationProvider>
                           </ModalContextProvider>
                         </AppDataProvider>
