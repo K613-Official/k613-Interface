@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ESupportedTimeRanges } from 'src/modules/reserve-overview/TimeRangeSelector';
 import { useRootStore } from 'src/store/root';
 import { makeCancelable } from 'src/utils/utils';
+import { useShallow } from 'zustand/shallow';
 
 export const reserveRateTimeRangeOptions = [
   ESupportedTimeRanges.OneMonth,
@@ -129,10 +130,9 @@ const fetchFromSubgraph = async (
 };
 
 export function useReserveRatesHistory(reserveAddress: string, timeRange: ReserveRateTimeRange) {
-  const [currentNetworkConfig, currentMarketData] = useRootStore((store) => [
-    store.currentNetworkConfig,
-    store.currentMarketData,
-  ]);
+  const [currentNetworkConfig, currentMarketData] = useRootStore(
+    useShallow((store) => [store.currentNetworkConfig, store.currentMarketData])
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [data, setData] = useState<FormattedReserveHistoryItem[]>([]);
