@@ -147,7 +147,7 @@ export function useK613StakingController() {
     [exitQueue]
   );
 
-  const availableToUnstake = stakedAmount > queuedTotal ? stakedAmount - queuedTotal : BigInt(0);
+  const availableToUnstake = walletXk613;
   const hasStakingActivity = stakedAmount > 0n || walletXk613 > 0n || queuedTotal > 0n;
 
   const displayApy =
