@@ -50,10 +50,10 @@ export function K613RewardPoolTab() {
     isClaimPending,
     error,
     pendingRewardsAmount,
+    claimableTotal,
+    orphanXk613,
     displayApy,
     handleClaimRewards,
-    handleRetryRedeem,
-    pendingRedeemAmount,
     handleDeposit,
     handleWithdraw,
     setMaxDeposit,
@@ -74,10 +74,8 @@ export function K613RewardPoolTab() {
       ? 'Claiming rewards…'
       : actionPending === 'claimRewards:redeem'
       ? 'Redeeming to K613…'
-      : pendingRedeemAmount !== null
-      ? 'Retry redeem'
       : 'Claim rewards';
-  const onClaimClick = pendingRedeemAmount !== null ? handleRetryRedeem : handleClaimRewards;
+  const onClaimClick = handleClaimRewards;
   const depositBusy = actionPending === 'deposit';
   const withdrawBusy = actionPending === 'withdraw';
 
@@ -164,13 +162,23 @@ export function K613RewardPoolTab() {
 
             <PanelSection>
               <BalanceCaption>
-                Available to claim: <strong>{formatted.pendingRewards} xK613</strong> → K613 1:1
+                Available to claim: <strong>{formatted.claimableTotal} xK613</strong> → K613 1:1
               </BalanceCaption>
+              {orphanXk613 > 0n && pendingRewardsAmount > 0n && (
+                <BalanceCaption>
+                  Includes {formatted.orphanXk613} xK613 leftover in wallet
+                </BalanceCaption>
+              )}
+              {orphanXk613 > 0n && pendingRewardsAmount <= 0n && (
+                <BalanceCaption>
+                  {formatted.orphanXk613} xK613 leftover from a previous claim — will be redeemed
+                </BalanceCaption>
+              )}
             </PanelSection>
 
             <CtaButton
               variant="contained"
-              disabled={paused || claimBusy || pendingRewardsAmount <= 0n}
+              disabled={paused || claimBusy || claimableTotal <= 0n}
               onClick={onClaimClick}
             >
               {claimBusy ? <CircularProgress color="inherit" size={22} /> : claimButtonLabel}
