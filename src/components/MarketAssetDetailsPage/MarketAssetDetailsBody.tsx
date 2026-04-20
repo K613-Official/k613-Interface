@@ -66,7 +66,7 @@ export function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveDa
   const reserveChartId =
     reserve.underlyingAsset + currentMarketData.addresses.LENDING_POOL_ADDRESS_PROVIDER;
   const renderCharts =
-    !!currentNetworkConfig.ratesHistoryApiUrl &&
+    (!!currentNetworkConfig.ratesHistoryApiUrl || !!currentMarketData.subgraphUrl) &&
     !currentMarketData.disableCharts &&
     !BROKEN_ASSETS.includes(reserveChartId);
 
@@ -298,11 +298,7 @@ export function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveDa
 
           {renderCharts ? (
             <GraphHost>
-              <ApyGraphContainer
-                graphKey="supply"
-                reserve={reserve}
-                currentMarketData={currentMarketData}
-              />
+              <ApyGraphContainer graphKey="supply" reserve={reserve} />
             </GraphHost>
           ) : (
             <ApyChartPanel
@@ -474,11 +470,7 @@ export function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveDa
 
           {renderCharts && showBorrowApyChart ? (
             <GraphHost>
-              <ApyGraphContainer
-                graphKey="borrow"
-                reserve={reserve}
-                currentMarketData={currentMarketData}
-              />
+              <ApyGraphContainer graphKey="borrow" reserve={reserve} />
             </GraphHost>
           ) : !renderCharts ? (
             <ApyChartPanel

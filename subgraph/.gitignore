@@ -1,6 +1,0 @@
-_upstream-protocol-subgraphs/
-generated/
-build/
-node_modules/
-.env
-*.env.local

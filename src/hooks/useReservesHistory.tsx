@@ -15,12 +15,7 @@ export const reserveRateTimeRangeOptions = [
 ];
 export type ReserveRateTimeRange = (typeof reserveRateTimeRangeOptions)[number];
 
-type RatesHistoryParams = {
-  from: number;
-  resolutionInHours: number;
-};
-
-type APIResponse = {
+type RestAPIResponse = {
   liquidityRate_avg: number;
   variableBorrowRate_avg: number;
   stableBorrowRate_avg: number;
@@ -28,51 +23,28 @@ type APIResponse = {
   x: { year: number; month: number; date: number; hours: number };
 };
 
-const fetchStats = async (
-  address: string,
-  timeRange: ReserveRateTimeRange,
-  endpointURL: string
-) => {
-  const { from, resolutionInHours } = resolutionForTimeRange(timeRange);
-  try {
-    const url = `${endpointURL}?reserveId=${address}&from=${from}&resolutionInHours=${resolutionInHours}`;
-    const result = await fetch(url);
-    const json = await result.json();
-    return json;
-  } catch (e) {
-    return [];
-  }
+type SubgraphHistoryItem = {
+  timestamp: number;
+  liquidityRate: string;
+  variableBorrowRate: string;
+  stableBorrowRate: string;
+  utilizationRate: string;
 };
 
-// TODO: there is possibly a bug here, as Polygon and Avalanche v2 data is coming through empty and erroring in our hook
-// The same asset without the 'from' field comes through just fine.
-const resolutionForTimeRange = (timeRange: ReserveRateTimeRange): RatesHistoryParams => {
-  // Return today as a fallback
-  let calculatedDate = dayjs().unix();
+const RAY = 1e27;
+
+const resolutionForTimeRange = (
+  timeRange: ReserveRateTimeRange
+): { from: number; resolutionInHours: number } => {
   switch (timeRange) {
     case ESupportedTimeRanges.OneMonth:
-      calculatedDate = dayjs().subtract(30, 'day').unix();
-      return {
-        from: calculatedDate,
-        resolutionInHours: 6,
-      };
+      return { from: dayjs().subtract(30, 'day').unix(), resolutionInHours: 6 };
     case ESupportedTimeRanges.SixMonths:
-      calculatedDate = dayjs().subtract(6, 'month').unix();
-      return {
-        from: calculatedDate,
-        resolutionInHours: 24,
-      };
+      return { from: dayjs().subtract(6, 'month').unix(), resolutionInHours: 24 };
     case ESupportedTimeRanges.OneYear:
-      calculatedDate = dayjs().subtract(1, 'year').unix();
-      return {
-        from: calculatedDate,
-        resolutionInHours: 24,
-      };
+      return { from: dayjs().subtract(1, 'year').unix(), resolutionInHours: 24 };
     default:
-      return {
-        from: calculatedDate,
-        resolutionInHours: 6,
-      };
+      return { from: dayjs().unix(), resolutionInHours: 6 };
   }
 };
 
@@ -97,49 +69,122 @@ export const BROKEN_ASSETS = [
   '0x956f47f50a910163d8bf957cf5846d573e7f87ca0xb53c1a33016b2dc2ff3653530bff1848a515c8c5',
 ];
 
-// TODO: api need to be altered to expect chainId underlying asset and poolConfig
+const fetchFromRest = async (
+  reserveAddress: string,
+  timeRange: ReserveRateTimeRange,
+  endpointURL: string
+): Promise<FormattedReserveHistoryItem[]> => {
+  const { from, resolutionInHours } = resolutionForTimeRange(timeRange);
+  const url = `${endpointURL}?reserveId=${reserveAddress}&from=${from}&resolutionInHours=${resolutionInHours}`;
+  const result = await fetch(url);
+  const json: RestAPIResponse[] = await result.json();
+  return json.map((d) => ({
+    date: new Date(d.x.year, d.x.month, d.x.date, d.x.hours).getTime(),
+    liquidityRate: d.liquidityRate_avg,
+    variableBorrowRate: d.variableBorrowRate_avg,
+    utilizationRate: d.utilizationRate_avg,
+    stableBorrowRate: d.stableBorrowRate_avg,
+  }));
+};
+
+const fetchFromSubgraph = async (
+  subgraphUrl: string,
+  underlyingAsset: string,
+  addressesProvider: string,
+  timeRange: ReserveRateTimeRange
+): Promise<FormattedReserveHistoryItem[]> => {
+  const { from } = resolutionForTimeRange(timeRange);
+  const reserveId = `${underlyingAsset.toLowerCase()}${addressesProvider.toLowerCase()}`;
+  const query = `
+    query($r: String!, $from: Int!) {
+      reserveParamsHistoryItems(
+        first: 1000
+        where: { reserve: $r, timestamp_gte: $from }
+        orderBy: timestamp
+        orderDirection: asc
+      ) {
+        timestamp
+        liquidityRate
+        variableBorrowRate
+        stableBorrowRate
+        utilizationRate
+      }
+    }`;
+  const res = await fetch(subgraphUrl, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ query, variables: { r: reserveId, from } }),
+  });
+  if (!res.ok) throw new Error(`subgraph HTTP ${res.status}`);
+  const json = await res.json();
+  if (json.errors) throw new Error(`subgraph errors: ${JSON.stringify(json.errors)}`);
+  const items: SubgraphHistoryItem[] = json.data?.reserveParamsHistoryItems ?? [];
+  return items.map((it) => ({
+    date: Number(it.timestamp) * 1000,
+    liquidityRate: Number(it.liquidityRate) / RAY,
+    variableBorrowRate: Number(it.variableBorrowRate) / RAY,
+    stableBorrowRate: Number(it.stableBorrowRate) / RAY,
+    utilizationRate: Number(it.utilizationRate),
+  }));
+};
+
 export function useReserveRatesHistory(reserveAddress: string, timeRange: ReserveRateTimeRange) {
-  const currentNetworkConfig = useRootStore((store) => store.currentNetworkConfig);
+  const [currentNetworkConfig, currentMarketData] = useRootStore((store) => [
+    store.currentNetworkConfig,
+    store.currentMarketData,
+  ]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [data, setData] = useState<FormattedReserveHistoryItem[]>([]);
 
   const ratesHistoryApiUrl = currentNetworkConfig?.ratesHistoryApiUrl;
+  const subgraphUrl = currentMarketData?.subgraphUrl;
+  const addressesProvider = currentMarketData?.addresses.LENDING_POOL_ADDRESS_PROVIDER;
 
   const refetchData = useCallback<() => () => void>(() => {
-    // reset
     setLoading(true);
     setError(false);
     setData([]);
 
-    if (reserveAddress && ratesHistoryApiUrl && !BROKEN_ASSETS.includes(reserveAddress)) {
-      const cancelable = makeCancelable(fetchStats(reserveAddress, timeRange, ratesHistoryApiUrl));
-
-      cancelable.promise
-        .then((data: APIResponse[]) => {
-          setData(
-            data.map((d) => ({
-              date: new Date(d.x.year, d.x.month, d.x.date, d.x.hours).getTime(),
-              liquidityRate: d.liquidityRate_avg,
-              variableBorrowRate: d.variableBorrowRate_avg,
-              utilizationRate: d.utilizationRate_avg,
-              stableBorrowRate: d.stableBorrowRate_avg,
-            }))
-          );
-          setLoading(false);
-        })
-        .catch((e) => {
-          console.error('useReservesHistory(): Failed to fetch historical reserve data.', e);
-          setError(true);
-          setLoading(false);
-        });
-
-      return cancelable.cancel;
+    if (!reserveAddress || BROKEN_ASSETS.includes(reserveAddress)) {
+      setLoading(false);
+      return () => null;
     }
 
-    setLoading(false);
-    return () => null;
-  }, [reserveAddress, timeRange, ratesHistoryApiUrl]);
+    let promise: Promise<FormattedReserveHistoryItem[]> | null = null;
+
+    if (subgraphUrl && addressesProvider) {
+      promise = fetchFromSubgraph(subgraphUrl, reserveAddress, addressesProvider, timeRange);
+    } else if (ratesHistoryApiUrl) {
+      // Legacy REST API expects v3 id format: underlying + addressesProvider + chainId
+      const restId =
+        currentMarketData?.v3 && addressesProvider
+          ? `${reserveAddress}${addressesProvider}${currentMarketData.chainId}`
+          : addressesProvider
+            ? `${reserveAddress}${addressesProvider}`
+            : reserveAddress;
+      promise = fetchFromRest(restId, timeRange, ratesHistoryApiUrl);
+    }
+
+    if (!promise) {
+      setLoading(false);
+      return () => null;
+    }
+
+    const cancelable = makeCancelable(promise);
+    cancelable.promise
+      .then((rows) => {
+        setData(rows);
+        setLoading(false);
+      })
+      .catch((e) => {
+        console.error('useReservesHistory(): Failed to fetch historical reserve data.', e);
+        setError(true);
+        setLoading(false);
+      });
+
+    return cancelable.cancel;
+  }, [reserveAddress, timeRange, ratesHistoryApiUrl, subgraphUrl, addressesProvider, currentMarketData?.v3, currentMarketData?.chainId]);
 
   useEffect(() => {
     const cancel = refetchData();
