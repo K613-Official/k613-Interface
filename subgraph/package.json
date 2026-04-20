@@ -1,8 +1,0 @@
-{
-  "name": "k613-subgraph-config",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "verify": "node ./scripts/verify-subgraph-prereqs.mjs"
-  }
-}

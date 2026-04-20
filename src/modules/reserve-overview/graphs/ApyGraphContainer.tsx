@@ -4,7 +4,6 @@ import { ParentSize } from '@visx/responsive';
 import { JSX, useState } from 'react';
 import type { ComputedReserveData } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { ReserveRateTimeRange, useReserveRatesHistory } from 'src/hooks/useReservesHistory';
-import { MarketDataType } from 'src/utils/marketsAndNetworksConfig';
 
 import { ESupportedTimeRanges } from '../TimeRangeSelector';
 import { ApyGraph, PlaceholderChart } from './ApyGraph';
@@ -20,7 +19,6 @@ type ApyGraphContainerKey = 'supply' | 'borrow';
 type ApyGraphContainerProps = {
   graphKey: ApyGraphContainerKey;
   reserve: ComputedReserveData;
-  currentMarketData: MarketDataType;
 };
 
 /**
@@ -33,7 +31,6 @@ type ApyGraphContainerProps = {
 export const ApyGraphContainer = ({
   graphKey,
   reserve,
-  currentMarketData,
 }: ApyGraphContainerProps): JSX.Element => {
   const [selectedTimeRange, setSelectedTimeRange] = useState<ReserveRateTimeRange>(
     ESupportedTimeRanges.OneMonth
@@ -41,16 +38,8 @@ export const ApyGraphContainer = ({
 
   const CHART_HEIGHT = 155;
   const CHART_HEIGHT_LOADING_FIX = 3;
-  let reserveAddress = '';
-  if (reserve) {
-    if (currentMarketData.v3) {
-      reserveAddress = `${reserve.underlyingAsset}${currentMarketData.addresses.LENDING_POOL_ADDRESS_PROVIDER}${currentMarketData.chainId}`;
-    } else {
-      reserveAddress = `${reserve.underlyingAsset}${currentMarketData.addresses.LENDING_POOL_ADDRESS_PROVIDER}`;
-    }
-  }
   const { data, loading, error, refetch } = useReserveRatesHistory(
-    reserveAddress,
+    reserve?.underlyingAsset ?? '',
     selectedTimeRange
   );
 
