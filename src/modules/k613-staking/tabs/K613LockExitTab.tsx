@@ -108,7 +108,7 @@ export function K613LockExitTab() {
           <StatCard>
             <StatInner>
               <StatLabel>Locked</StatLabel>
-              <StatValue>{formatted.stakedXk613} xK613</StatValue>
+              <StatValue>{formatted.stakedPosition} xK613</StatValue>
             </StatInner>
           </StatCard>
         </StatsRow>

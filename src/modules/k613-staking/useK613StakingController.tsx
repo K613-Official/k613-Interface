@@ -61,7 +61,6 @@ export function useK613StakingController() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState<string | null>(null);
-  const [pendingRedeemAmount, setPendingRedeemAmount] = useState<bigint | null>(null);
   const [infoDialog, setInfoDialog] = useState<K613InfoDialogKind>(null);
   const [unlockCountdownTick, setUnlockCountdownTick] = useState(0);
 
@@ -148,6 +147,8 @@ export function useK613StakingController() {
   );
 
   const availableToUnstake = stakedAmount > queuedTotal ? stakedAmount - queuedTotal : BigInt(0);
+  const orphanXk613 = walletXk613 > stakedAmount ? walletXk613 - stakedAmount : BigInt(0);
+  const claimableTotal = pendingRewardsAmount + orphanXk613;
   const hasStakingActivity = stakedAmount > 0n || walletXk613 > 0n || queuedTotal > 0n;
 
   const displayApy =
@@ -176,6 +177,8 @@ export function useK613StakingController() {
       stakedXk613: formatTokenAmount(walletXk613),
       stakedPosition: formatTokenAmount(stakedAmount),
       pendingRewards: formatTokenAmount(pendingRewardsAmount),
+      claimableTotal: formatTokenAmount(claimableTotal),
+      orphanXk613: formatTokenAmount(orphanXk613),
       exitSlots: `${exitQueue.length} / ${maxExitSlots}`,
       lockPeriodShort: formatStakeLockPeriod(lockDurationSeconds),
       penaltyPercent,
@@ -198,6 +201,8 @@ export function useK613StakingController() {
       totalPoolDeposits,
       poolPendingRewards,
       protocolTVL,
+      claimableTotal,
+      orphanXk613,
     ]
   );
 
@@ -396,46 +401,11 @@ export function useK613StakingController() {
     xk613Allowance.refetch();
   }, [rewardsData, refetch, xk613Balance, k613Balance, xk613Allowance]);
 
-  const handleRetryRedeem = useCallback(async () => {
-    if (pendingRedeemAmount === null || pendingRedeemAmount <= 0n) return;
-    setError(null);
-    setSuccessMessage(null);
-    setActionPending('claimRewards:redeem');
-    try {
-      const currentAllowance = BigInt((xk613Allowance.data as bigint | undefined) ?? 0);
-      if (currentAllowance < pendingRedeemAmount && xk613Address && stakingAddress) {
-        await approve(xk613Address, stakingAddress as `0x${string}`, MAX_UINT256);
-        await xk613Allowance.refetch();
-      }
-      await redeemRewards(pendingRedeemAmount);
-      const redeemed = pendingRedeemAmount;
-      setPendingRedeemAmount(null);
-      refetchAllRewardsState();
-      setSuccessMessage(`Claimed ${formatTokenAmount(redeemed)} K613.`);
-    } catch (e) {
-      setError(
-        e instanceof Error
-          ? `Redeem failed: ${e.message}. xK613 is in your wallet — retry to swap for K613.`
-          : 'Redeem failed'
-      );
-    } finally {
-      setActionPending(null);
-    }
-  }, [
-    pendingRedeemAmount,
-    xk613Allowance,
-    xk613Address,
-    stakingAddress,
-    approve,
-    redeemRewards,
-    refetchAllRewardsState,
-  ]);
-
   const handleClaimRewards = useCallback(async () => {
     setError(null);
     setSuccessMessage(null);
-    if (pendingRewardsAmount <= 0n) {
-      setError('No rewards to claim');
+    if (claimableTotal <= 0n) {
+      setError('Nothing to claim');
       return;
     }
     if (!stakingAddress || !xk613Address) {
@@ -443,41 +413,33 @@ export function useK613StakingController() {
       return;
     }
 
-    const amount = pendingRewardsAmount;
+    const amountToRedeem = claimableTotal;
     setActionPending('claimRewards:approve');
     try {
       const currentAllowance = BigInt((xk613Allowance.data as bigint | undefined) ?? 0);
-      if (currentAllowance < amount) {
+      if (currentAllowance < amountToRedeem) {
         await approve(xk613Address, stakingAddress as `0x${string}`, MAX_UINT256);
         await xk613Allowance.refetch();
       }
 
-      setActionPending('claimRewards:claim');
-      await claimRewards();
-
-      setActionPending('claimRewards:redeem');
-      try {
-        await redeemRewards(amount);
-      } catch (redeemErr) {
-        setPendingRedeemAmount(amount);
-        refetchAllRewardsState();
-        setError(
-          redeemErr instanceof Error
-            ? `Rewards received as xK613. Retry to redeem for K613 (${redeemErr.message}).`
-            : 'Rewards received as xK613. Retry to redeem for K613.'
-        );
-        return;
+      if (pendingRewardsAmount > 0n) {
+        setActionPending('claimRewards:claim');
+        await claimRewards();
       }
 
-      setPendingRedeemAmount(null);
+      setActionPending('claimRewards:redeem');
+      await redeemRewards(amountToRedeem);
+
       refetchAllRewardsState();
-      setSuccessMessage(`Claimed ${formatTokenAmount(amount)} K613.`);
+      setSuccessMessage(`Claimed ${formatTokenAmount(amountToRedeem)} K613.`);
     } catch (e) {
+      refetchAllRewardsState();
       setError(e instanceof Error ? e.message : 'Claim failed');
     } finally {
       setActionPending(null);
     }
   }, [
+    claimableTotal,
     pendingRewardsAmount,
     stakingAddress,
     xk613Address,
@@ -699,8 +661,8 @@ export function useK613StakingController() {
     isApprovePending,
     isClaimPending: isStakingActionPending || isClaimPending,
     handleClaimRewards,
-    handleRetryRedeem,
-    pendingRedeemAmount,
+    claimableTotal,
+    orphanXk613,
     handleLock,
     handleInitiateExit,
     handleExit,
