@@ -17,6 +17,7 @@ import InfoCard from 'src/components/InfoCard';
 import Layout from 'src/components/Layout';
 import MaxWidthContainer from 'src/components/MaxWidthContainer';
 import { ModalType } from 'src/components/Modals/types';
+import { FormattedNumber } from 'src/components/primitives/FormattedNumber';
 import { useDevice } from 'src/hooks';
 import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
@@ -57,6 +58,10 @@ export default function DashboardPage() {
           Number(user?.totalCollateralMarketReferenceCurrency || '1')
         ).toString();
 
+  const showUserStats = Boolean(currentAccount && user);
+  const netApyValue = user?.netAPY;
+  const netApyFinite = typeof netApyValue === 'number' && Number.isFinite(netApyValue);
+
   return (
     <Layout>
       <MaxWidthContainer>
@@ -76,16 +81,32 @@ export default function DashboardPage() {
               <Typography variant="body2" color="text.secondary">
                 Net worth
               </Typography>
-              <Typography variant="h6">$ 0</Typography>
+              {showUserStats && user ? (
+                <FormattedNumber value={user.netWorthUSD} variant="h6" symbol="USD" compact />
+              ) : (
+                <Typography variant="h6" color="text.secondary">
+                  –
+                </Typography>
+              )}
             </StatBlock>
             <HorizontalDivider />
             <StatBlock>
               <Typography variant="body2" color="text.secondary">
                 Net APY
               </Typography>
-              <Typography variant="h6" color="text.secondary">
-                –
-              </Typography>
+              {showUserStats && user && netApyFinite && typeof netApyValue === 'number' ? (
+                <FormattedNumber
+                  value={netApyValue}
+                  variant="h6"
+                  percent
+                  visibleDecimals={2}
+                  color={netApyValue < 0 ? 'error' : 'text.primary'}
+                />
+              ) : (
+                <Typography variant="h6" color="text.secondary">
+                  –
+                </Typography>
+              )}
             </StatBlock>
             <HorizontalDivider />
             <StatBlock>
