@@ -7,7 +7,9 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   CircularProgress,
+  FormControlLabel,
   IconButton,
   Menu,
   MenuItem,
@@ -27,6 +29,7 @@ import { BigNumber } from 'bignumber.js';
 import { useEffect, useMemo, useState } from 'react';
 import { ROUTES } from 'src/components/primitives/Link';
 import { TokenIcon } from 'src/components/primitives/TokenIcon';
+import { toggleLocalStorageClick } from 'src/helpers/toggle-local-storage-click';
 import {
   ComputedReserveData,
   useAppDataContext,
@@ -77,6 +80,8 @@ type BorrowRow = {
 
 const ROWS_PER_PAGE = 10;
 
+const SHOW_SUPPLY_ZERO_BALANCE_KEY = 'showSupplyZeroAssets';
+
 export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
   const isSupply = type === 'supply';
   const { currentAccount } = useWeb3Context();
@@ -106,6 +111,9 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
   const [menuRow, setMenuRow] = useState<SupplyRow | null>(null);
   const [isAlertShown, setIsAlertShown] = useState(true);
   const [page, setPage] = useState(0);
+  const [showZeroBalanceSupplyAssets, setShowZeroBalanceSupplyAssets] = useState(
+    () => typeof window !== 'undefined' && localStorage.getItem(SHOW_SUPPLY_ZERO_BALANCE_KEY) === 'true'
+  );
 
   const dataLoading = loadingReserves || loadingWallet;
 
@@ -225,7 +233,11 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
       return walletBalances[wrappedTokenConfig.tokenIn.underlyingAsset]?.amount !== '0';
     });
 
-    const list = filteredSupplyReserves.length >= 1 ? filteredSupplyReserves : sortedSupplyReserves;
+    const list = showZeroBalanceSupplyAssets
+      ? sortedSupplyReserves
+      : filteredSupplyReserves.length >= 1
+        ? filteredSupplyReserves
+        : sortedSupplyReserves;
 
     return list.map((item) => {
       const wb = item.walletBalance ?? '0';
@@ -262,6 +274,7 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
     baseAssetSymbol,
     wrappedTokenReserves,
     marketReferencePriceInUsd,
+    showZeroBalanceSupplyAssets,
   ]);
 
   const borrowRows: BorrowRow[] = useMemo(() => {
@@ -393,17 +406,39 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
 
   return (
     <Paper isOpen={isOpen}>
-      <Stack direction="row" justifyContent="space-between" mb={3}>
-        <Typography variant="h6">{isSupply ? 'Assets to supply' : 'Assets to borrow'}</Typography>
+      <Stack spacing={isSupply ? 1 : 0} mb={3}>
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Typography variant="h6">{isSupply ? 'Assets to supply' : 'Assets to borrow'}</Typography>
 
-        <Stack direction="row" spacing={2} alignItems="center">
-          <Select size="small" defaultValue="all">
-            <MenuItem value="all">All categories</MenuItem>
-          </Select>
-          <Button variant="text" color="secondary" onClick={() => setIsOpen(!isOpen)}>
-            {isOpen ? 'Hide –' : 'Show +'}
-          </Button>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Select size="small" defaultValue="all">
+              <MenuItem value="all">All categories</MenuItem>
+            </Select>
+            <Button variant="text" color="secondary" onClick={() => setIsOpen(!isOpen)}>
+              {isOpen ? 'Hide –' : 'Show +'}
+            </Button>
+          </Stack>
         </Stack>
+
+        {isSupply && (
+          <FormControlLabel
+            sx={{ m: 0, alignSelf: 'flex-start' }}
+            control={<Checkbox size="small" sx={{ py: 0.5 }} />}
+            checked={showZeroBalanceSupplyAssets}
+            onChange={() =>
+              toggleLocalStorageClick(
+                showZeroBalanceSupplyAssets,
+                setShowZeroBalanceSupplyAssets,
+                SHOW_SUPPLY_ZERO_BALANCE_KEY
+              )
+            }
+            label={
+              <Typography variant="body2" color="text.secondary">
+                Show assets with 0 balance
+              </Typography>
+            }
+          />
+        )}
       </Stack>
 
       {showSupplyEmptyAlert && (

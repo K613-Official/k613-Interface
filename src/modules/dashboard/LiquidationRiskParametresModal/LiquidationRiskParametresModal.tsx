@@ -1,12 +1,13 @@
+import { XIcon } from '@heroicons/react/outline';
 import { Trans } from '@lingui/macro';
-import { AlertColor, Typography } from '@mui/material';
+import { AlertColor, DialogContent, IconButton, SvgIcon, Typography } from '@mui/material';
+import { HealthFactorNumber } from 'src/components/HealthFactorNumber';
+import { FormattedNumber } from 'src/components/primitives/FormattedNumber';
+import { Link } from 'src/components/primitives/Link';
 import { useRootStore } from 'src/store/root';
 import { GENERAL } from 'src/utils/mixPanelEvents';
 
-import { HealthFactorNumber } from '../../../components/HealthFactorNumber';
-import { BasicModal } from '../../../components/primitives/BasicModal';
-import { FormattedNumber } from '../../../components/primitives/FormattedNumber';
-import { Link } from '../../../components/primitives/Link';
+import { DialogTitleStyled, StyledDialog } from '../../k613-staking/k613Staking.styles';
 import { HFContent } from './components/HFContent';
 import { InfoWrapper } from './components/InfoWrapper';
 import { LTVContent } from './components/LTVContent';
@@ -47,86 +48,102 @@ export const LiquidationRiskParametresInfoModal = ({
     ltvColor = 'warning';
   }
 
+  const handleClose = () => setOpen(false);
+
   return (
-    <BasicModal open={open} setOpen={setOpen}>
-      <Typography variant="h2" mb={6}>
+    <StyledDialog open={open} onClose={handleClose} fullWidth>
+      <DialogTitleStyled
+        sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+      >
         <Trans>Liquidation risk parameters</Trans>
-      </Typography>
-      <Typography mb={6}>
-        <Trans>
-          Your health factor and loan to value determine the assurance of your collateral. To avoid
-          liquidations you can supply more collateral or repay borrow positions.
-        </Trans>{' '}
-        <Link
-          onClick={() => {
-            trackEvent(GENERAL.EXTERNAL_LINK, {
-              Link: 'HF Risk Link',
-            });
-          }}
-          href="https://docs.aave.com/faq/"
-          sx={{ textDecoration: 'underline' }}
-          color="text.primary"
-          variant="body2"
+        <IconButton
+          size="small"
+          onClick={handleClose}
+          sx={{ color: 'rgba(255,255,255,0.7)', padding: 0.5, ml: 1 }}
         >
-          <Trans>Learn more</Trans>
-        </Link>
-      </Typography>
+          <SvgIcon sx={{ fontSize: '20px' }}>
+            <XIcon />
+          </SvgIcon>
+        </IconButton>
+      </DialogTitleStyled>
 
-      <InfoWrapper
-        topTitle={<Trans>Health factor</Trans>}
-        topDescription={
+      <DialogContent sx={{ pt: 2, pb: 3 }}>
+        <Typography variant="body2" color="text.secondary" mb={3}>
           <Trans>
-            Safety of your deposited collateral against the borrowed assets and its underlying
-            value.
-          </Trans>
-        }
-        topValue={
-          <HealthFactorNumber
-            value={healthFactor}
-            variant="caption"
-            sx={{ color: 'common.white' }}
-          />
-        }
-        bottomText={
-          <Trans>
-            If the health factor goes below 1, the liquidation of your collateral might be
-            triggered.
-          </Trans>
-        }
-        color={healthFactorColor}
-      >
-        <HFContent healthFactor={healthFactor} />
-      </InfoWrapper>
+            Your health factor and loan to value determine the assurance of your collateral. To
+            avoid liquidations you can supply more collateral or repay borrow positions.
+          </Trans>{' '}
+          <Link
+            onClick={() => {
+              trackEvent(GENERAL.EXTERNAL_LINK, {
+                Link: 'HF Risk Link',
+              });
+            }}
+            href="https://docs.aave.com/faq/"
+            sx={{ textDecoration: 'underline' }}
+            color="text.primary"
+            variant="body2"
+          >
+            <Trans>Learn more</Trans>
+          </Link>
+        </Typography>
 
-      <InfoWrapper
-        topTitle={<Trans>Current LTV</Trans>}
-        topDescription={
-          <Trans>Your current loan to value based on your collateral supplied.</Trans>
-        }
-        topValue={
-          <FormattedNumber
-            value={loanToValue}
-            percent
-            variant="caption"
-            color="common.white"
-            symbolsColor="common.white"
-          />
-        }
-        bottomText={
-          <Trans>
-            If your loan to value goes above the liquidation threshold your collateral supplied may
-            be liquidated.
-          </Trans>
-        }
-        color={ltvColor}
-      >
-        <LTVContent
-          loanToValue={loanToValue}
-          currentLoanToValue={currentLoanToValue}
-          currentLiquidationThreshold={currentLiquidationThreshold}
+        <InfoWrapper
+          topTitle={<Trans>Health factor</Trans>}
+          topDescription={
+            <Trans>
+              Safety of your deposited collateral against the borrowed assets and its underlying
+              value.
+            </Trans>
+          }
+          topValue={
+            <HealthFactorNumber
+              value={healthFactor}
+              variant="caption"
+              sx={{ color: 'common.white' }}
+            />
+          }
+          bottomText={
+            <Trans>
+              If the health factor goes below 1, the liquidation of your collateral might be
+              triggered.
+            </Trans>
+          }
+          color={healthFactorColor}
+        >
+          <HFContent healthFactor={healthFactor} />
+        </InfoWrapper>
+
+        <InfoWrapper
+          topTitle={<Trans>Current LTV</Trans>}
+          topDescription={
+            <Trans>Your current loan to value based on your collateral supplied.</Trans>
+          }
+          topValue={
+            <FormattedNumber
+              value={loanToValue}
+              percent
+              variant="caption"
+              color="common.white"
+              symbolsColor="common.white"
+            />
+          }
+          bottomText={
+            <Trans>
+              If your loan to value goes above the liquidation threshold your collateral supplied
+              may be liquidated.
+            </Trans>
+          }
           color={ltvColor}
-        />
-      </InfoWrapper>
-    </BasicModal>
+        >
+          <LTVContent
+            loanToValue={loanToValue}
+            currentLoanToValue={currentLoanToValue}
+            currentLiquidationThreshold={currentLiquidationThreshold}
+            color={ltvColor}
+          />
+        </InfoWrapper>
+      </DialogContent>
+    </StyledDialog>
   );
 };

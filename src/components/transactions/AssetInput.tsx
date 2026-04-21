@@ -201,7 +201,7 @@ export const AssetInput = <T extends Asset = Asset>({
                 symbol={asset.iconSymbol || asset.symbol}
                 sx={{ mr: 2, ml: 4 }}
               />
-              <Typography variant="h3" sx={{ lineHeight: '28px' }} data-cy={'inputAsset'}>
+              <Typography variant="h6" sx={{ lineHeight: '28px' }} data-cy={'inputAsset'}>
                 {symbol}
               </Typography>
             </Box>
