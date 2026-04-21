@@ -1,4 +1,4 @@
-import { ARBITRUM_SEPOLIA_REWARDS_DISTRIBUTION, ARBITRUM_SEPOLIA_STAKING } from 'src/const/env';
+import { ARBITRUM_SEPOLIA_REWARDS_DISTRIBUTION, ARBITRUM_SEPOLIA_STAKING } from 'src/const/testnet';
 
 export const addresses_testnet = {
   staking: '',
