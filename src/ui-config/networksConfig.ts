@@ -13,6 +13,8 @@ import {
   linea,
   mainnet,
   metis,
+  monad,
+  monadTestnet,
   optimism,
   optimismSepolia,
   polygon,
@@ -22,6 +24,13 @@ import {
   sonic,
   zksync,
 } from 'wagmi/chains';
+
+/**
+ * chainId сети Monad. В `@aave/contract-helpers` его пока нет, поэтому
+ * храним как локальную константу.
+ */
+export const MONAD_CHAIN_ID = 143;
+export const MONAD_TESTNET_CHAIN_ID = 10143;
 
 export type ExplorerLinkBuilderProps = {
   tx?: string;
@@ -178,6 +187,17 @@ export const testnetConfig: Record<string, BaseNetworkConfig> = {
     isTestnet: true,
     networkLogoPath: '/icons/networks/scroll.svg',
     wagmiChain: scrollSepolia,
+  },
+  [MONAD_TESTNET_CHAIN_ID]: {
+    name: 'Monad Testnet',
+    publicJsonRPCUrl: [...monadTestnet.rpcUrls.default.http],
+    baseAssetSymbol: monadTestnet.nativeCurrency.symbol,
+    wrappedBaseAssetSymbol: `W${monadTestnet.nativeCurrency.symbol}`,
+    baseAssetDecimals: monadTestnet.nativeCurrency.decimals,
+    explorerLink: monadTestnet.blockExplorers.default.url,
+    isTestnet: true,
+    networkLogoPath: '/icons/networks/monad.svg',
+    wagmiChain: monadTestnet,
   },
 };
 
@@ -437,6 +457,17 @@ export const prodNetworkConfig: Record<string, BaseNetworkConfig> = {
       url: 'https://gateway.soniclabs.com',
     },
     wagmiChain: sonic,
+  },
+  [MONAD_CHAIN_ID]: {
+    name: 'Monad',
+    publicJsonRPCUrl: [...monad.rpcUrls.default.http],
+    publicJsonRPCWSUrl: monad.rpcUrls.default.webSocket?.[0],
+    baseAssetSymbol: monad.nativeCurrency.symbol,
+    wrappedBaseAssetSymbol: `W${monad.nativeCurrency.symbol}`,
+    baseAssetDecimals: monad.nativeCurrency.decimals,
+    explorerLink: monad.blockExplorers.default.url,
+    networkLogoPath: '/icons/networks/monad.svg',
+    wagmiChain: monad,
   },
 };
 
