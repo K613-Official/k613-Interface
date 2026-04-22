@@ -1,4 +1,3 @@
-import { normalize, UserIncentiveData } from '@aave/math-utils';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import {
   Box,
@@ -11,6 +10,9 @@ import {
   Typography,
 } from '@mui/material';
 import { useMemo, useState } from 'react';
+import { formatUnits } from 'ethers/lib/utils';
+import { useOnChainClaimable } from 'src/hooks/pool/useOnChainClaimable';
+import { useRootStore } from 'src/store/root';
 import AssetsTable from 'src/components/AssetsTable';
 import { ConnectWalletPaper } from 'src/components/ConnectWalletPaper';
 import { HealthFactorNumber } from 'src/components/HealthFactorNumber';
@@ -61,21 +63,19 @@ export default function DashboardPage() {
 
   const showUserStats = Boolean(currentAccount && user);
 
+  const currentMarketData = useRootStore((s) => s.currentMarketData);
+  const { data: onChainRewards = [] } = useOnChainClaimable(currentMarketData);
   const { claimableAmount, claimableSymbol } = useMemo(() => {
-    if (!user) return { claimableAmount: 0, claimableSymbol: '' };
     let amount = 0;
     let symbol = '';
-    Object.keys(user.calculatedUserIncentives).forEach((rewardTokenAddress) => {
-      const incentive: UserIncentiveData = user.calculatedUserIncentives[rewardTokenAddress];
-      const rewardBalance = Number(
-        normalize(incentive.claimableRewards, incentive.rewardTokenDecimals)
-      );
-      if (rewardBalance <= 0) return;
-      amount += rewardBalance;
-      if (!symbol) symbol = incentive.rewardTokenSymbol;
+    onChainRewards.forEach((r) => {
+      const v = Number(formatUnits(r.amount, r.decimals));
+      if (v <= 0) return;
+      amount += v;
+      if (!symbol) symbol = r.symbol;
     });
     return { claimableAmount: amount, claimableSymbol: symbol };
-  }, [user]);
+  }, [onChainRewards]);
   const netApyValue = user?.netAPY;
   const netApyFinite = typeof netApyValue === 'number' && Number.isFinite(netApyValue);
 
