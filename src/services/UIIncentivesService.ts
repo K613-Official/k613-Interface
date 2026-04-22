@@ -25,6 +25,7 @@ const RC_ABI = [
   'function getRewardOracle(address reward) view returns (address)',
   'function getUserAssetIndex(address user, address asset, address reward) view returns (uint256)',
   'function getUserRewards(address[] assets, address user, address reward) view returns (uint256)',
+  'function getAllUserRewards(address[] assets, address user) view returns (address[], uint256[])',
 ];
 
 const ERC20_ABI = [
@@ -127,6 +128,54 @@ export class UiIncentivesService {
     } catch {
       return [];
     }
+  }
+
+  async getOnChainClaimable(
+    marketData: MarketDataType,
+    user: string
+  ): Promise<{ reward: string; symbol: string; decimals: number; amount: BigNumber }[]> {
+    if (!user) return [];
+    const provider = this.getProvider(marketData.chainId);
+    invariant(marketData.addresses.LENDING_POOL, 'No Pool address for this market');
+    const pool = new Contract(marketData.addresses.LENDING_POOL, POOL_ABI, provider);
+    const reserves: string[] = await pool.getReservesList();
+
+    const tokens: string[] = [];
+    const rcByToken = new Map<string, string>();
+    await Promise.all(
+      reserves.map(async (underlying) => {
+        const rd = await pool.getReserveData(underlying);
+        for (const tok of [rd.aTokenAddress, rd.variableDebtTokenAddress]) {
+          if (!tok || tok === constants.AddressZero) continue;
+          const rcAddress = await new Contract(tok, TOKEN_ABI, provider)
+            .getIncentivesController()
+            .catch(() => constants.AddressZero);
+          if (!rcAddress || rcAddress === constants.AddressZero) continue;
+          tokens.push(tok);
+          rcByToken.set(tok.toLowerCase(), rcAddress);
+        }
+      })
+    );
+    if (tokens.length === 0) return [];
+
+    const rcAddress = rcByToken.get(tokens[0].toLowerCase())!;
+    const rc = new Contract(rcAddress, RC_ABI, provider);
+    const [rewardAddresses, amounts] = (await rc
+      .getAllUserRewards(tokens, user)
+      .catch(() => [[], []])) as [string[], BigNumber[]];
+
+    const metaCache = new Map<string, Promise<RewardMeta>>();
+    return Promise.all(
+      rewardAddresses.map(async (reward, i) => {
+        const meta = await this.loadRewardMeta(provider, rc, reward, metaCache);
+        return {
+          reward,
+          symbol: meta.symbol,
+          decimals: meta.decimals,
+          amount: amounts[i],
+        };
+      })
+    );
   }
 
   private async buildAssetIncentive(
