@@ -1,3 +1,4 @@
+import { normalize, UserIncentiveData } from '@aave/math-utils';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import {
   Box,
@@ -9,7 +10,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import AssetsTable from 'src/components/AssetsTable';
 import { ConnectWalletPaper } from 'src/components/ConnectWalletPaper';
 import { HealthFactorNumber } from 'src/components/HealthFactorNumber';
@@ -59,6 +60,22 @@ export default function DashboardPage() {
         ).toString();
 
   const showUserStats = Boolean(currentAccount && user);
+
+  const { claimableAmount, claimableSymbol } = useMemo(() => {
+    if (!user) return { claimableAmount: 0, claimableSymbol: '' };
+    let amount = 0;
+    let symbol = '';
+    Object.keys(user.calculatedUserIncentives).forEach((rewardTokenAddress) => {
+      const incentive: UserIncentiveData = user.calculatedUserIncentives[rewardTokenAddress];
+      const rewardBalance = Number(
+        normalize(incentive.claimableRewards, incentive.rewardTokenDecimals)
+      );
+      if (rewardBalance <= 0) return;
+      amount += rewardBalance;
+      if (!symbol) symbol = incentive.rewardTokenSymbol;
+    });
+    return { claimableAmount: amount, claimableSymbol: symbol };
+  }, [user]);
   const netApyValue = user?.netAPY;
   const netApyFinite = typeof netApyValue === 'number' && Number.isFinite(netApyValue);
 
@@ -162,10 +179,23 @@ export default function DashboardPage() {
                 Rewards
               </Typography>
               <RewardsRow>
-                <Typography variant="h6">$ 0</Typography>
+                {showUserStats ? (
+                  <FormattedNumber
+                    value={claimableAmount}
+                    variant="h6"
+                    symbol={claimableSymbol || undefined}
+                    visibleDecimals={4}
+                    compact
+                  />
+                ) : (
+                  <Typography variant="h6" color="text.secondary">
+                    –
+                  </Typography>
+                )}
                 <Button
                   variant="contained"
                   size="small"
+                  disabled={!showUserStats || claimableAmount <= 0}
                   onClick={() => openModal(ModalType.ClaimRewards, {})}
                 >
                   CLAIM
