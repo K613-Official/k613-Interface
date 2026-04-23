@@ -1,8 +1,7 @@
 import { Button, CircularProgress, Typography } from '@mui/material';
-import { BigNumber, constants, Contract } from 'ethers';
+import { BigNumber, constants } from 'ethers';
 import { formatUnits, Interface } from 'ethers/lib/utils';
 import { useMemo, useState } from 'react';
-import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { useOnChainClaimable } from 'src/hooks/pool/useOnChainClaimable';
 import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
 import { useRootStore } from 'src/store/root';
@@ -15,61 +14,42 @@ type Props = BaseModalProps & ClaimRewardsModalProps;
 const RC_IFACE = new Interface([
   'function claimAllRewards(address[] assets, address to) returns (address[], uint256[])',
 ]);
-const TOKEN_ABI = ['function getIncentivesController() view returns (address)'];
 
 export default function ClaimRewardsModal({ open, onClose }: Props) {
   const currentMarketData = useRootStore((s) => s.currentMarketData);
   const account = useRootStore((s) => s.account);
-  const { sendTx, provider } = useWeb3Context();
-  const { reserves } = useAppDataContext();
-  const { data: rewards = [] } = useOnChainClaimable(currentMarketData);
+  const { sendTx } = useWeb3Context();
+  const { data: onChain } = useOnChainClaimable(currentMarketData);
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
 
+  const rewardsList = onChain?.rewards ?? [];
   const totalByReward = useMemo(
     () =>
-      rewards
+      rewardsList
         .filter((r) => (r.amount as BigNumber)?.gt(0))
         .map((r) => ({
           symbol: r.symbol,
           human: Number(formatUnits(r.amount, r.decimals)),
         })),
-    [rewards]
+    [rewardsList]
   );
   const hasClaimable = totalByReward.length > 0;
 
   const handleClaim = async () => {
-    if (!account || !provider) return;
+    if (!account) return;
+    if (!onChain || onChain.rcAddress === constants.AddressZero || onChain.tokens.length === 0) {
+      setError('Rewards controller not resolved for this market');
+      return;
+    }
     setBusy(true);
     setError(null);
     setTxHash(null);
     try {
-      const assets: string[] = [];
-      for (const reserve of reserves) {
-        if (reserve.aTokenAddress) assets.push(reserve.aTokenAddress);
-        if (reserve.variableDebtTokenAddress) assets.push(reserve.variableDebtTokenAddress);
-      }
-
-      let rcAddress = constants.AddressZero;
-      for (const a of assets) {
-        try {
-          const got: string = await new Contract(a, TOKEN_ABI, provider).getIncentivesController();
-          if (got && got !== constants.AddressZero) {
-            rcAddress = got;
-            break;
-          }
-        } catch {
-          // skip
-        }
-      }
-      if (rcAddress === constants.AddressZero) {
-        throw new Error('RewardsController not found for this market');
-      }
-
-      const data = RC_IFACE.encodeFunctionData('claimAllRewards', [assets, account]);
-      const tx = await sendTx({ from: account, to: rcAddress, data });
+      const data = RC_IFACE.encodeFunctionData('claimAllRewards', [onChain.tokens, account]);
+      const tx = await sendTx({ from: account, to: onChain.rcAddress, data });
       setTxHash(tx.hash);
       await tx.wait();
       setBusy(false);

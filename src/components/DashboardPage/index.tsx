@@ -64,18 +64,18 @@ export default function DashboardPage() {
   const showUserStats = Boolean(currentAccount && user);
 
   const currentMarketData = useRootStore((s) => s.currentMarketData);
-  const { data: onChainRewards = [] } = useOnChainClaimable(currentMarketData);
+  const { data: onChainClaimable } = useOnChainClaimable(currentMarketData);
   const { claimableAmount, claimableSymbol } = useMemo(() => {
     let amount = 0;
     let symbol = '';
-    onChainRewards.forEach((r) => {
+    (onChainClaimable?.rewards ?? []).forEach((r) => {
       const v = Number(formatUnits(r.amount, r.decimals));
       if (v <= 0) return;
       amount += v;
       if (!symbol) symbol = r.symbol;
     });
     return { claimableAmount: amount, claimableSymbol: symbol };
-  }, [onChainRewards]);
+  }, [onChainClaimable]);
   const netApyValue = user?.netAPY;
   const netApyFinite = typeof netApyValue === 'number' && Number.isFinite(netApyValue);
 
