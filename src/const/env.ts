@@ -3,7 +3,6 @@ import { cleanEnv, str, url } from 'envalid';
 const rawEnv = {
   NODE_ENV: process.env.NEXT_PUBLIC_NODE_ENV,
   API_BASEURL: process.env.NEXT_PUBLIC_API_BASEURL,
-  SUBGRAPH_ARBITRUM_SEPOLIA_URL: process.env.NEXT_PUBLIC_SUBGRAPH_ARBITRUM_SEPOLIA_URL,
   SUBGRAPH_MONAD_URL: process.env.NEXT_PUBLIC_SUBGRAPH_MONAD_URL,
 
   MONAD_POOL_ADDRESSES_PROVIDER: process.env.NEXT_PUBLIC_MONAD_POOL_ADDRESSES_PROVIDER,
@@ -34,7 +33,6 @@ const rawEnv = {
 const env = cleanEnv(rawEnv, {
   NODE_ENV: str({ choices: ['production', 'development'], default: 'development' }),
   API_BASEURL: url({ default: '' }),
-  SUBGRAPH_ARBITRUM_SEPOLIA_URL: url({ default: '' }),
   SUBGRAPH_MONAD_URL: url({ default: '' }),
 
   MONAD_POOL_ADDRESSES_PROVIDER: str({ default: '' }),
@@ -64,7 +62,6 @@ const env = cleanEnv(rawEnv, {
 export const {
   NODE_ENV,
   API_BASEURL,
-  SUBGRAPH_ARBITRUM_SEPOLIA_URL,
   SUBGRAPH_MONAD_URL,
   MONAD_POOL_ADDRESSES_PROVIDER,
   MONAD_POOL,
