@@ -1,8 +1,9 @@
+import { waitForTransactionReceipt } from '@wagmi/core';
 import k613Artifact from 'src/abis/K613/K613.json';
 import rewardsDistributorArtifact from 'src/abis/RewardsDistributor/RewardsDistributor.json';
 import stakingArtifact from 'src/abis/Staking/Staking.json';
 import { addressesByChainId } from 'src/utils/addresses';
-import { useAccount, useReadContract, useWriteContract } from 'wagmi';
+import { useAccount, useConfig, useReadContract, useWriteContract } from 'wagmi';
 
 const STAKING_ABI = (stakingArtifact as unknown as { abi: unknown[] }).abi;
 const K613_ABI = (k613Artifact as unknown as { abi: unknown[] }).abi;
@@ -192,10 +193,17 @@ export function useK613TokenAllowance(
 export function useK613StakingActions() {
   const stakingAddress = useK613StakingAddress();
   const { writeContractAsync, isPending } = useWriteContract();
+  const config = useConfig();
+
+  const writeAndWait = async (args: Parameters<typeof writeContractAsync>[0]) => {
+    const hash = await writeContractAsync(args);
+    await waitForTransactionReceipt(config, { hash });
+    return hash;
+  };
 
   const stake = async (amount: bigint) => {
     if (!stakingAddress) throw new Error('Staking contract not configured');
-    return writeContractAsync({
+    return writeAndWait({
       address: stakingAddress as `0x${string}`,
       abi: STAKING_ABI,
       functionName: 'stake',
@@ -205,7 +213,7 @@ export function useK613StakingActions() {
 
   const initiateExit = async (amount: bigint) => {
     if (!stakingAddress) throw new Error('Staking contract not configured');
-    return writeContractAsync({
+    return writeAndWait({
       address: stakingAddress as `0x${string}`,
       abi: STAKING_ABI,
       functionName: 'initiateExit',
@@ -215,7 +223,7 @@ export function useK613StakingActions() {
 
   const exit = async (index: bigint) => {
     if (!stakingAddress) throw new Error('Staking contract not configured');
-    return writeContractAsync({
+    return writeAndWait({
       address: stakingAddress as `0x${string}`,
       abi: STAKING_ABI,
       functionName: 'exit',
@@ -225,7 +233,7 @@ export function useK613StakingActions() {
 
   const instantExit = async (index: bigint) => {
     if (!stakingAddress) throw new Error('Staking contract not configured');
-    return writeContractAsync({
+    return writeAndWait({
       address: stakingAddress as `0x${string}`,
       abi: STAKING_ABI,
       functionName: 'instantExit',
@@ -235,7 +243,7 @@ export function useK613StakingActions() {
 
   const cancelExit = async (index: bigint) => {
     if (!stakingAddress) throw new Error('Staking contract not configured');
-    return writeContractAsync({
+    return writeAndWait({
       address: stakingAddress as `0x${string}`,
       abi: STAKING_ABI,
       functionName: 'cancelExit',
@@ -245,7 +253,7 @@ export function useK613StakingActions() {
 
   const redeemRewards = async (amount: bigint) => {
     if (!stakingAddress) throw new Error('Staking contract not configured');
-    return writeContractAsync({
+    return writeAndWait({
       address: stakingAddress as `0x${string}`,
       abi: STAKING_ABI,
       functionName: 'redeemRewards',
@@ -266,14 +274,17 @@ export function useK613StakingActions() {
 
 export function useK613Approve() {
   const { writeContractAsync, isPending } = useWriteContract();
+  const config = useConfig();
 
   const approve = async (tokenAddress: `0x${string}`, spender: `0x${string}`, amount: bigint) => {
-    return writeContractAsync({
+    const hash = await writeContractAsync({
       address: tokenAddress,
       abi: K613_ABI,
       functionName: 'approve',
       args: [spender, amount],
     });
+    await waitForTransactionReceipt(config, { hash });
+    return hash;
   };
 
   return { approve, isPending };
@@ -347,10 +358,17 @@ export function useK613RewardsData(rewardsDistributorAddress: `0x${string}` | un
 
 export function useK613RewardsActions(rewardsDistributorAddress: `0x${string}` | undefined) {
   const { writeContractAsync, isPending } = useWriteContract();
+  const config = useConfig();
+
+  const writeAndWait = async (args: Parameters<typeof writeContractAsync>[0]) => {
+    const hash = await writeContractAsync(args);
+    await waitForTransactionReceipt(config, { hash });
+    return hash;
+  };
 
   const claimRewards = async () => {
     if (!rewardsDistributorAddress) throw new Error('Rewards distributor not configured');
-    return writeContractAsync({
+    return writeAndWait({
       address: rewardsDistributorAddress,
       abi: REWARDS_DISTRIBUTOR_ABI,
       functionName: 'claim',
@@ -360,7 +378,7 @@ export function useK613RewardsActions(rewardsDistributorAddress: `0x${string}` |
 
   const deposit = async (amount: bigint) => {
     if (!rewardsDistributorAddress) throw new Error('Rewards distributor not configured');
-    return writeContractAsync({
+    return writeAndWait({
       address: rewardsDistributorAddress,
       abi: REWARDS_DISTRIBUTOR_ABI,
       functionName: 'deposit',
@@ -370,7 +388,7 @@ export function useK613RewardsActions(rewardsDistributorAddress: `0x${string}` |
 
   const withdraw = async (amount: bigint) => {
     if (!rewardsDistributorAddress) throw new Error('Rewards distributor not configured');
-    return writeContractAsync({
+    return writeAndWait({
       address: rewardsDistributorAddress,
       abi: REWARDS_DISTRIBUTOR_ABI,
       functionName: 'withdraw',
