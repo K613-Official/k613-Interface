@@ -15,6 +15,8 @@ import {
   useK613TokenAllowance,
   useK613TokenBalance,
 } from 'src/hooks/useK613Staking';
+import { useRootStore } from 'src/store/root';
+import { getNetworkConfig } from 'src/utils/marketsAndNetworksConfig';
 import { formatUnits, parseUnits } from 'viem';
 import { useAccount, useSwitchChain } from 'wagmi';
 
@@ -27,7 +29,6 @@ import type {
 } from './k613Staking.types';
 
 const MAX_UINT256 = BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
-const K613_STAKING_CHAIN_ID = 421614;
 
 function formatTokenAmount(amount: bigint): string {
   const negative = amount < 0n;
@@ -47,6 +48,11 @@ function formatTokenAmount(amount: bigint): string {
 export function useK613StakingController() {
   const { address: userAddress, chainId } = useAccount();
   const { switchChainAsync, isPending: isSwitchChainPending } = useSwitchChain();
+  const stakingChainId = useRootStore((s) => s.currentMarketData.chainId) as number;
+  const stakingNetworkName = useMemo(
+    () => getNetworkConfig(stakingChainId).name,
+    [stakingChainId]
+  );
 
   const [mainTab, setMainTab] = useState<K613MainTab>('rewardPool');
   const [rewardPoolSubTab, setRewardPoolSubTab] = useState<K613RewardPoolSubTab>('claimRewards');
@@ -590,19 +596,19 @@ export function useK613StakingController() {
         </StatePaper>
       );
     }
-    if (chainId !== K613_STAKING_CHAIN_ID) {
+    if (chainId !== stakingChainId) {
       return (
         <StatePaper>
           <StateText variant="body2">
-            {`K613 staking uses Arbitrum Sepolia (chain ID ${K613_STAKING_CHAIN_ID}). Switch network to continue.`}
+            {`K613 staking uses ${stakingNetworkName} (chain ID ${stakingChainId}). Switch network to continue.`}
           </StateText>
           <CtaButton
             variant="contained"
             color="primary"
             disabled={!switchChainAsync || isSwitchChainPending}
-            onClick={() => switchChainAsync?.({ chainId: K613_STAKING_CHAIN_ID })}
+            onClick={() => switchChainAsync?.({ chainId: stakingChainId })}
           >
-            {isSwitchChainPending ? 'Switching…' : 'Switch to Arbitrum Sepolia'}
+            {isSwitchChainPending ? 'Switching…' : `Switch to ${stakingNetworkName}`}
           </CtaButton>
         </StatePaper>
       );
@@ -617,7 +623,15 @@ export function useK613StakingController() {
       );
     }
     return null;
-  }, [userAddress, chainId, stakingAddress, switchChainAsync, isSwitchChainPending]);
+  }, [
+    userAddress,
+    chainId,
+    stakingChainId,
+    stakingNetworkName,
+    stakingAddress,
+    switchChainAsync,
+    isSwitchChainPending,
+  ]);
 
   return {
     gate,

@@ -1,14 +1,15 @@
-import { addresses_arbitrum_sepolia, addresses_mainnet, addresses_testnet } from 'src/const';
+import { addresses_mainnet, addresses_testnet, NetworkAddresses } from 'src/const';
+import { MONAD_CHAIN_ID } from 'src/ui-config/networksConfig';
 
-export const addressesByChainId = (chainId: number) => {
+const ARBITRUM_SEPOLIA_CHAIN_ID = 421614;
+
+export const addressesByChainId = (chainId: number): NetworkAddresses | null => {
   switch (chainId) {
-    case 421614:
-      return addresses_arbitrum_sepolia;
-    case 56:
-      return addresses_mainnet;
-    case 97:
+    case ARBITRUM_SEPOLIA_CHAIN_ID:
       return addresses_testnet;
-    default:
+    case MONAD_CHAIN_ID:
       return addresses_mainnet;
+    default:
+      return null;
   }
 };
