@@ -275,11 +275,10 @@ export function AppHeader() {
 
         <Box sx={{ flexGrow: 1 }} />
 
-        {availableMarkets.length > 1 && (
-          <Box sx={{ display: { xs: 'none', md: 'block' }, mr: 2 }}>
-            <MarketSwitcher />
-          </Box>
-        )}
+        <Box sx={{ mr: 2, border: '2px solid red' }}>
+          DEBUG markets={availableMarkets.length}
+          {availableMarkets.length > 1 && <MarketSwitcher />}
+        </Box>
 
         <NoSsr>
           <StyledBadge
