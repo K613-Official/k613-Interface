@@ -1,9 +1,10 @@
 import { ChainId } from '@aave/contract-helpers';
 import { ReactNode } from 'react';
 import {
-  addresses,
+  addresses_mainnet,
+  addresses_testnet,
+  ARBITRUM_SEPOLIA_SUBGRAPH_URL,
   IS_PRODUCTION,
-  SUBGRAPH_ARBITRUM_SEPOLIA_URL,
   SUBGRAPH_MONAD_URL,
 } from 'src/const';
 import { MONAD_CHAIN_ID } from 'src/ui-config/networksConfig';
@@ -91,16 +92,16 @@ const testnetMarket: MarketDataType = {
   enabledFeatures: {
     incentives: true,
   },
-  subgraphUrl: SUBGRAPH_ARBITRUM_SEPOLIA_URL,
+  subgraphUrl: ARBITRUM_SEPOLIA_SUBGRAPH_URL,
   addresses: {
-    LENDING_POOL_ADDRESS_PROVIDER: addresses.POOL_ADDRESSES_PROVIDER,
-    LENDING_POOL: addresses.POOL,
-    WETH_GATEWAY: addresses.WETH_GATEWAY,
-    WALLET_BALANCE_PROVIDER: addresses.WALLET_BALANCE_PROVIDER,
-    L2_ENCODER: addresses.L2_ENCODER,
-    UI_POOL_DATA_PROVIDER: addresses.UI_POOL_DATA_PROVIDER,
-    UI_INCENTIVE_DATA_PROVIDER: addresses.UI_INCENTIVE_DATA_PROVIDER,
-    COLLECTOR: addresses.COLLECTOR,
+    LENDING_POOL_ADDRESS_PROVIDER: addresses_testnet.POOL_ADDRESSES_PROVIDER,
+    LENDING_POOL: addresses_testnet.POOL,
+    WETH_GATEWAY: addresses_testnet.WETH_GATEWAY,
+    WALLET_BALANCE_PROVIDER: addresses_testnet.WALLET_BALANCE_PROVIDER,
+    L2_ENCODER: addresses_testnet.L2_ENCODER,
+    UI_POOL_DATA_PROVIDER: addresses_testnet.UI_POOL_DATA_PROVIDER,
+    UI_INCENTIVE_DATA_PROVIDER: addresses_testnet.UI_INCENTIVE_DATA_PROVIDER,
+    COLLECTOR: addresses_testnet.COLLECTOR,
   },
 };
 
@@ -116,17 +117,20 @@ const mainnetMarket: MarketDataType = {
   },
   subgraphUrl: SUBGRAPH_MONAD_URL,
   addresses: {
-    LENDING_POOL_ADDRESS_PROVIDER: addresses.POOL_ADDRESSES_PROVIDER,
-    LENDING_POOL: addresses.POOL,
-    WETH_GATEWAY: addresses.WETH_GATEWAY,
-    WALLET_BALANCE_PROVIDER: addresses.WALLET_BALANCE_PROVIDER,
-    L2_ENCODER: addresses.L2_ENCODER,
-    UI_POOL_DATA_PROVIDER: addresses.UI_POOL_DATA_PROVIDER,
-    UI_INCENTIVE_DATA_PROVIDER: addresses.UI_INCENTIVE_DATA_PROVIDER,
-    COLLECTOR: addresses.COLLECTOR,
+    LENDING_POOL_ADDRESS_PROVIDER: addresses_mainnet.POOL_ADDRESSES_PROVIDER,
+    LENDING_POOL: addresses_mainnet.POOL,
+    WETH_GATEWAY: addresses_mainnet.WETH_GATEWAY,
+    WALLET_BALANCE_PROVIDER: addresses_mainnet.WALLET_BALANCE_PROVIDER,
+    L2_ENCODER: addresses_mainnet.L2_ENCODER,
+    UI_POOL_DATA_PROVIDER: addresses_mainnet.UI_POOL_DATA_PROVIDER,
+    UI_INCENTIVE_DATA_PROVIDER: addresses_mainnet.UI_INCENTIVE_DATA_PROVIDER,
+    COLLECTOR: addresses_mainnet.COLLECTOR,
   },
 };
 
 export const marketsData: Partial<Record<CustomMarket, MarketDataType>> = IS_PRODUCTION
   ? { [CustomMarket.proto_monad_v3]: mainnetMarket }
-  : { [CustomMarket.proto_arbitrum_sepolia_v3]: testnetMarket };
+  : {
+      [CustomMarket.proto_arbitrum_sepolia_v3]: testnetMarket,
+      [CustomMarket.proto_monad_v3]: mainnetMarket,
+    };

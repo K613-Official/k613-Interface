@@ -1,5 +1,4 @@
 import {
-  IS_PRODUCTION,
   MONAD_ACL_ADMIN,
   MONAD_ACL_MANAGER,
   MONAD_ATOKEN_IMPL,
@@ -128,12 +127,5 @@ export const addresses_mainnet: NetworkAddresses = {
   staking: MONAD_STAKING,
   rewardsDistribution: MONAD_REWARDS_DISTRIBUTION,
 };
-
-/**
- * Набор адресов для текущего окружения:
- * - NODE_ENV === 'production'  → mainnet (Monad, значения из env)
- * - NODE_ENV === 'development' → testnet (Arbitrum Sepolia, хардкод-константы)
- */
-export const addresses: NetworkAddresses = IS_PRODUCTION ? addresses_mainnet : addresses_testnet;
 
 export const addresses_arbitrum_sepolia = addresses_testnet;
