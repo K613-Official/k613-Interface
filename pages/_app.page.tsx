@@ -115,11 +115,11 @@ export default function MyApp(props: MyAppProps) {
                 <Web3ContextProvider>
                   <AppGlobalStyles>
                     <AddressBlocked>
-                      <ModalProvider />
                       <SharedDependenciesProvider>
                         <AppDataProvider>
                           <ModalContextProvider>
                             <GasStationProvider>
+                              <ModalProvider />
                               {getLayout(<Component {...pageProps} />)}
                               <SupplyModal />
                               <BorrowModal />
