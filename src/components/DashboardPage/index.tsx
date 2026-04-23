@@ -9,10 +9,8 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useMemo, useState } from 'react';
 import { formatUnits } from 'ethers/lib/utils';
-import { useOnChainClaimable } from 'src/hooks/pool/useOnChainClaimable';
-import { useRootStore } from 'src/store/root';
+import { useMemo, useState } from 'react';
 import AssetsTable from 'src/components/AssetsTable';
 import { ConnectWalletPaper } from 'src/components/ConnectWalletPaper';
 import { HealthFactorNumber } from 'src/components/HealthFactorNumber';
@@ -23,8 +21,10 @@ import { ModalType } from 'src/components/Modals/types';
 import { FormattedNumber } from 'src/components/primitives/FormattedNumber';
 import { useDevice } from 'src/hooks';
 import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
+import { useOnChainClaimable } from 'src/hooks/pool/useOnChainClaimable';
 import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
 import { LiquidationRiskParametresInfoModal } from 'src/modules/dashboard/LiquidationRiskParametresModal/LiquidationRiskParametresModal';
+import { useRootStore } from 'src/store/root';
 import { useModalStore } from 'src/store/useModalStore';
 
 import { DASHBOARD_TABLES } from './const';
@@ -248,12 +248,8 @@ export default function DashboardPage() {
               </Button>
             </TableSwitchContainer>
             <CardsContainer>
-              {(!isTablet || table === DASHBOARD_TABLES.SUPPLY) && (
-                <InfoCard title="Your supplies" />
-              )}
-              {(!isTablet || table === DASHBOARD_TABLES.BORROW) && (
-                <InfoCard title="Your borrows" extra="E-Mode" />
-              )}
+              {(!isTablet || table === DASHBOARD_TABLES.SUPPLY) && <InfoCard type="supply" />}
+              {(!isTablet || table === DASHBOARD_TABLES.BORROW) && <InfoCard type="borrow" />}
             </CardsContainer>
 
             <TablesContainer>
