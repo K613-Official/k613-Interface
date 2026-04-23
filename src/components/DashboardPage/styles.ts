@@ -15,7 +15,7 @@ export const FirstBlock = styled(Box)(({ theme }) => ({
 export const RightContainer = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'stretch',
-  gap: 56,
+  gap: 48,
   backgroundColor: '#FFFFFF14',
   border: `1px solid #FFFFFF4D`,
   borderRadius: 4,

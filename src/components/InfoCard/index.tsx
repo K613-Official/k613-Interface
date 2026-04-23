@@ -1,18 +1,78 @@
-import { Stack, Typography } from '@mui/material';
+import { Typography } from '@mui/material';
 
-import { Paper } from './styles';
+import { InfoCardDesktopTable } from './components/InfoCardDesktopTable';
+import { InfoCardMobileCards } from './components/InfoCardMobileCards';
+import { InfoCardType } from './data';
+import {
+  Content,
+  DesktopOnly,
+  ExtraText,
+  HeaderRow,
+  MetricAlertIcon,
+  MetricChip,
+  MetricLabel,
+  MetricsRow,
+  MetricValue,
+  Paper,
+  StateText,
+  TabletMobileOnly,
+  TitleStack,
+} from './styles';
+import { useInfoCardData } from './useInfoCardData';
 
-export default function InfoCard({ title, extra }: { title: string; extra?: string }) {
+export default function InfoCard({ type }: { type: InfoCardType }) {
+  const { data, isLoading } = useInfoCardData(type);
+
   return (
     <Paper>
-      <Stack direction="row" spacing={1} alignItems="center">
-        <Typography variant="h6">{title}</Typography>
-        {extra && <Typography color="text.secondary">{extra}</Typography>}
-      </Stack>
+      <HeaderRow>
+        <TitleStack direction="row">
+          <Typography variant="h6">{data.title}</Typography>
+          {data.extra ? (
+            <ExtraText variant="body2" color="text.secondary">
+              {data.extra}
+            </ExtraText>
+          ) : null}
+        </TitleStack>
+      </HeaderRow>
 
-      <Typography mt={4} color="#E0E0E0">
-        Nothing supplied yet
-      </Typography>
+      <Content>
+        {!isLoading && data.positions.length > 0 && (
+          <MetricsRow>
+            {data.metrics.map((metric) => (
+              <MetricChip key={`${metric.label}-${metric.value}`}>
+                <MetricLabel>{metric.label}</MetricLabel>
+                <MetricValue>{metric.value}</MetricValue>
+                {metric.showAlert ? <MetricAlertIcon /> : null}
+              </MetricChip>
+            ))}
+          </MetricsRow>
+        )}
+
+        {isLoading ? (
+          <StateText>Loading data...</StateText>
+        ) : data.positions.length === 0 ? (
+          <StateText>{data.emptyText}</StateText>
+        ) : (
+          <>
+            <DesktopOnly>
+              <InfoCardDesktopTable
+                type={type}
+                positions={data.positions}
+                actionLabel={data.actionLabel}
+              />
+            </DesktopOnly>
+
+            <TabletMobileOnly>
+              <InfoCardMobileCards
+                type={type}
+                positions={data.positions}
+                actionLabel={data.actionLabel}
+              />
+            </TabletMobileOnly>
+          </>
+        )}
+      </Content>
     </Paper>
   );
 }
