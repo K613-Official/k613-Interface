@@ -16,12 +16,12 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import Layout from 'src/components/Layout';
 import MaxWidthContainer from 'src/components/MaxWidthContainer';
 import { FormattedNumber } from 'src/components/primitives/FormattedNumber';
 import { Link, ROUTES } from 'src/components/primitives/Link';
+import { TokenIcon } from 'src/components/primitives/TokenIcon';
 import {
   ComputedReserveData,
   useAppDataContext,
@@ -286,12 +286,7 @@ export default function MarketsPage() {
                         <TableRow key={row.underlyingAsset}>
                           <TableCell>
                             <Box display="flex" alignItems="center" gap={1}>
-                              <Image
-                                src={`/icons/tokens/${row.iconSymbol.toLowerCase()}.svg`}
-                                width={24}
-                                height={24}
-                                alt={row.symbol}
-                              />
+                              <TokenIcon symbol={row.iconSymbol} sx={{ fontSize: 24 }} />
                               <Box>
                                 <Typography variant="body2" color="text.secondary">
                                   {row.name}
@@ -373,12 +368,7 @@ export default function MarketsPage() {
                     <MobileAssetCard key={row.underlyingAsset}>
                       <Box display="flex" alignItems="center" justifyContent="space-between">
                         <Box display="flex" alignItems="center" gap={1}>
-                          <Image
-                            src={`/icons/tokens/${row.iconSymbol.toLowerCase()}.svg`}
-                            width={24}
-                            height={24}
-                            alt={row.symbol}
-                          />
+                          <TokenIcon symbol={row.iconSymbol} sx={{ fontSize: 24 }} />
                           <Box>
                             <Typography variant="body2">{row.name}</Typography>
                             <Typography variant="body1">{row.symbol}</Typography>
