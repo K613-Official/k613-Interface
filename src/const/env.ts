@@ -4,6 +4,7 @@ const rawEnv = {
   NODE_ENV: process.env.NEXT_PUBLIC_NODE_ENV,
   API_BASEURL: process.env.NEXT_PUBLIC_API_BASEURL,
   SUBGRAPH_MONAD_URL: process.env.NEXT_PUBLIC_SUBGRAPH_MONAD_URL,
+  MONAD_RPC_URL: process.env.NEXT_PUBLIC_MONAD_RPC_URL,
 
   MONAD_POOL_ADDRESSES_PROVIDER: process.env.NEXT_PUBLIC_MONAD_POOL_ADDRESSES_PROVIDER,
   MONAD_POOL: process.env.NEXT_PUBLIC_MONAD_POOL,
@@ -34,6 +35,7 @@ const env = cleanEnv(rawEnv, {
   NODE_ENV: str({ choices: ['production', 'development'], default: 'development' }),
   API_BASEURL: url({ default: '' }),
   SUBGRAPH_MONAD_URL: url({ default: '' }),
+  MONAD_RPC_URL: url({ default: '' }),
 
   MONAD_POOL_ADDRESSES_PROVIDER: str({ default: '' }),
   MONAD_POOL: str({ default: '' }),
@@ -63,6 +65,7 @@ export const {
   NODE_ENV,
   API_BASEURL,
   SUBGRAPH_MONAD_URL,
+  MONAD_RPC_URL,
   MONAD_POOL_ADDRESSES_PROVIDER,
   MONAD_POOL,
   MONAD_POOL_CONFIGURATOR,
