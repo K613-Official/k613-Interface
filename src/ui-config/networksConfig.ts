@@ -1,5 +1,5 @@
 import { ChainId } from '@aave/contract-helpers';
-import { API_BASEURL } from 'src/const';
+import { API_BASEURL, MONAD_RPC_URL } from 'src/const';
 import {
   arbitrum,
   arbitrumSepolia,
@@ -447,6 +447,7 @@ export const prodNetworkConfig: Record<string, BaseNetworkConfig> = {
   },
   [MONAD_CHAIN_ID]: {
     name: 'Monad',
+    privateJsonRPCUrl: MONAD_RPC_URL || undefined,
     publicJsonRPCUrl: [...monad.rpcUrls.default.http],
     publicJsonRPCWSUrl: monad.rpcUrls.default.webSocket?.[0],
     baseAssetSymbol: monad.nativeCurrency.symbol,
