@@ -70,9 +70,10 @@ const getTransport = (chainId: number) => {
 const buildTransports = (chains: CreateConfigParameters['chains']) =>
   Object.fromEntries(chains.map((chain) => [chain.id, http(getTransport(chain.id))]));
 
+const activeChains = ENABLE_TESTNET ? testnetChains : prodChainsWithArbitrumSepolia;
 const prodCkConfig = getDefaultConfig({
-  chains: ENABLE_TESTNET ? testnetChains : prodChainsWithArbitrumSepolia,
-  transports: ENABLE_TESTNET ? undefined : buildTransports(prodChainsWithArbitrumSepolia),
+  chains: activeChains,
+  transports: buildTransports(activeChains),
   ...defaultConfig,
 });
 const prodConfig = createConfig({

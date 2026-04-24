@@ -1,13 +1,13 @@
 import { ChainId } from '@aave/contract-helpers';
 import { ReactNode } from 'react';
 import {
-  ARBITRUM_SEPOLIA_POOL,
-  ARBITRUM_SEPOLIA_POOL_ADDRESSES_PROVIDER,
-  ARBITRUM_SEPOLIA_UI_INCENTIVE_DATA_PROVIDER,
-  ARBITRUM_SEPOLIA_UI_POOL_DATA_PROVIDER,
-  ARBITRUM_SEPOLIA_WALLET_BALANCE_PROVIDER,
-  SUBGRAPH_ARBITRUM_SEPOLIA_URL,
+  addresses_mainnet,
+  addresses_testnet,
+  ARBITRUM_SEPOLIA_SUBGRAPH_URL,
+  IS_PRODUCTION,
+  SUBGRAPH_MONAD_URL,
 } from 'src/const';
+import { MONAD_CHAIN_ID } from 'src/ui-config/networksConfig';
 
 export type MarketDataType = {
   v3?: boolean;
@@ -61,6 +61,7 @@ export enum CustomMarket {
   proto_sepolia_v3 = 'proto_sepolia_v3',
   proto_base_sepolia_v3 = 'proto_base_sepolia_v3',
   // v3 mainnets
+  proto_monad_v3 = 'proto_monad_v3',
   proto_mainnet_v3 = 'proto_mainnet_v3',
   proto_optimism_v3 = 'proto_optimism_v3',
   proto_avalanche_v3 = 'proto_avalanche_v3',
@@ -82,23 +83,54 @@ export enum CustomMarket {
   proto_polygon = 'proto_polygon',
 }
 
-export const marketsData: Partial<Record<CustomMarket, MarketDataType>> = {
-  [CustomMarket.proto_arbitrum_sepolia_v3]: {
-    marketTitle: 'K613 Aave v3 Fork',
-    market: CustomMarket.proto_arbitrum_sepolia_v3,
-    v3: true,
-    permitDisabled: true,
-    chainId: ChainId.arbitrum_sepolia,
-    enabledFeatures: {
-      incentives: true,
-    },
-    subgraphUrl: SUBGRAPH_ARBITRUM_SEPOLIA_URL,
-    addresses: {
-      LENDING_POOL_ADDRESS_PROVIDER: ARBITRUM_SEPOLIA_POOL_ADDRESSES_PROVIDER,
-      LENDING_POOL: ARBITRUM_SEPOLIA_POOL,
-      WALLET_BALANCE_PROVIDER: ARBITRUM_SEPOLIA_WALLET_BALANCE_PROVIDER,
-      UI_POOL_DATA_PROVIDER: ARBITRUM_SEPOLIA_UI_POOL_DATA_PROVIDER,
-      UI_INCENTIVE_DATA_PROVIDER: ARBITRUM_SEPOLIA_UI_INCENTIVE_DATA_PROVIDER,
-    },
+const testnetMarket: MarketDataType = {
+  marketTitle: 'K613 Aave v3 Fork',
+  market: CustomMarket.proto_arbitrum_sepolia_v3,
+  v3: true,
+  permitDisabled: true,
+  chainId: ChainId.arbitrum_sepolia,
+  enabledFeatures: {
+    incentives: true,
+  },
+  subgraphUrl: ARBITRUM_SEPOLIA_SUBGRAPH_URL,
+  addresses: {
+    LENDING_POOL_ADDRESS_PROVIDER: addresses_testnet.POOL_ADDRESSES_PROVIDER,
+    LENDING_POOL: addresses_testnet.POOL,
+    WETH_GATEWAY: addresses_testnet.WETH_GATEWAY,
+    WALLET_BALANCE_PROVIDER: addresses_testnet.WALLET_BALANCE_PROVIDER,
+    L2_ENCODER: addresses_testnet.L2_ENCODER,
+    UI_POOL_DATA_PROVIDER: addresses_testnet.UI_POOL_DATA_PROVIDER,
+    UI_INCENTIVE_DATA_PROVIDER: addresses_testnet.UI_INCENTIVE_DATA_PROVIDER,
+    COLLECTOR: addresses_testnet.COLLECTOR,
   },
 };
+
+const mainnetMarket: MarketDataType = {
+  marketTitle: 'K613 Monad',
+  market: CustomMarket.proto_monad_v3,
+  v3: true,
+  permitDisabled: true,
+  // Monad chainId (143) отсутствует в `@aave/contract-helpers`, поэтому приводим вручную.
+  chainId: MONAD_CHAIN_ID as unknown as ChainId,
+  enabledFeatures: {
+    incentives: true,
+  },
+  subgraphUrl: SUBGRAPH_MONAD_URL,
+  addresses: {
+    LENDING_POOL_ADDRESS_PROVIDER: addresses_mainnet.POOL_ADDRESSES_PROVIDER,
+    LENDING_POOL: addresses_mainnet.POOL,
+    WETH_GATEWAY: addresses_mainnet.WETH_GATEWAY,
+    WALLET_BALANCE_PROVIDER: addresses_mainnet.WALLET_BALANCE_PROVIDER,
+    L2_ENCODER: addresses_mainnet.L2_ENCODER,
+    UI_POOL_DATA_PROVIDER: addresses_mainnet.UI_POOL_DATA_PROVIDER,
+    UI_INCENTIVE_DATA_PROVIDER: addresses_mainnet.UI_INCENTIVE_DATA_PROVIDER,
+    COLLECTOR: addresses_mainnet.COLLECTOR,
+  },
+};
+
+export const marketsData: Partial<Record<CustomMarket, MarketDataType>> = IS_PRODUCTION
+  ? { [CustomMarket.proto_monad_v3]: mainnetMarket }
+  : {
+      [CustomMarket.proto_arbitrum_sepolia_v3]: testnetMarket,
+      [CustomMarket.proto_monad_v3]: mainnetMarket,
+    };

@@ -25,7 +25,12 @@ import { ConnectWalletButton } from 'src/components/WalletConnection/ConnectWall
 import { useModalContext } from 'src/hooks/useModal';
 import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
 import { useRootStore } from 'src/store/root';
-import { ENABLE_TESTNET, FORK_ENABLED } from 'src/utils/marketsAndNetworksConfig';
+import { MarketSwitcher } from 'src/components/MarketSwitcher';
+import {
+  availableMarkets,
+  ENABLE_TESTNET,
+  FORK_ENABLED,
+} from 'src/utils/marketsAndNetworksConfig';
 import { useShallow } from 'zustand/shallow';
 
 import { Link } from '../components/primitives/Link';
@@ -269,6 +274,12 @@ export function AppHeader() {
         </Box>
 
         <Box sx={{ flexGrow: 1 }} />
+
+        {availableMarkets.length > 1 && (
+          <Box sx={{ mr: 2 }}>
+            <MarketSwitcher />
+          </Box>
+        )}
 
         <NoSsr>
           <StyledBadge

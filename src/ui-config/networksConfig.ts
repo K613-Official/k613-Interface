@@ -13,6 +13,7 @@ import {
   linea,
   mainnet,
   metis,
+  monad,
   optimism,
   optimismSepolia,
   polygon,
@@ -22,6 +23,12 @@ import {
   sonic,
   zksync,
 } from 'wagmi/chains';
+
+/**
+ * chainId mainnet-сети Monad. В `@aave/contract-helpers` его пока нет,
+ * поэтому храним как локальную константу.
+ */
+export const MONAD_CHAIN_ID = 143;
 
 export type ExplorerLinkBuilderProps = {
   tx?: string;
@@ -437,6 +444,17 @@ export const prodNetworkConfig: Record<string, BaseNetworkConfig> = {
       url: 'https://gateway.soniclabs.com',
     },
     wagmiChain: sonic,
+  },
+  [MONAD_CHAIN_ID]: {
+    name: 'Monad',
+    publicJsonRPCUrl: [...monad.rpcUrls.default.http],
+    publicJsonRPCWSUrl: monad.rpcUrls.default.webSocket?.[0],
+    baseAssetSymbol: monad.nativeCurrency.symbol,
+    wrappedBaseAssetSymbol: `W${monad.nativeCurrency.symbol}`,
+    baseAssetDecimals: monad.nativeCurrency.decimals,
+    explorerLink: monad.blockExplorers.default.url,
+    networkLogoPath: '/icons/networks/monad.svg',
+    wagmiChain: monad,
   },
 };
 

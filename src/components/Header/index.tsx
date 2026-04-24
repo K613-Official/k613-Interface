@@ -6,11 +6,13 @@ import { useState } from 'react';
 import { AvatarSize } from 'src/components/Avatar';
 import MaxWidthContainer from 'src/components/MaxWidthContainer';
 import { ModalType } from 'src/components/Modals/types';
+import { MarketSwitcher } from 'src/components/MarketSwitcher';
 import { Link, ROUTES } from 'src/components/primitives/Link';
 import { UserDisplay } from 'src/components/UserDisplay';
 import { ConnectWalletButton } from 'src/components/WalletConnection/ConnectWalletButton';
 import { useDevice } from 'src/hooks';
 import { useModalStore } from 'src/store/useModalStore';
+import { availableMarkets } from 'src/utils/marketsAndNetworksConfig';
 import { useAccount } from 'wagmi';
 
 import { Container, MobileMenuButton, Tabs, TabsWrapper } from './styles';
@@ -62,10 +64,8 @@ export default function Header() {
             </Tabs>
           </TabsWrapper>
 
-          <Box display="flex" gap={1}>
-            {/* <Button variant="outlined" endIcon={<SwapHorizOutlined />}>
-              Swap
-            </Button> */}
+          <Box display="flex" alignItems="center" gap={1}>
+            {availableMarkets.length > 1 && <MarketSwitcher />}
             {isConnected && address ? (
               <Button
                 variant="outlined"

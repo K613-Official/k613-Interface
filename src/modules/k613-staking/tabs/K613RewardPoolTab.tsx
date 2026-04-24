@@ -68,12 +68,10 @@ export function K613RewardPoolTab() {
     actionPending === 'claimRewards:claim' ||
     actionPending === 'claimRewards:redeem';
   const claimButtonLabel =
-    actionPending === 'claimRewards:approve'
-      ? 'Approving xK613…'
-      : actionPending === 'claimRewards:claim'
-      ? 'Claiming rewards…'
+    actionPending === 'claimRewards:approve' || actionPending === 'claimRewards:claim'
+      ? 'Confirm in wallet xK613'
       : actionPending === 'claimRewards:redeem'
-      ? 'Redeeming to K613…'
+      ? 'Converting xK613 → K613…'
       : 'Claim rewards';
   const onClaimClick = handleClaimRewards;
   const depositBusy = actionPending === 'deposit';

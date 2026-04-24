@@ -9,7 +9,8 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useState } from 'react';
+import { formatUnits } from 'ethers/lib/utils';
+import { useMemo, useState } from 'react';
 import AssetsTable from 'src/components/AssetsTable';
 import { ConnectWalletPaper } from 'src/components/ConnectWalletPaper';
 import { HealthFactorNumber } from 'src/components/HealthFactorNumber';
@@ -20,8 +21,10 @@ import { ModalType } from 'src/components/Modals/types';
 import { FormattedNumber } from 'src/components/primitives/FormattedNumber';
 import { useDevice } from 'src/hooks';
 import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
+import { useOnChainClaimable } from 'src/hooks/pool/useOnChainClaimable';
 import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
 import { LiquidationRiskParametresInfoModal } from 'src/modules/dashboard/LiquidationRiskParametresModal/LiquidationRiskParametresModal';
+import { useRootStore } from 'src/store/root';
 import { useModalStore } from 'src/store/useModalStore';
 
 import { DASHBOARD_TABLES } from './const';
@@ -59,6 +62,20 @@ export default function DashboardPage() {
         ).toString();
 
   const showUserStats = Boolean(currentAccount && user);
+
+  const currentMarketData = useRootStore((s) => s.currentMarketData);
+  const { data: onChainClaimable } = useOnChainClaimable(currentMarketData);
+  const { claimableAmount, claimableSymbol } = useMemo(() => {
+    let amount = 0;
+    let symbol = '';
+    (onChainClaimable?.rewards ?? []).forEach((r) => {
+      const v = Number(formatUnits(r.amount, r.decimals));
+      if (v <= 0) return;
+      amount += v;
+      if (!symbol) symbol = r.symbol;
+    });
+    return { claimableAmount: amount, claimableSymbol: symbol };
+  }, [onChainClaimable]);
   const netApyValue = user?.netAPY;
   const netApyFinite = typeof netApyValue === 'number' && Number.isFinite(netApyValue);
 
@@ -162,10 +179,23 @@ export default function DashboardPage() {
                 Rewards
               </Typography>
               <RewardsRow>
-                <Typography variant="h6">$ 0</Typography>
+                {showUserStats ? (
+                  <FormattedNumber
+                    value={claimableAmount}
+                    variant="h6"
+                    symbol={claimableSymbol || undefined}
+                    visibleDecimals={4}
+                    compact
+                  />
+                ) : (
+                  <Typography variant="h6" color="text.secondary">
+                    –
+                  </Typography>
+                )}
                 <Button
                   variant="contained"
                   size="small"
+                  disabled={!showUserStats || claimableAmount <= 0}
                   onClick={() => openModal(ModalType.ClaimRewards, {})}
                 >
                   CLAIM
@@ -218,12 +248,8 @@ export default function DashboardPage() {
               </Button>
             </TableSwitchContainer>
             <CardsContainer>
-              {(!isTablet || table === DASHBOARD_TABLES.SUPPLY) && (
-                <InfoCard title="Your supplies" />
-              )}
-              {(!isTablet || table === DASHBOARD_TABLES.BORROW) && (
-                <InfoCard title="Your borrows" extra="E-Mode" />
-              )}
+              {(!isTablet || table === DASHBOARD_TABLES.SUPPLY) && <InfoCard type="supply" />}
+              {(!isTablet || table === DASHBOARD_TABLES.BORROW) && <InfoCard type="borrow" />}
             </CardsContainer>
 
             <TablesContainer>
