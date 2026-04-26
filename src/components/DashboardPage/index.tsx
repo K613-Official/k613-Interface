@@ -18,7 +18,7 @@ import InfoCard from 'src/components/InfoCard';
 import Layout from 'src/components/Layout';
 import MaxWidthContainer from 'src/components/MaxWidthContainer';
 import { ModalType } from 'src/components/Modals/types';
-import { FormattedNumber } from 'src/components/primitives/FormattedNumber';
+import { BigStat } from 'src/components/primitives/BigStat';
 import { useDevice } from 'src/hooks';
 import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { useOnChainClaimable } from 'src/hooks/pool/useOnChainClaimable';
@@ -99,29 +99,36 @@ export default function DashboardPage() {
                 Net worth
               </Typography>
               {showUserStats && user ? (
-                <FormattedNumber value={user.netWorthUSD} variant="h6" symbol="USD" compact />
+                <BigStat value={user.netWorthUSD} />
               ) : (
-                <Typography variant="h6" color="text.secondary">
-                  –
+                <Typography
+                  color="text.secondary"
+                  sx={{ fontSize: { xs: 26, md: 32 }, fontWeight: 500, lineHeight: 1.1 }}
+                >
+                  —
                 </Typography>
               )}
             </StatBlock>
             <HorizontalDivider />
             <StatBlock>
-              <Typography variant="body2" color="text.secondary">
-                Net APY
-              </Typography>
+              <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Net APY
+                </Typography>
+                <Tooltip title="Net APY is the combined effect of all supply and borrow positions on your portfolio.">
+                  <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
+                    <InfoOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                  </Box>
+                </Tooltip>
+              </Box>
               {showUserStats && user && netApyFinite && typeof netApyValue === 'number' ? (
-                <FormattedNumber
-                  value={netApyValue}
-                  variant="h6"
-                  percent
-                  visibleDecimals={2}
-                  color={netApyValue < 0 ? 'error' : 'text.primary'}
-                />
+                <BigStat value={netApyValue} percent visibleDecimals={2} showDollar={false} />
               ) : (
-                <Typography variant="h6" color="text.secondary">
-                  –
+                <Typography
+                  color="text.secondary"
+                  sx={{ fontSize: { xs: 26, md: 32 }, fontWeight: 500, lineHeight: 1.1 }}
+                >
+                  —
                 </Typography>
               )}
             </StatBlock>
@@ -139,57 +146,83 @@ export default function DashboardPage() {
               </Box>
 
               {currentAccount && user?.healthFactor ? (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                  <HealthFactorNumber value={user.healthFactor} variant="h6" sx={{ ml: 0 }} />
-                  <Button
-                    variant="contained"
-                    size="small"
-                    disabled={loading}
-                    onClick={() => setRiskDetailsOpen(true)}
-                    sx={{ minWidth: 'unset' }}
-                  >
-                    RISK DETAILS
-                  </Button>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    disabled={loading}
-                    onClick={() => setNotifyOpen(true)}
-                    sx={{
-                      minWidth: 'unset',
-                      backgroundColor: (theme) => theme.palette.grey[300],
-                      color: 'black',
-                      '&:hover': {
-                        backgroundColor: (theme) => theme.palette.grey[400],
-                      },
-                    }}
-                  >
-                    NOTIFY
-                  </Button>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Box sx={{ display: 'block' }}>
+                    <HealthFactorNumber
+                      value={user.healthFactor}
+                      sx={{
+                        ml: 0,
+                        fontSize: { xs: 26, md: 32 },
+                        fontWeight: 500,
+                        lineHeight: 1.1,
+                      }}
+                    />
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      disabled={loading}
+                      onClick={() => setRiskDetailsOpen(true)}
+                      sx={{
+                        minWidth: 'unset',
+                        backgroundColor: '#B6F000',
+                        color: '#000',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        px: 1,
+                        '&:hover': { backgroundColor: '#ceff00' },
+                      }}
+                    >
+                      RISK DETAILS
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      disabled={loading}
+                      onClick={() => setNotifyOpen(true)}
+                      sx={{
+                        minWidth: 'unset',
+                        borderColor: 'rgba(255,255,255,0.3)',
+                        color: '#fff',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        px: 1,
+                        '&:hover': { borderColor: 'rgba(255,255,255,0.6)' },
+                      }}
+                    >
+                      NOTIFY
+                    </Button>
+                  </Box>
                 </Box>
               ) : (
-                <Typography variant="h6" color="text.secondary">
-                  –
+                <Typography
+                  color="text.secondary"
+                  sx={{ fontSize: { xs: 26, md: 32 }, fontWeight: 500, lineHeight: 1.1 }}
+                >
+                  —
                 </Typography>
               )}
             </StatBlock>
             <HorizontalDivider />
             <StatBlock>
               <Typography variant="body2" color="text.secondary">
-                Rewards
+                Available rewards
               </Typography>
               <RewardsRow>
                 {showUserStats ? (
-                  <FormattedNumber
+                  <BigStat
                     value={claimableAmount}
-                    variant="h6"
                     symbol={claimableSymbol || undefined}
                     visibleDecimals={4}
-                    compact
+                    showDollar={false}
                   />
                 ) : (
-                  <Typography variant="h6" color="text.secondary">
-                    –
+                  <Typography
+                    color="text.secondary"
+                    sx={{ fontSize: { xs: 26, md: 32 }, fontWeight: 500, lineHeight: 1.1 }}
+                  >
+                    —
                   </Typography>
                 )}
                 <Button

@@ -7,11 +7,11 @@ import { Row } from 'src/components/primitives/Row';
 import { useAssetCaps } from 'src/hooks/useAssetCaps';
 import { useModalContext } from 'src/hooks/useModal';
 import { useRootStore } from 'src/store/root';
+import { useModalStore } from 'src/store/useModalStore';
+import { ModalType } from 'src/components/Modals/types';
 import { DashboardReserve } from 'src/utils/dashboardSortUtils';
 import { isFeatureEnabled } from 'src/utils/marketsAndNetworksConfig';
 import { showExternalIncentivesTooltip } from 'src/utils/utils';
-import { useShallow } from 'zustand/shallow';
-
 import { ListAPRColumn } from '../ListAPRColumn';
 import { ListButtonsColumn } from '../ListButtonsColumn';
 import { ListItemWrapper } from '../ListItemWrapper';
@@ -25,12 +25,11 @@ export const BorrowedPositionsListItem = ({
   disableEModeSwitch,
 }: BorrowedPositionsListItemWrapperProps) => {
   const { borrowCap } = useAssetCaps();
-  const [currentMarket, currentMarketData] = useRootStore(
-    useShallow((state) => [state.currentMarket, state.currentMarketData])
-  );
+  const currentMarketData = useRootStore((state) => state.currentMarketData);
   const theme = useTheme();
   const downToXSM = useMediaQuery(theme.breakpoints.down('xsm'));
-  const { openBorrow, openRepay, openDebtSwitch } = useModalContext();
+  const { openDebtSwitch } = useModalContext();
+  const openModal = useModalStore((s) => s.openModal);
 
   const reserve = item.reserve;
 
@@ -61,16 +60,13 @@ export const BorrowedPositionsListItem = ({
       openDebtSwitch(reserve.underlyingAsset);
     },
     onOpenBorrow: () => {
-      openBorrow(reserve.underlyingAsset, currentMarket, reserve.name, 'dashboard');
+      openModal(ModalType.Borrow, { underlyingAsset: reserve.underlyingAsset });
     },
     onOpenRepay: () => {
-      openRepay(
-        reserve.underlyingAsset,
-        reserve.isFrozen,
-        currentMarket,
-        reserve.name,
-        'dashboard'
-      );
+      openModal(ModalType.Repay, {
+        underlyingAsset: reserve.underlyingAsset,
+        isFrozen: reserve.isFrozen,
+      });
     },
   };
 

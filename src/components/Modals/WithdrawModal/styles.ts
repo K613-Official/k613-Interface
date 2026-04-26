@@ -18,7 +18,7 @@ export const ModalCard = styled(Box)({
   display: 'flex',
   flexDirection: 'column',
   gap: 16,
-  minWidth: 420,
+  width: 500,
 });
 
 export const Header = styled(Box)({

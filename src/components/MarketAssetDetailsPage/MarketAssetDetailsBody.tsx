@@ -10,6 +10,7 @@ import { ComputedReserveData } from 'src/hooks/app-data-provider/useAppDataProvi
 import { useAssetCaps } from 'src/hooks/useAssetCaps';
 import { BROKEN_ASSETS } from 'src/hooks/useReservesHistory';
 import { ApyGraphContainer } from 'src/modules/reserve-overview/graphs/ApyGraphContainer';
+import { InterestRateModelGraphContainer } from 'src/modules/reserve-overview/graphs/InterestRateModelGraphContainer';
 import { useRootStore } from 'src/store/root';
 import { useShallow } from 'zustand/shallow';
 
@@ -117,20 +118,22 @@ export function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveDa
 
       <TopRows>
         <AssetTitleRow>
+          <Typography variant="body2" color="text.secondary">
+            {currentMarketData.marketTitle}
+          </Typography>
           <AssetIdentity>
             <Image src={tokenIconSrc} width={40} height={40} alt={reserve.symbol} />
             <Box display="flex" flexDirection="column" gap={0.25}>
-              <Typography variant="subtitle2" color="text.secondary">
+              <Typography variant="h6">{reserve.name}</Typography>
+              <Typography variant="body2" color="text.secondary">
                 {reserve.symbol}
               </Typography>
-              <Typography variant="h6">{reserve.name}</Typography>
             </Box>
           </AssetIdentity>
         </AssetTitleRow>
-      </TopRows>
 
-      <StatsAndInfoRow>
-        <StatsStrip>
+        <StatsAndInfoRow>
+          <StatsStrip>
           <StatCell>
             <Typography variant="body2" color="text.secondary">
               Reserve Size
@@ -200,8 +203,9 @@ export function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveDa
           </StatCell>
         </StatsStrip>
 
-        <YourInfoPanel reserve={reserve} />
-      </StatsAndInfoRow>
+          <YourInfoPanel reserve={reserve} />
+        </StatsAndInfoRow>
+      </TopRows>
 
       <SectionShell elevation={0}>
         <SectionTitle>
@@ -518,11 +522,11 @@ export function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveDa
           </ConfigCard>
         ) : null}
 
-        {reserve.eModes.length > 0 ? (
-          <ConfigCard>
-            <CardBlockTitle>
-              <Typography variant="body1">E-Mode categories</Typography>
-            </CardBlockTitle>
+        <ConfigCard>
+          <CardBlockTitle>
+            <Typography variant="body1">E-Mode info</Typography>
+          </CardBlockTitle>
+          {reserve.eModes.length > 0 ? (
             <Box display="flex" flexDirection="column" gap={1.5}>
               {reserve.eModes.map((e) => (
                 <Box key={e.id} display="flex" alignItems="center" gap={2} flexWrap="wrap">
@@ -539,8 +543,19 @@ export function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveDa
                 </Box>
               ))}
             </Box>
-          </ConfigCard>
-        ) : null}
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              No E-Mode categories configured for this asset.
+            </Typography>
+          )}
+        </ConfigCard>
+
+        <ConfigCard>
+          <CardBlockTitle>
+            <Typography variant="body1">Interest rate model</Typography>
+          </CardBlockTitle>
+          <InterestRateModelGraphContainer reserve={reserve} />
+        </ConfigCard>
       </SectionShell>
     </PageWrapper>
   );

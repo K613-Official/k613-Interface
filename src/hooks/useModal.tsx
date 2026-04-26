@@ -8,10 +8,6 @@ import { GENERAL } from 'src/utils/mixPanelEvents';
 import { Proposal } from './governance/useProposals';
 
 export enum ModalType {
-  Supply,
-  Withdraw,
-  Borrow,
-  Repay,
   CollateralChange,
   Stake,
   Unstake,
@@ -56,33 +52,6 @@ export type TxStateType = {
 type CallbackFn = () => void;
 
 export interface ModalContextType<T extends ModalArgsType> {
-  openSupply: (
-    underlyingAsset: string,
-    currentMarket: string,
-    name: string,
-    funnel: string,
-    isReserve?: boolean
-  ) => void;
-  openWithdraw: (
-    underlyingAsset: string,
-    currentMarket: string,
-    name: string,
-    funnel: string
-  ) => void;
-  openBorrow: (
-    underlyingAsset: string,
-    currentMarket: string,
-    name: string,
-    funnel: string,
-    isReserve?: boolean
-  ) => void;
-  openRepay: (
-    underlyingAsset: string,
-    isFrozen: boolean,
-    currentMarket: string,
-    name: string,
-    funnel: string
-  ) => void;
   openCollateralChange: (
     underlyingAsset: string,
     currentMarket: string,
@@ -149,73 +118,6 @@ export const ModalContextProvider: React.FC<PropsWithChildren> = ({ children }) 
       value={{
         openReadMode: () => {
           setType(ModalType.ReadMode);
-        },
-        openSupply: (underlyingAsset, currentMarket, name, funnel, isReserve) => {
-          setType(ModalType.Supply);
-          setArgs({ underlyingAsset });
-
-          if (isReserve) {
-            trackEvent(GENERAL.OPEN_MODAL, {
-              modal: 'Supply',
-              market: currentMarket,
-              assetName: name,
-              asset: underlyingAsset,
-              funnel,
-            });
-          } else {
-            trackEvent(GENERAL.OPEN_MODAL, {
-              modal: 'Supply',
-              market: currentMarket,
-              assetName: name,
-              asset: underlyingAsset,
-              funnel,
-            });
-          }
-        },
-        openWithdraw: (underlyingAsset, currentMarket, name, funnel) => {
-          setType(ModalType.Withdraw);
-          setArgs({ underlyingAsset });
-
-          trackEvent(GENERAL.OPEN_MODAL, {
-            modal: 'Withdraw',
-            market: currentMarket,
-            assetName: name,
-            asset: underlyingAsset,
-            funnel: funnel,
-          });
-        },
-        openBorrow: (underlyingAsset, currentMarket, name, funnel, isReserve) => {
-          setType(ModalType.Borrow);
-          setArgs({ underlyingAsset });
-          if (isReserve) {
-            trackEvent(GENERAL.OPEN_MODAL, {
-              modal: 'Borrow',
-              market: currentMarket,
-              assetName: name,
-              asset: underlyingAsset,
-              funnel,
-            });
-          } else {
-            trackEvent(GENERAL.OPEN_MODAL, {
-              modal: 'Borrow',
-              market: currentMarket,
-              assetName: name,
-              asset: underlyingAsset,
-              funnel,
-            });
-          }
-        },
-        openRepay: (underlyingAsset, isFrozen, currentMarket, name, funnel) => {
-          setType(ModalType.Repay);
-          setArgs({ underlyingAsset, isFrozen });
-
-          trackEvent(GENERAL.OPEN_MODAL, {
-            modal: 'Repay',
-            asset: underlyingAsset,
-            assetName: name,
-            market: currentMarket,
-            funnel,
-          });
         },
         openCollateralChange: (
           underlyingAsset,

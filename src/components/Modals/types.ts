@@ -2,6 +2,7 @@ export enum ModalType {
   Wallet = 'Wallet',
   ClaimRewards = 'ClaimRewards',
   SupplySuccess = 'SupplySuccess',
+  Supply = 'Supply',
   Withdraw = 'Withdraw',
   Borrow = 'Borrow',
   Repay = 'Repay',
@@ -18,25 +19,28 @@ export interface SupplySuccessModalProps {
   token: string;
 }
 
+export interface SupplyModalProps {
+  underlyingAsset: string;
+}
+
 export interface WithdrawModalProps {
-  token: string;
-  balance: string;
+  underlyingAsset: string;
 }
 
 export interface BorrowModalProps {
-  token: string;
-  available: string;
+  underlyingAsset: string;
 }
 
 export interface RepayModalProps {
-  token: string;
-  balance: string;
+  underlyingAsset: string;
+  isFrozen?: boolean;
 }
 
 export interface ModalPropsMap {
   [ModalType.Wallet]: WalletModalProps;
   [ModalType.ClaimRewards]: ClaimRewardsModalProps;
   [ModalType.SupplySuccess]: SupplySuccessModalProps;
+  [ModalType.Supply]: SupplyModalProps;
   [ModalType.Withdraw]: WithdrawModalProps;
   [ModalType.Borrow]: BorrowModalProps;
   [ModalType.Repay]: RepayModalProps;
