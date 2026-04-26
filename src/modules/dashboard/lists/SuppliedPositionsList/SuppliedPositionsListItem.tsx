@@ -5,6 +5,8 @@ import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvide
 import { useAssetCaps } from 'src/hooks/useAssetCaps';
 import { useModalContext } from 'src/hooks/useModal';
 import { useRootStore } from 'src/store/root';
+import { useModalStore } from 'src/store/useModalStore';
+import { ModalType } from 'src/components/Modals/types';
 import { DashboardReserve } from 'src/utils/dashboardSortUtils';
 import { GENERAL } from 'src/utils/mixPanelEvents';
 import { showExternalIncentivesTooltip } from 'src/utils/utils';
@@ -27,7 +29,8 @@ export const SuppliedPositionsListItem = ({
 }: DashboardReserve) => {
   const { user } = useAppDataContext();
   const { isIsolated, aIncentivesData, aTokenAddress, isFrozen, isActive, isPaused } = reserve;
-  const { openSupply, openWithdraw, openCollateralChange, openSwap } = useModalContext();
+  const { openCollateralChange, openSwap } = useModalContext();
+  const openModal = useModalStore((s) => s.openModal);
   const { debtCeiling } = useAssetCaps();
   const [trackEvent, currentMarketData, currentMarket] = useRootStore(
     useShallow((store) => [store.trackEvent, store.currentMarketData, store.currentMarket])
@@ -126,7 +129,7 @@ export const SuppliedPositionsListItem = ({
           <Button
             disabled={disableSupply}
             variant="contained"
-            onClick={() => openSupply(underlyingAsset, currentMarket, reserve.name, 'dashboard')}
+            onClick={() => openModal(ModalType.Supply, { underlyingAsset })}
           >
             <Trans>Supply</Trans>
           </Button>
@@ -135,7 +138,7 @@ export const SuppliedPositionsListItem = ({
           disabled={disableWithdraw}
           variant="outlined"
           onClick={() => {
-            openWithdraw(underlyingAsset, currentMarket, reserve.name, 'dashboard');
+            openModal(ModalType.Withdraw, { underlyingAsset });
           }}
         >
           <Trans>Withdraw</Trans>

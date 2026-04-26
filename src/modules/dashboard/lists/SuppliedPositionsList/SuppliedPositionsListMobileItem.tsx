@@ -11,6 +11,8 @@ import { useShallow } from 'zustand/shallow';
 import { IncentivesCard } from '../../../../components/incentives/IncentivesCard';
 import { Row } from '../../../../components/primitives/Row';
 import { useModalContext } from '../../../../hooks/useModal';
+import { useModalStore } from 'src/store/useModalStore';
+import { ModalType } from 'src/components/Modals/types';
 import { isFeatureEnabled } from '../../../../utils/marketsAndNetworksConfig';
 import { ListItemUsedAsCollateral } from '../ListItemUsedAsCollateral';
 import { ListMobileItemWrapper } from '../ListMobileItemWrapper';
@@ -27,7 +29,8 @@ export const SuppliedPositionsListMobileItem = ({
   const [currentMarketData, currentMarket] = useRootStore(
     useShallow((state) => [state.currentMarketData, state.currentMarket])
   );
-  const { openSupply, openSwap, openWithdraw, openCollateralChange } = useModalContext();
+  const { openSwap, openCollateralChange } = useModalContext();
+  const openModal = useModalStore((s) => s.openModal);
   const { debtCeiling } = useAssetCaps();
   const isSwapButton = isFeatureEnabled.liquiditySwap(currentMarketData);
   const {
@@ -132,7 +135,7 @@ export const SuppliedPositionsListMobileItem = ({
           <Button
             disabled={disableSupply}
             variant="contained"
-            onClick={() => openSupply(underlyingAsset, currentMarket, reserve.name, 'dashboard')}
+            onClick={() => openModal(ModalType.Supply, { underlyingAsset })}
             fullWidth
           >
             <Trans>Supply</Trans>
@@ -141,7 +144,7 @@ export const SuppliedPositionsListMobileItem = ({
         <Button
           disabled={disableWithdraw}
           variant="outlined"
-          onClick={() => openWithdraw(underlyingAsset, currentMarket, reserve.name, 'dashboard')}
+          onClick={() => openModal(ModalType.Withdraw, { underlyingAsset })}
           sx={{ ml: 1.5 }}
           fullWidth
         >

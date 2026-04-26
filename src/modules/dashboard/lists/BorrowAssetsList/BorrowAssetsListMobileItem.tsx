@@ -11,7 +11,8 @@ import { CapType } from '../../../../components/caps/helper';
 import { IncentivesCard } from '../../../../components/incentives/IncentivesCard';
 import { Link, ROUTES } from '../../../../components/primitives/Link';
 import { Row } from '../../../../components/primitives/Row';
-import { useModalContext } from '../../../../hooks/useModal';
+import { useModalStore } from 'src/store/useModalStore';
+import { ModalType } from 'src/components/Modals/types';
 import { ListMobileItemWrapper } from '../ListMobileItemWrapper';
 import { ListValueRow } from '../ListValueRow';
 
@@ -29,7 +30,7 @@ export const BorrowAssetsListMobileItem = ({
   underlyingAsset,
   isFreezed,
 }: DashboardReserve) => {
-  const { openBorrow } = useModalContext();
+  const openModal = useModalStore((s) => s.openModal);
   const currentMarket = useRootStore((state) => state.currentMarket);
 
   const disableBorrow = isFreezed || Number(availableBorrows) <= 0;
@@ -87,7 +88,7 @@ export const BorrowAssetsListMobileItem = ({
         <Button
           disabled={disableBorrow}
           variant="contained"
-          onClick={() => openBorrow(underlyingAsset, currentMarket, name, 'dashboard')}
+          onClick={() => openModal(ModalType.Borrow, { underlyingAsset })}
           sx={{ mr: 1.5 }}
           fullWidth
         >

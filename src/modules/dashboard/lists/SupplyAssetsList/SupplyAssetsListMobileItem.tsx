@@ -10,7 +10,8 @@ import { CapType } from '../../../../components/caps/helper';
 import { IncentivesCard } from '../../../../components/incentives/IncentivesCard';
 import { Link, ROUTES } from '../../../../components/primitives/Link';
 import { Row } from '../../../../components/primitives/Row';
-import { useModalContext } from '../../../../hooks/useModal';
+import { useModalStore } from 'src/store/useModalStore';
+import { ModalType } from 'src/components/Modals/types';
 import { ListItemCanBeCollateral } from '../ListItemCanBeCollateral';
 import { ListMobileItemWrapper } from '../ListMobileItemWrapper';
 import { ListValueRow } from '../ListValueRow';
@@ -35,7 +36,7 @@ export const SupplyAssetsListMobileItem = ({
   isPaused,
 }: DashboardReserve) => {
   const currentMarket = useRootStore((state) => state.currentMarket);
-  const { openSupply } = useModalContext();
+  const openModal = useModalStore((s) => s.openModal);
 
   // Disable the asset to prevent it from being supplied if supply cap has been reached
   const { supplyCap: supplyCapUsage } = useAssetCaps();
@@ -101,7 +102,7 @@ export const SupplyAssetsListMobileItem = ({
         <Button
           disabled={disableSupply}
           variant="contained"
-          onClick={() => openSupply(underlyingAsset, currentMarket, name, 'dashboard')}
+          onClick={() => openModal(ModalType.Supply, { underlyingAsset })}
           sx={{ mr: 1.5 }}
           fullWidth
         >
