@@ -10,10 +10,11 @@ import {
   useAppDataContext,
 } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { useWalletBalances } from 'src/hooks/app-data-provider/useWalletBalances';
-import { useModalContext } from 'src/hooks/useModal';
 import { useReserveActionState } from 'src/hooks/useReserveActionState';
 import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
 import { useRootStore } from 'src/store/root';
+import { useModalStore } from 'src/store/useModalStore';
+import { ModalType } from 'src/components/Modals/types';
 import {
   getMaxAmountAvailableToBorrow,
   getMaxGhoMintAmount,
@@ -57,7 +58,7 @@ export function YourInfoPanel({ reserve }: YourInfoPanelProps) {
   const [selectedAsset, setSelectedAsset] = useState(reserve.symbol);
 
   const { currentAccount } = useWeb3Context();
-  const { openBorrow, openSupply } = useModalContext();
+  const openModal = useModalStore((s) => s.openModal);
   const [currentMarket, currentNetworkConfig, currentMarketData, minRemainingBaseTokenBalance] =
     useRootStore(
       useShallow((store) => [
@@ -122,14 +123,14 @@ export function YourInfoPanel({ reserve }: YourInfoPanelProps) {
 
   const handleSupplyClick = () => {
     if (reserve.isWrappedBaseAsset && selectedAsset === baseAssetSymbol) {
-      openSupply(API_ETH_MOCK_ADDRESS.toLowerCase(), currentMarket, reserve.name, 'reserve', true);
+      openModal(ModalType.Supply, { underlyingAsset: API_ETH_MOCK_ADDRESS.toLowerCase() });
     } else {
-      openSupply(reserve.underlyingAsset, currentMarket, reserve.name, 'reserve', true);
+      openModal(ModalType.Supply, { underlyingAsset: reserve.underlyingAsset });
     }
   };
 
   const handleBorrowClick = () => {
-    openBorrow(reserve.underlyingAsset, currentMarket, reserve.name, 'reserve', true);
+    openModal(ModalType.Borrow, { underlyingAsset: reserve.underlyingAsset });
   };
 
   const isLoading = loadingReserves || loadingWalletBalance;

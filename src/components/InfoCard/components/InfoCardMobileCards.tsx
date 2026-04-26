@@ -1,11 +1,11 @@
 import { Box } from '@mui/material';
+import { TokenIcon } from 'src/components/primitives/TokenIcon';
 
 import { InfoCardType, InfoPosition } from '../data';
 import {
   CollateralSwitch,
   CollateralSwitchButton,
   MobileActionButton,
-  MobileAssetIcon,
   MobileCard,
   MobileGrid,
   MobileHeader,
@@ -34,7 +34,7 @@ export function InfoCardMobileCards({
       {positions.map((position) => (
         <MobileCard key={position.id}>
           <MobileHeader>
-            <MobileAssetIcon symbol={position.iconSymbol} />
+            <TokenIcon symbol={position.iconSymbol} sx={{ width: 44, height: 44, fontSize: '44px' }} />
             <Box>
               <NameText>{position.name}</NameText>
               <SymbolText>{position.symbol}</SymbolText>

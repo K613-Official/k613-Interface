@@ -1,16 +1,5 @@
-import { XIcon } from '@heroicons/react/outline';
-import { Trans } from '@lingui/macro';
-import { AlertColor, DialogContent, IconButton, SvgIcon, Typography } from '@mui/material';
-import { HealthFactorNumber } from 'src/components/HealthFactorNumber';
-import { FormattedNumber } from 'src/components/primitives/FormattedNumber';
-import { Link } from 'src/components/primitives/Link';
-import { useRootStore } from 'src/store/root';
-import { GENERAL } from 'src/utils/mixPanelEvents';
-
-import { DialogTitleStyled, StyledDialog } from '../../k613-staking/k613Staking.styles';
-import { HFContent } from './components/HFContent';
-import { InfoWrapper } from './components/InfoWrapper';
-import { LTVContent } from './components/LTVContent';
+import { Close } from '@mui/icons-material';
+import { Box, Dialog, IconButton, Typography } from '@mui/material';
 
 interface LiquidationRiskParametresInfoModalProps {
   open: boolean;
@@ -21,6 +10,54 @@ interface LiquidationRiskParametresInfoModalProps {
   currentLiquidationThreshold: string;
 }
 
+function getHfStatus(hf: number): { label: string; color: string } {
+  if (hf <= 0) return { label: 'No borrows', color: 'text.secondary' };
+  if (hf < 1) return { label: 'Liquidation risk', color: 'error.main' };
+  if (hf < 1.5) return { label: 'High risk', color: 'warning.main' };
+  if (hf < 3) return { label: 'Moderate', color: 'warning.main' };
+  return { label: 'Very safe', color: 'success.main' };
+}
+
+function SectionCard({ children }: { children: React.ReactNode }) {
+  return (
+    <Box
+      sx={{
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 2,
+        p: 2.5,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2,
+      }}
+    >
+      {children}
+    </Box>
+  );
+}
+
+function InfoCell({ label, value }: { label: string; value: string }) {
+  return (
+    <Box
+      sx={{
+        flex: 1,
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 1.5,
+        p: 1.5,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 0.5,
+      }}
+    >
+      <Typography variant="caption" sx={{ opacity: 0.5 }}>
+        {label}
+      </Typography>
+      <Typography variant="body1" fontWeight={600}>
+        {value}
+      </Typography>
+    </Box>
+  );
+}
+
 export const LiquidationRiskParametresInfoModal = ({
   open,
   setOpen,
@@ -29,121 +66,97 @@ export const LiquidationRiskParametresInfoModal = ({
   currentLoanToValue,
   currentLiquidationThreshold,
 }: LiquidationRiskParametresInfoModalProps) => {
-  let healthFactorColor: AlertColor = 'success';
   const hf = Number(healthFactor);
-  if (hf > 1.1 && hf <= 3) {
-    healthFactorColor = 'warning';
-  } else if (hf <= 1.1) {
-    healthFactorColor = 'error';
-  }
-  const trackEvent = useRootStore((store) => store.trackEvent);
+  const hfStatus = getHfStatus(hf);
 
-  let ltvColor: AlertColor = 'success';
-  const ltvPercent = Number(loanToValue) * 100;
-  const currentLtvPercent = Number(currentLoanToValue) * 100;
-  const liquidationThresholdPercent = Number(currentLiquidationThreshold) * 100;
-  if (ltvPercent >= Math.min(currentLtvPercent, liquidationThresholdPercent)) {
-    ltvColor = 'error';
-  } else if (ltvPercent > currentLtvPercent / 2 && ltvPercent < currentLtvPercent) {
-    ltvColor = 'warning';
-  }
-
-  const handleClose = () => setOpen(false);
+  const ltvPercent = (Number(loanToValue) * 100).toFixed(2);
+  const maxLtvPercent = (Number(currentLoanToValue) * 100).toFixed(2);
+  const liquidationThresholdPercent = (Number(currentLiquidationThreshold) * 100).toFixed(2);
 
   return (
-    <StyledDialog open={open} onClose={handleClose} fullWidth>
-      <DialogTitleStyled
-        sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-      >
-        <Trans>Liquidation risk parameters</Trans>
-        <IconButton
-          size="small"
-          onClick={handleClose}
-          sx={{ color: 'rgba(255,255,255,0.7)', padding: 0.5, ml: 1 }}
-        >
-          <SvgIcon sx={{ fontSize: '20px' }}>
-            <XIcon />
-          </SvgIcon>
-        </IconButton>
-      </DialogTitleStyled>
-
-      <DialogContent sx={{ pt: 2, pb: 3 }}>
-        <Typography variant="body2" color="text.secondary" mb={3}>
-          <Trans>
-            Your health factor and loan to value determine the assurance of your collateral. To
-            avoid liquidations you can supply more collateral or repay borrow positions.
-          </Trans>{' '}
-          <Link
-            onClick={() => {
-              trackEvent(GENERAL.EXTERNAL_LINK, {
-                Link: 'HF Risk Link',
-              });
-            }}
-            href="https://docs.aave.com/faq/"
-            sx={{ textDecoration: 'underline' }}
-            color="text.primary"
-            variant="body2"
-          >
-            <Trans>Learn more</Trans>
-          </Link>
+    <Dialog
+      open={open}
+      onClose={() => setOpen(false)}
+      PaperProps={{
+        sx: {
+          bgcolor: 'background.paper',
+          backgroundImage: 'none',
+          borderRadius: 3,
+          p: 3,
+          width: 440,
+          maxWidth: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2.5,
+        },
+      }}
+    >
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="h6" fontWeight={600}>
+          Details
         </Typography>
+        <IconButton size="small" onClick={() => setOpen(false)}>
+          <Close fontSize="small" />
+        </IconButton>
+      </Box>
 
-        <InfoWrapper
-          topTitle={<Trans>Health factor</Trans>}
-          topDescription={
-            <Trans>
-              Safety of your deposited collateral against the borrowed assets and its underlying
-              value.
-            </Trans>
-          }
-          topValue={
-            <HealthFactorNumber
-              value={healthFactor}
-              variant="caption"
-              sx={{ color: 'common.white' }}
-            />
-          }
-          bottomText={
-            <Trans>
-              If the health factor goes below 1, the liquidation of your collateral might be
-              triggered.
-            </Trans>
-          }
-          color={healthFactorColor}
-        >
-          <HFContent healthFactor={healthFactor} />
-        </InfoWrapper>
+      {/* Health Factor */}
+      <SectionCard>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <Box>
+            <Typography variant="body1" fontWeight={600}>
+              Health Factor
+            </Typography>
+            <Typography variant="caption" sx={{ opacity: 0.5 }}>
+              Indicates how safe your position is
+            </Typography>
+          </Box>
+          <Typography variant="h6" fontWeight={700}>
+            {hf > 0 ? (hf > 100 ? '∞' : hf.toFixed(2)) : '—'}
+          </Typography>
+        </Box>
 
-        <InfoWrapper
-          topTitle={<Trans>Current LTV</Trans>}
-          topDescription={
-            <Trans>Your current loan to value based on your collateral supplied.</Trans>
-          }
-          topValue={
-            <FormattedNumber
-              value={loanToValue}
-              percent
-              variant="caption"
-              color="common.white"
-              symbolsColor="common.white"
-            />
-          }
-          bottomText={
-            <Trans>
-              If your loan to value goes above the liquidation threshold your collateral supplied
-              may be liquidated.
-            </Trans>
-          }
-          color={ltvColor}
-        >
-          <LTVContent
-            loanToValue={loanToValue}
-            currentLoanToValue={currentLoanToValue}
-            currentLiquidationThreshold={currentLiquidationThreshold}
-            color={ltvColor}
-          />
-        </InfoWrapper>
-      </DialogContent>
-    </StyledDialog>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <InfoCell label="Safe" value="> 1.0" />
+          <InfoCell label="High risk" value="≈ 1.0" />
+          <InfoCell label="Liquidation possible" value="< 1.0" />
+        </Box>
+
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="body2" sx={{ opacity: 0.5 }}>
+            Your position is currently
+          </Typography>
+          <Typography variant="body2" fontWeight={600} color={hfStatus.color}>
+            {hfStatus.label}
+          </Typography>
+        </Box>
+      </SectionCard>
+
+      {/* LTV */}
+      <SectionCard>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <Box>
+            <Typography variant="body1" fontWeight={600}>
+              Loan-to-Value (LTV)
+            </Typography>
+            <Typography variant="caption" sx={{ opacity: 0.5 }}>
+              Shows how much you&apos;ve borrowed relative to your collateral
+            </Typography>
+          </Box>
+          <Typography variant="body2" fontWeight={600}>
+            {Number(ltvPercent) < 0.01 ? '< 0.01%' : `${ltvPercent}%`}
+          </Typography>
+        </Box>
+
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <InfoCell label="Max LTV" value={`${maxLtvPercent}%`} />
+          <InfoCell label="Liquidation threshold" value={`${liquidationThresholdPercent}%`} />
+        </Box>
+
+        <Typography variant="caption" sx={{ opacity: 0.5 }}>
+          If your LTV exceeds the liquidation threshold, your collateral may be liquidated.
+        </Typography>
+      </SectionCard>
+    </Dialog>
   );
 };

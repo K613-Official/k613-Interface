@@ -35,10 +35,11 @@ import {
   useAppDataContext,
 } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { useWalletBalances } from 'src/hooks/app-data-provider/useWalletBalances';
-import { useModalContext } from 'src/hooks/useModal';
 import { useWrappedTokens } from 'src/hooks/useWrappedTokens';
 import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
 import { useRootStore } from 'src/store/root';
+import { useModalStore } from 'src/store/useModalStore';
+import { ModalType } from 'src/components/Modals/types';
 import { CustomMarket } from 'src/ui-config/marketsConfig';
 import { fetchIconSymbolAndName } from 'src/ui-config/reservePatches';
 import {
@@ -85,7 +86,7 @@ const SHOW_SUPPLY_ZERO_BALANCE_KEY = 'showSupplyZeroAssets';
 export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
   const isSupply = type === 'supply';
   const { currentAccount } = useWeb3Context();
-  const { openSupply, openBorrow } = useModalContext();
+  const openModal = useModalStore((s) => s.openModal);
 
   const currentMarketData = useRootStore((s) => s.currentMarketData);
   const currentMarket = useRootStore((s) => s.currentMarket);
@@ -519,17 +520,20 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
                     <SupplyTableRow
                       key={(row as SupplyRow).id}
                       row={row as SupplyRow}
-                      currentMarket={currentMarket}
                       setMenuAnchor={setMenuAnchor}
                       setMenuRow={setMenuRow}
-                      openSupply={openSupply}
+                      onSupply={(underlyingAsset) =>
+                        openModal(ModalType.Supply, { underlyingAsset })
+                      }
                     />
                   ) : (
                     <BorrowTableRow
                       key={(row as BorrowRow).id}
                       row={row as BorrowRow}
                       currentMarket={currentMarket as CustomMarket}
-                      openBorrow={openBorrow}
+                      onBorrow={(underlyingAsset) =>
+                        openModal(ModalType.Borrow, { underlyingAsset })
+                      }
                     />
                   )
                 )}
@@ -557,14 +561,18 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
                   key={(row as SupplyRow).id}
                   row={row as SupplyRow}
                   currentMarket={currentMarket}
-                  openSupply={openSupply}
+                  onSupply={(underlyingAsset) =>
+                    openModal(ModalType.Supply, { underlyingAsset })
+                  }
                 />
               ) : (
                 <BorrowMobileCard
                   key={(row as BorrowRow).id}
                   row={row as BorrowRow}
                   currentMarket={currentMarket as CustomMarket}
-                  openBorrow={openBorrow}
+                  onBorrow={(underlyingAsset) =>
+                    openModal(ModalType.Borrow, { underlyingAsset })
+                  }
                 />
               )
             )}
@@ -615,16 +623,11 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
 function SupplyMobileCard({
   row,
   currentMarket,
-  openSupply,
+  onSupply,
 }: {
   row: SupplyRow;
   currentMarket: string;
-  openSupply: (
-    underlyingAsset: string,
-    currentMarket: string,
-    name: string,
-    funnel: string
-  ) => void;
+  onSupply: (underlyingAsset: string) => void;
 }) {
   return (
     <MobileAssetCard>
@@ -661,7 +664,7 @@ function SupplyMobileCard({
           color="inherit"
           fullWidth
           disabled={row.disableSupply}
-          onClick={() => openSupply(row.underlyingAsset, currentMarket, row.name, 'dashboard')}
+          onClick={() => onSupply(row.underlyingAsset)}
         >
           Supply
         </Button>
@@ -682,16 +685,11 @@ function SupplyMobileCard({
 function BorrowMobileCard({
   row,
   currentMarket,
-  openBorrow,
+  onBorrow,
 }: {
   row: BorrowRow;
   currentMarket: CustomMarket;
-  openBorrow: (
-    underlyingAsset: string,
-    currentMarket: string,
-    name: string,
-    funnel: string
-  ) => void;
+  onBorrow: (underlyingAsset: string) => void;
 }) {
   const apyLabel = row.borrowApyPercent < 0 ? '—' : `${row.borrowApyPercent.toFixed(2)}%`;
 
@@ -722,7 +720,7 @@ function BorrowMobileCard({
           color="inherit"
           fullWidth
           disabled={row.disableBorrow}
-          onClick={() => openBorrow(row.underlyingAsset, currentMarket, row.name, 'dashboard')}
+          onClick={() => onBorrow(row.underlyingAsset)}
         >
           Borrow
         </Button>
@@ -742,21 +740,14 @@ function BorrowMobileCard({
 
 function SupplyTableRow({
   row,
-  currentMarket,
   setMenuAnchor,
   setMenuRow,
-  openSupply,
+  onSupply,
 }: {
   row: SupplyRow;
-  currentMarket: string;
   setMenuAnchor: (el: HTMLElement | null) => void;
   setMenuRow: (row: SupplyRow) => void;
-  openSupply: (
-    underlyingAsset: string,
-    currentMarket: string,
-    name: string,
-    funnel: string
-  ) => void;
+  onSupply: (underlyingAsset: string) => void;
 }) {
   return (
     <TableRow>
@@ -787,7 +778,7 @@ function SupplyTableRow({
             variant="contained"
             color="inherit"
             disabled={row.disableSupply}
-            onClick={() => openSupply(row.underlyingAsset, currentMarket, row.name, 'dashboard')}
+            onClick={() => onSupply(row.underlyingAsset)}
           >
             Supply
           </Button>
@@ -809,16 +800,11 @@ function SupplyTableRow({
 function BorrowTableRow({
   row,
   currentMarket,
-  openBorrow,
+  onBorrow,
 }: {
   row: BorrowRow;
   currentMarket: CustomMarket;
-  openBorrow: (
-    underlyingAsset: string,
-    currentMarket: string,
-    name: string,
-    funnel: string
-  ) => void;
+  onBorrow: (underlyingAsset: string) => void;
 }) {
   const apyLabel = row.borrowApyPercent < 0 ? '—' : `${row.borrowApyPercent.toFixed(2)}%`;
 
@@ -843,7 +829,7 @@ function BorrowTableRow({
             variant="contained"
             color="inherit"
             disabled={row.disableBorrow}
-            onClick={() => openBorrow(row.underlyingAsset, currentMarket, row.name, 'dashboard')}
+            onClick={() => onBorrow(row.underlyingAsset)}
           >
             Borrow
           </Button>
@@ -851,7 +837,6 @@ function BorrowTableRow({
             size="small"
             variant="text"
             color="secondary"
-            fullWidth
             href={ROUTES.marketAssetDetails(row.underlyingAsset, currentMarket)}
           >
             Details

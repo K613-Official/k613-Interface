@@ -3,48 +3,18 @@ import { Box, Paper as PaperBase, styled } from '@mui/material';
 export const PageWrapper = styled(Box)(({ theme }) => ({
   marginTop: 64,
   paddingInline: 0,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 64,
   [theme.breakpoints.down('md')]: {
     marginTop: 32,
+    gap: 40,
   },
   [theme.breakpoints.down('xsm')]: {
     marginTop: 24,
     paddingInline: 16,
     paddingBottom: 16,
-    gap: 48,
-  },
-}));
-
-export const Title = styled(Box)(({ theme }) => ({
-  marginBottom: 24,
-  [theme.breakpoints.down('xsm')]: {
-    marginBottom: 16,
-  },
-}));
-
-export const BannerRow = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  paddingBlock: 16,
-  paddingInline: 24,
-  backgroundColor: theme.palette.background.surface,
-  borderRadius: 4,
-  marginBottom: 24,
-  flexWrap: 'wrap',
-  gap: 16,
-  [theme.breakpoints.down('sm')]: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    paddingBlock: 12,
-    paddingInline: 16,
-    marginBottom: 16,
-  },
-  [theme.breakpoints.down('xsm')]: {
-    flexDirection: 'column',
-    alignItems: 'stretch',
-    paddingBlock: 12,
-    paddingInline: 16,
-    marginBottom: 24,
+    gap: 32,
   },
 }));
 
@@ -52,7 +22,6 @@ export const CoreInstanceBlock = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   gap: 24,
-  marginBottom: 24,
   [theme.breakpoints.up('md')]: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -60,7 +29,6 @@ export const CoreInstanceBlock = styled(Box)(({ theme }) => ({
   },
   [theme.breakpoints.down('xsm')]: {
     gap: 16,
-    marginBottom: 24,
   },
 }));
 
@@ -72,28 +40,20 @@ export const CoreInstanceInfo = styled(Box)({
 
 export const StatsCard = styled(Box)(({ theme }) => ({
   display: 'flex',
-  gap: 24,
+  gap: 16,
   backgroundColor: theme.palette.background.paper,
-  border: `1px solid ${theme.palette.text.secondary}`,
   borderRadius: 4,
   paddingBlock: 24,
   paddingInline: 40,
   flexWrap: 'wrap',
   [theme.breakpoints.down('md')]: {
-    gap: 16,
     paddingBlock: 16,
     paddingInline: 20,
   },
   [theme.breakpoints.down('sm')]: {
-    flexDirection: 'row',
-    gap: 16,
-    paddingBlock: 16,
     paddingInline: 16,
   },
   [theme.breakpoints.down('xsm')]: {
-    flexDirection: 'row',
-    gap: 16,
-    paddingBlock: 16,
     paddingInline: 16,
   },
 }));
@@ -101,34 +61,36 @@ export const StatsCard = styled(Box)(({ theme }) => ({
 export const StatItem = styled(Box)({
   display: 'flex',
   flexDirection: 'column',
-  gap: 4,
+  gap: 8,
 });
 
 export const VerticalDivider = styled(Box)(({ theme }) => ({
   width: 1,
-  minHeight: 40,
-  backgroundColor: theme.palette.text.secondary,
+  minHeight: 56,
+  backgroundColor: 'rgba(255, 255, 255, 0.12)',
   [theme.breakpoints.down('sm')]: {
     width: 1,
-    minHeight: 32,
+    minHeight: 40,
   },
   [theme.breakpoints.down('xsm')]: {
     width: 1,
-    minHeight: 32,
+    minHeight: 40,
   },
 }));
 
 export const CoreAssetsSection = styled(PaperBase)(({ theme }) => ({
   marginTop: 24,
   padding: 24,
-  border: '1px solid #FFFFFF4D',
+  borderRadius: 4,
+  border: '1px solid rgba(255, 255, 255, 0.08)',
   display: 'flex',
   flexDirection: 'column',
-  gap: 16,
+  gap: 24,
 
   [theme.breakpoints.down('xsm')]: {
     marginTop: 24,
     gap: 16,
+    padding: 16,
   },
 }));
 
@@ -147,7 +109,9 @@ export const FiltersRow = styled(Box)(({ theme }) => ({
 export const TablePaper = styled(PaperBase)(({ theme }) => ({
   borderRadius: 4,
   overflow: 'auto',
-  backgroundColor: theme.palette.background.paper,
+  backgroundColor: 'transparent',
+  boxShadow: 'none',
+  backgroundImage: 'none',
   [theme.breakpoints.down('md')]: {
     overflowX: 'auto',
   },
@@ -163,9 +127,9 @@ export const MobileAssetCard = styled(Box)(({ theme }) => ({
   flexDirection: 'column',
   gap: 12,
   padding: 16,
-  border: `1px solid ${theme.palette.text.secondary}`,
+  border: `1px solid ${theme.palette.divider}`,
   borderRadius: 12,
-  backgroundColor: '#333333',
+  backgroundColor: theme.palette.background.paper,
 }));
 
 export const DesktopTable = styled(Box)(({ theme }) => ({
@@ -184,10 +148,3 @@ export const MobileCards = styled(Box)(({ theme }) => ({
   },
 }));
 
-export const V3Badge = styled(Box)(({ theme }) => ({
-  backgroundColor: theme.palette.primary.main,
-  color: theme.palette.primary.dark,
-  borderRadius: 100,
-  paddingInline: 8,
-  paddingBlock: 2,
-}));

@@ -81,6 +81,11 @@ export const SYMBOL_NAME_MAP: { [key: string]: string } = {
   ZRX: '0x Coin',
   '1INCH': '1inch Network',
   LUSD: 'LUSD Stablecoin',
+  WMON: 'Wrapped MON',
+  GMON: 'gMON',
+  SMON: 'Kintsu Staked Monad',
+  SHMON: 'ShMonad',
+  WSRUSD: 'Wrapped Savings rUSD',
 };
 
 export interface IconSymbolInterface {
