@@ -18,18 +18,6 @@ import { GasStationProvider } from 'src/components/transactions/GasStation/GasSt
 import { AppDataProvider } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { ModalContextProvider } from 'src/hooks/useModal';
 
-const SupplyModal = dynamic(() =>
-  import('src/components/transactions/Supply/SupplyModal').then((m) => m.SupplyModal)
-);
-const BorrowModal = dynamic(() =>
-  import('src/components/transactions/Borrow/BorrowModal').then((m) => m.BorrowModal)
-);
-const WithdrawModal = dynamic(() =>
-  import('src/components/transactions/Withdraw/WithdrawModal').then((m) => m.WithdrawModal)
-);
-const RepayModal = dynamic(() =>
-  import('src/components/transactions/Repay/RepayModal').then((m) => m.RepayModal)
-);
 const CollateralChangeModal = dynamic(() =>
   import('src/components/transactions/CollateralChange/CollateralChangeModal').then(
     (m) => m.CollateralChangeModal
@@ -121,10 +109,6 @@ export default function MyApp(props: MyAppProps) {
                             <GasStationProvider>
                               <ModalProvider />
                               {getLayout(<Component {...pageProps} />)}
-                              <SupplyModal />
-                              <BorrowModal />
-                              <WithdrawModal />
-                              <RepayModal />
                               <CollateralChangeModal />
                               <EmodeModal />
                               <FaucetModal />

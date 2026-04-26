@@ -1,7 +1,6 @@
 import {
   API_ETH_MOCK_ADDRESS,
   gasLimitRecommendations,
-  InterestRate,
   ProtocolAction,
 } from '@aave/contract-helpers';
 import {
@@ -23,12 +22,13 @@ import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
 import { useRootStore } from 'src/store/root';
 import { getErrorTextFromError, TxAction } from 'src/ui-config/errorMapping';
 import { queryKeysFactory } from 'src/ui-config/queries';
+import { getMaxAmountAvailableToSupply } from 'src/utils/getMaxAmountAvailableToSupply';
 import { roundToTokenDecimals } from 'src/utils/utils';
 import { useShallow } from 'zustand/shallow';
 
 import { APPROVAL_GAS_LIMIT, checkRequiresApproval } from '../../transactions/utils';
+import { BaseModalProps, SupplyModalProps } from '../types';
 import { SuccessView } from '../SuccessView';
-import { BaseModalProps, RepayModalProps } from '../types';
 import {
   AmountDisplay,
   AmountInput,
@@ -42,20 +42,27 @@ import {
   TokenInputRow,
 } from './styles';
 
-type Props = BaseModalProps & RepayModalProps;
+type Props = BaseModalProps & SupplyModalProps;
 
-export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
+export default function SupplyModal({ open, onClose, underlyingAsset }: Props) {
   const { reserves, user, marketReferencePriceInUsd } = useAppDataContext();
-  const [repay, generateApproval, estimateGasLimit, addTransaction, currentMarketData] =
-    useRootStore(
-      useShallow((s) => [
-        s.repay,
-        s.generateApproval,
-        s.estimateGasLimit,
-        s.addTransaction,
-        s.currentMarketData,
-      ])
-    );
+  const [
+    supply,
+    generateApproval,
+    estimateGasLimit,
+    addTransaction,
+    currentMarketData,
+    minRemainingBaseTokenBalance,
+  ] = useRootStore(
+    useShallow((s) => [
+      s.supply,
+      s.generateApproval,
+      s.estimateGasLimit,
+      s.addTransaction,
+      s.currentMarketData,
+      s.poolComputed.minRemainingBaseTokenBalance,
+    ])
+  );
   const { sendTx } = useWeb3Context();
   const { walletBalances } = useWalletBalances(currentMarketData);
   const queryClient = useQueryClient();
@@ -80,16 +87,6 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
     });
   }, [reserves, underlyingAsset]);
 
-  const userReserve = useMemo(
-    () =>
-      user?.userReservesData.find((ur) => {
-        const key = underlyingAsset.toLowerCase();
-        if (key === API_ETH_MOCK_ADDRESS.toLowerCase()) return ur.reserve.isWrappedBaseAsset;
-        return ur.underlyingAsset.toLowerCase() === key;
-      }),
-    [user, underlyingAsset]
-  );
-
   const isNative = underlyingAsset.toLowerCase() === API_ETH_MOCK_ADDRESS.toLowerCase();
   const poolAddress = isNative ? API_ETH_MOCK_ADDRESS : reserve?.underlyingAsset || '';
 
@@ -104,12 +101,12 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
     onClose();
   };
 
-  if (!reserve || !user || !userReserve) {
+  if (!reserve || !user) {
     return (
       <Dialog open={open} onClose={handleClose}>
         <ModalCard>
           <Header>
-            <Typography variant="h5">Repay</Typography>
+            <Typography variant="h5">Supply</Typography>
             <IconButton size="small" onClick={handleClose}>
               <Close fontSize="small" />
             </IconButton>
@@ -123,19 +120,32 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
   }
 
   const symbol = isNative ? reserve.symbol.replace(/^W/, '') : reserve.symbol;
-  const debt = userReserve.variableBorrows;
   const walletBalance = isNative
     ? walletBalances[API_ETH_MOCK_ADDRESS.toLowerCase()]?.amount || '0'
     : walletBalances[reserve.underlyingAsset.toLowerCase()]?.amount || '0';
 
-  const maxRepay = Math.min(Number(debt), Number(walletBalance)).toString();
+  const maxAmountToSupply = getMaxAmountAvailableToSupply(
+    walletBalance,
+    {
+      supplyCap: reserve.supplyCap,
+      totalLiquidity: reserve.totalLiquidity,
+      isFrozen: reserve.isFrozen,
+      decimals: reserve.decimals,
+      debtCeiling: reserve.debtCeiling,
+      isolationModeTotalDebt: reserve.isolationModeTotalDebt,
+    },
+    underlyingAsset,
+    minRemainingBaseTokenBalance
+  );
+
+  const isMaxSelected = amount !== '' && amount === maxAmountToSupply;
 
   const handleAmountChange = (value: string) => {
     const truncated = roundToTokenDecimals(value, reserve.decimals);
     setAmount(truncated);
   };
 
-  const handleMax = () => setAmount(maxRepay);
+  const handleMax = () => setAmount(maxAmountToSupply);
 
   const amountInUsd = valueToBigNumber(amount || '0').multipliedBy(reserve.priceInUSD);
 
@@ -145,15 +155,15 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
     .shiftedBy(-USD_DECIMALS);
 
   const futureHealthFactor = useMemo(() => {
-    if (!amount || Number(amount) === 0) return null;
+    if (!amount || Number(amount) === 0 || !reserve.usageAsCollateralEnabled) return null;
     return calculateHealthFactorFromBalancesBigUnits({
-      collateralBalanceMarketReferenceCurrency: user.totalCollateralUSD,
-      borrowBalanceMarketReferenceCurrency: valueToBigNumber(user.totalBorrowsUSD).minus(
+      collateralBalanceMarketReferenceCurrency: valueToBigNumber(user.totalCollateralUSD).plus(
         amountInMarketRef
       ),
+      borrowBalanceMarketReferenceCurrency: user.totalBorrowsUSD,
       currentLiquidationThreshold: user.currentLiquidationThreshold,
     }).toString();
-  }, [amount, user, amountInMarketRef]);
+  }, [amount, user, amountInMarketRef, reserve.usageAsCollateralEnabled]);
 
   const requiresApproval =
     !isNative &&
@@ -165,7 +175,7 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
     });
 
   useEffect(() => {
-    let gas = Number(gasLimitRecommendations[ProtocolAction.repay].recommended);
+    let gas = Number(gasLimitRecommendations[ProtocolAction.supply].recommended);
     if (requiresApproval && !approvalTxState.success) {
       gas += Number(APPROVAL_GAS_LIMIT);
     }
@@ -191,21 +201,19 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
     }
   };
 
-  const handleRepay = async () => {
+  const handleSupply = async () => {
     try {
       setMainTxState({ ...mainTxState, loading: true });
-      let tx = repay({
-        amountToRepay: parseUnits(amount, reserve.decimals).toString(),
-        poolAddress,
-        repayWithATokens: false,
-        debtType: InterestRate.Variable,
+      let tx = supply({
+        amount: parseUnits(amount, reserve.decimals).toString(),
+        reserve: poolAddress,
       });
       tx = await estimateGasLimit(tx);
       const response = await sendTx(tx);
       await response.wait(1);
       setMainTxState({ txHash: response.hash, loading: false, success: true });
       addTransaction(response.hash, {
-        action: ProtocolAction.repay,
+        action: ProtocolAction.supply,
         txState: 'success',
         asset: poolAddress,
         amount,
@@ -220,23 +228,32 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
 
   const amountNum = Number(amount || '0');
   const exceedsBalance = amountNum > Number(walletBalance);
-  const exceedsDebt = amountNum > Number(debt);
+  const blocked = reserve.isFrozen;
   const disabled =
+    blocked ||
     amountNum <= 0 ||
     exceedsBalance ||
-    exceedsDebt ||
     mainTxState.loading ||
     approvalTxState.loading;
 
   const actionLabel =
-    requiresApproval && !approvalTxState.success ? 'Approve' : `Repay ${symbol}`;
-  const onAction = requiresApproval && !approvalTxState.success ? handleApprove : handleRepay;
+    requiresApproval && !approvalTxState.success ? 'Approve' : `Supply ${symbol}`;
+  const onAction = requiresApproval && !approvalTxState.success ? handleApprove : handleSupply;
 
   if (mainTxState.success) {
     return (
       <Dialog open={open} onClose={handleClose}>
         <ModalCard>
-          <SuccessView action="Repaid" amount={amount} symbol={symbol} txHash={mainTxState.txHash} onClose={handleClose} />
+          <SuccessView
+            action="Supplied"
+            amount={amount}
+            symbol={symbol}
+            txHash={mainTxState.txHash}
+            onClose={handleClose}
+            addToWalletAddress={reserve.aTokenAddress}
+            addToWalletSymbol={`a${symbol}`}
+            addToWalletDecimals={reserve.decimals}
+          />
         </ModalCard>
       </Dialog>
     );
@@ -246,7 +263,7 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
     <Dialog open={open} onClose={handleClose}>
       <ModalCard>
         <Header>
-          <Typography variant="h5">Repay {symbol}</Typography>
+          <Typography variant="h5">Supply {symbol}</Typography>
           <IconButton size="small" onClick={handleClose}>
             <Close fontSize="small" />
           </IconButton>
@@ -287,7 +304,7 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
               </Stack>
               <BalanceRow>
                 <Typography variant="caption">
-                  Wallet {Number(walletBalance).toFixed(4)}
+                  Wallet balance {Number(walletBalance).toFixed(4)}
                 </Typography>
                 <Typography
                   variant="caption"
@@ -307,17 +324,33 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
           </AmountInput>
         </TokenInputRow>
 
+        {isMaxSelected && (
+          <Typography variant="caption" color="primary">
+            MAX selected
+          </Typography>
+        )}
+
         <OverviewSection>
           <Typography variant="caption" sx={{ opacity: 0.5 }}>
             Transaction overview
           </Typography>
           <OverviewRow>
             <Typography variant="body2" sx={{ opacity: 0.5 }}>
-              Remaining debt
+              Supply APY
             </Typography>
             <Typography variant="body2">
-              {Number(debt).toFixed(4)} {symbol}
-              {amountNum > 0 && ` → ${Math.max(0, Number(debt) - amountNum).toFixed(4)} ${symbol}`}
+              {(Number(reserve.supplyAPY) * 100).toFixed(2)}%
+            </Typography>
+          </OverviewRow>
+          <OverviewRow>
+            <Typography variant="body2" sx={{ opacity: 0.5 }}>
+              Collateralization
+            </Typography>
+            <Typography
+              variant="body2"
+              color={reserve.usageAsCollateralEnabled ? 'success.main' : 'text.secondary'}
+            >
+              {reserve.usageAsCollateralEnabled ? 'Enabled' : 'Disabled'}
             </Typography>
           </OverviewRow>
           <OverviewRow>
@@ -325,12 +358,17 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
               Health factor
             </Typography>
             {futureHealthFactor ? (
-              <Typography variant="body2" color="success.main">
+              <Typography
+                variant="body2"
+                color={Number(futureHealthFactor) < 1.5 ? 'error.main' : 'success.main'}
+              >
                 {Number(user.healthFactor) > 0 ? Number(user.healthFactor).toFixed(2) : '∞'} →{' '}
                 {Number(futureHealthFactor) > 0 ? Number(futureHealthFactor).toFixed(2) : '∞'}
               </Typography>
             ) : (
-              <Typography variant="body2" sx={{ opacity: 0.3 }}>—</Typography>
+              <Typography variant="body2" sx={{ opacity: 0.3 }}>
+                —
+              </Typography>
             )}
           </OverviewRow>
         </OverviewSection>
@@ -340,8 +378,8 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
             {txError.error || 'Transaction failed'}
           </Alert>
         )}
+
         {exceedsBalance && <Alert severity="warning">Amount exceeds wallet balance.</Alert>}
-        {exceedsDebt && <Alert severity="warning">Amount exceeds outstanding debt.</Alert>}
 
         <Button variant="contained" size="large" fullWidth disabled={disabled} onClick={onAction}>
           {mainTxState.loading || approvalTxState.loading ? 'Processing…' : actionLabel}

@@ -9,8 +9,9 @@ import { ListItem } from 'src/components/lists/ListItem';
 import { Row } from 'src/components/primitives/Row';
 import { TokenIcon } from 'src/components/primitives/TokenIcon';
 import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
-import { useModalContext } from 'src/hooks/useModal';
 import { useRootStore } from 'src/store/root';
+import { useModalStore } from 'src/store/useModalStore';
+import { ModalType } from 'src/components/Modals/types';
 import { CustomMarket } from 'src/ui-config/marketsConfig';
 import { DASHBOARD_LIST_COLUMN_WIDTHS } from 'src/utils/dashboardSortUtils';
 import { getMaxGhoMintAmount } from 'src/utils/getMaxAmountAvailableToBorrow';
@@ -31,7 +32,7 @@ export const GhoBorrowAssetsListItem = ({
   isFreezed,
   reserve,
 }: GhoBorrowAssetsItem) => {
-  const { openBorrow } = useModalContext();
+  const openModal = useModalStore((s) => s.openModal);
   const { user } = useAppDataContext();
   const currentMarket = useRootStore((store) => store.currentMarket);
   const { ghoReserveData, ghoUserData, ghoUserLoadingData, ghoLoadingData } = useAppDataContext();
@@ -81,7 +82,7 @@ export const GhoBorrowAssetsListItem = ({
     ghoUserDataFetched: !ghoUserLoadingData,
     userBorrowApyAfterNewBorrow,
     ghoLoadingData,
-    onBorrowClick: () => openBorrow(underlyingAsset, currentMarket, name, 'dashboard'),
+    onBorrowClick: () => openModal(ModalType.Borrow, { underlyingAsset }),
   };
   if (downToXSM) {
     return <GhoBorrowAssetsListItemMobile {...props} />;

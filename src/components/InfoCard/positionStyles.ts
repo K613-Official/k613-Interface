@@ -31,13 +31,12 @@ export const AssetCell = styled(Box)(() => ({
 
 export const NameText = styled(Typography)(() => ({
   color: '#f5f5f5',
-  fontSize: 16,
-  lineHeight: '24px',
-  fontWeight: 600,
+  fontSize: 14,
+  lineHeight: '20px',
 }));
 
 export const SymbolText = styled(Typography)(() => ({
-  color: '#8b8e93',
+  color: '#f5f5f5',
   fontSize: 14,
   lineHeight: '20px',
 }));

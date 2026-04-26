@@ -1,9 +1,12 @@
 import { valueToBigNumber } from '@aave/math-utils';
-import { Search as SearchIcon } from '@mui/icons-material';
+import { Search as SearchIcon, UnfoldMore as UnfoldMoreIcon } from '@mui/icons-material';
 import {
   Box,
   Button,
+  Checkbox,
   InputAdornment,
+  ListItemText,
+  ListSubheader,
   MenuItem,
   Select,
   SelectChangeEvent,
@@ -13,12 +16,14 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  TableSortLabel,
   TextField,
   Typography,
 } from '@mui/material';
 import { useMemo, useState } from 'react';
 import Layout from 'src/components/Layout';
 import MaxWidthContainer from 'src/components/MaxWidthContainer';
+import { BigStat } from 'src/components/primitives/BigStat';
 import { FormattedNumber } from 'src/components/primitives/FormattedNumber';
 import { Link, ROUTES } from 'src/components/primitives/Link';
 import { TokenIcon } from 'src/components/primitives/TokenIcon';
@@ -69,28 +74,44 @@ const STABLECOIN_SYMBOLS = new Set([
   'MIM',
 ]);
 
-function reserveCategory(reserve: ComputedReserveData): 'crypto' | 'stablecoin' {
+type ReserveCategory = 'crypto' | 'stablecoin';
+
+function reserveCategory(reserve: ComputedReserveData): ReserveCategory {
   const raw = reserve.symbol.toUpperCase();
   const base = raw.split('.')[0];
   if (STABLECOIN_SYMBOLS.has(raw) || STABLECOIN_SYMBOLS.has(base)) {
     return 'stablecoin';
   }
-  if (raw === 'USDC' || raw === 'USDT' || raw.endsWith('USDC') || raw.endsWith('USDT')) {
+  if (raw.endsWith('USDC') || raw.endsWith('USDT')) {
     return 'stablecoin';
   }
   return 'crypto';
 }
 
-const CATEGORY_OPTIONS = [
-  { value: 'crypto', label: 'Crypto' },
-  { value: 'stablecoin', label: 'Stablecoin' },
-];
+const CATEGORY_LABELS: Record<ReserveCategory, string> = {
+  stablecoin: 'Stablecoins',
+  crypto: 'Crypto',
+};
+
+type SortField = 'symbol' | 'totalLiquidityUSD' | 'supplyAPY' | 'totalDebtUSD' | 'variableBorrowAPY';
+type SortOrder = 'asc' | 'desc';
 
 export default function MarketsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categories, setCategories] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<SortField>('totalLiquidityUSD');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const currentMarket = useRootStore((s) => s.currentMarket) as CustomMarket;
   const { reserves, loading } = useAppDataContext();
+
+  const handleSort = (field: SortField) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
+  };
 
   const totals = useMemo(() => {
     return reserves.reduce(
@@ -107,14 +128,22 @@ export default function MarketsPage() {
     );
   }, [reserves]);
 
+  const availableCategories = useMemo(() => {
+    const present = new Set<ReserveCategory>();
+    reserves.forEach((r) => present.add(reserveCategory(r)));
+    return Array.from(present);
+  }, [reserves]);
+
   const handleCategoriesChange = (event: SelectChangeEvent<string[]>) => {
     const value = event.target.value;
     setCategories(typeof value === 'string' ? value.split(',') : value);
   };
 
+  const resetCategories = () => setCategories([]);
+
   const filteredReserves = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return reserves.filter((r) => {
+    const filtered = reserves.filter((r) => {
       const matchesSearch =
         !q ||
         r.symbol.toLowerCase().includes(q) ||
@@ -124,7 +153,16 @@ export default function MarketsPage() {
       const matchesCategory = categories.length === 0 || categories.includes(cat);
       return matchesSearch && matchesCategory;
     });
-  }, [reserves, searchQuery, categories]);
+    const sorted = [...filtered].sort((a, b) => {
+      if (sortBy === 'symbol') {
+        return a.symbol.localeCompare(b.symbol);
+      }
+      const av = Number(a[sortBy] ?? 0);
+      const bv = Number(b[sortBy] ?? 0);
+      return av - bv;
+    });
+    return sortOrder === 'asc' ? sorted : sorted.reverse();
+  }, [reserves, searchQuery, categories, sortBy, sortOrder]);
 
   const showStatsSkeleton = loading && reserves.length === 0;
 
@@ -147,66 +185,21 @@ export default function MarketsPage() {
                 <Typography variant="body2" color="text.secondary">
                   Total market size
                 </Typography>
-                {showStatsSkeleton ? (
-                  <Skeleton width={100} height={28} sx={{ mt: 0.5 }} />
-                ) : (
-                  <Typography variant="body1" component="div">
-                    <Typography component="span" color="text.secondary">
-                      ${' '}
-                    </Typography>
-                    <FormattedNumber
-                      value={totals.supplyUsd.toString()}
-                      variant="body1"
-                      component="span"
-                      color="text.primary"
-                      compact
-                    />
-                  </Typography>
-                )}
+                <BigStat value={totals.supplyUsd.toString()} loading={showStatsSkeleton} />
               </StatItem>
               <VerticalDivider />
               <StatItem>
                 <Typography variant="body2" color="text.secondary">
                   Total available
                 </Typography>
-                {showStatsSkeleton ? (
-                  <Skeleton width={100} height={28} sx={{ mt: 0.5 }} />
-                ) : (
-                  <Typography variant="body1" component="div">
-                    <Typography component="span" color="text.secondary">
-                      ${' '}
-                    </Typography>
-                    <FormattedNumber
-                      value={totals.availableUsd.toString()}
-                      variant="body1"
-                      component="span"
-                      color="text.primary"
-                      compact
-                    />
-                  </Typography>
-                )}
+                <BigStat value={totals.availableUsd.toString()} loading={showStatsSkeleton} />
               </StatItem>
               <VerticalDivider />
               <StatItem>
                 <Typography variant="body2" color="text.secondary">
                   Total borrows
                 </Typography>
-                {showStatsSkeleton ? (
-                  <Skeleton width={100} height={28} sx={{ mt: 0.5 }} />
-                ) : (
-                  <Typography variant="body1" component="div">
-                    <Typography component="span" color="text.secondary">
-                      ${' '}
-                    </Typography>
-                    <FormattedNumber
-                      value={totals.borrowUsd.toString()}
-                      variant="body1"
-                      component="span"
-                      color="text.primary"
-                      compact
-                    />
-                  </Typography>
-                )}
+                <BigStat value={totals.borrowUsd.toString()} loading={showStatsSkeleton} />
               </StatItem>
             </StatsCard>
           </CoreInstanceBlock>
@@ -228,14 +221,47 @@ export default function MarketsPage() {
                       if (s.length === 0) {
                         return 'All categories';
                       }
-                      return s
-                        .map((v) => CATEGORY_OPTIONS.find((c) => c.value === v)?.label ?? v)
-                        .join(', ');
+                      return s.map((v) => CATEGORY_LABELS[v as ReserveCategory] ?? v).join(', ');
                     }}
                   >
-                    {CATEGORY_OPTIONS.map((c) => (
-                      <MenuItem key={c.value} value={c.value}>
-                        {c.label}
+                    <ListSubheader
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        bgcolor: 'background.paper',
+                        lineHeight: '32px',
+                        py: 0.5,
+                      }}
+                    >
+                      <Typography variant="body2" color="text.secondary">
+                        Select
+                      </Typography>
+                      <Button
+                        size="small"
+                        onClick={resetCategories}
+                        sx={{
+                          minWidth: 'auto',
+                          p: 0,
+                          color: 'primary.main',
+                          textTransform: 'none',
+                        }}
+                      >
+                        Reset
+                      </Button>
+                    </ListSubheader>
+                    {availableCategories.map((c) => (
+                      <MenuItem key={c} value={c} sx={{ pr: 1 }}>
+                        <ListItemText primary={CATEGORY_LABELS[c]} />
+                        <Checkbox
+                          checked={categories.indexOf(c) > -1}
+                          size="small"
+                          sx={{
+                            p: 0,
+                            color: 'text.secondary',
+                            '&.Mui-checked': { color: 'primary.main' },
+                          }}
+                        />
                       </MenuItem>
                     ))}
                   </Select>
@@ -270,77 +296,134 @@ export default function MarketsPage() {
                 </Box>
               ) : (
                 <DesktopTable>
-                  <Table>
+                  <Table sx={{ tableLayout: 'fixed' }}>
                     <TableHead>
                       <TableRow>
-                        <TableCell>Asset</TableCell>
-                        <TableCell align="right">Total supplied</TableCell>
-                        <TableCell align="right">Supply APY</TableCell>
-                        <TableCell align="right">Total borrowed</TableCell>
-                        <TableCell align="right">Borrow APY, variable</TableCell>
-                        <TableCell align="right" />
+                        <TableCell sx={{ width: '22%' }}>
+                          <TableSortLabel
+                            active={sortBy === 'symbol'}
+                            direction={sortBy === 'symbol' ? sortOrder : 'asc'}
+                            onClick={() => handleSort('symbol')}
+                            IconComponent={UnfoldMoreIcon}
+                          >
+                            Asset
+                          </TableSortLabel>
+                        </TableCell>
+                        <TableCell align="center" sx={{ width: '16%' }}>
+                          <TableSortLabel
+                            active={sortBy === 'totalLiquidityUSD'}
+                            direction={sortBy === 'totalLiquidityUSD' ? sortOrder : 'desc'}
+                            onClick={() => handleSort('totalLiquidityUSD')}
+                            IconComponent={UnfoldMoreIcon}
+                          >
+                            Total supplied
+                          </TableSortLabel>
+                        </TableCell>
+                        <TableCell align="center" sx={{ width: '14%' }}>
+                          <TableSortLabel
+                            active={sortBy === 'supplyAPY'}
+                            direction={sortBy === 'supplyAPY' ? sortOrder : 'desc'}
+                            onClick={() => handleSort('supplyAPY')}
+                            IconComponent={UnfoldMoreIcon}
+                          >
+                            Supply APY
+                          </TableSortLabel>
+                        </TableCell>
+                        <TableCell align="center" sx={{ width: '16%' }}>
+                          <TableSortLabel
+                            active={sortBy === 'totalDebtUSD'}
+                            direction={sortBy === 'totalDebtUSD' ? sortOrder : 'desc'}
+                            onClick={() => handleSort('totalDebtUSD')}
+                            IconComponent={UnfoldMoreIcon}
+                          >
+                            Total borrowed
+                          </TableSortLabel>
+                        </TableCell>
+                        <TableCell align="center" sx={{ width: '18%' }}>
+                          <TableSortLabel
+                            active={sortBy === 'variableBorrowAPY'}
+                            direction={sortBy === 'variableBorrowAPY' ? sortOrder : 'desc'}
+                            onClick={() => handleSort('variableBorrowAPY')}
+                            IconComponent={UnfoldMoreIcon}
+                          >
+                            Borrow APY, variable
+                          </TableSortLabel>
+                        </TableCell>
+                        <TableCell align="right" sx={{ width: '14%' }} />
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {filteredReserves.map((row) => (
                         <TableRow key={row.underlyingAsset}>
                           <TableCell>
-                            <Box display="flex" alignItems="center" gap={1}>
-                              <TokenIcon symbol={row.iconSymbol} sx={{ fontSize: 24 }} />
+                            <Box display="flex" alignItems="center" gap={1.5}>
+                              <TokenIcon symbol={row.iconSymbol} sx={{ fontSize: 32 }} />
                               <Box>
+                                <Typography variant="body1">{row.name}</Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                  {row.name}
+                                  {row.symbol}
                                 </Typography>
-                                <Typography variant="body1">{row.symbol}</Typography>
                               </Box>
                             </Box>
                           </TableCell>
-                          <TableCell align="right">
+                          <TableCell align="center">
                             <Box>
-                              <FormattedNumber value={row.totalLiquidity} variant="body2" compact />
+                              <FormattedNumber
+                                value={row.totalLiquidity}
+                                variant="body1"
+                                compact
+                                sx={{ justifyContent: 'center' }}
+                              />
                               <Box>
                                 <FormattedNumber
                                   value={row.totalLiquidityUSD}
                                   variant="body2"
                                   symbol="USD"
                                   compact
-                                  sx={{ color: 'text.secondary' }}
+                                  sx={{ color: 'text.secondary', justifyContent: 'center' }}
                                 />
                               </Box>
                             </Box>
                           </TableCell>
-                          <TableCell align="right">
+                          <TableCell align="center">
                             <FormattedNumber
                               value={row.supplyAPY}
                               percent
-                              variant="body2"
+                              variant="body1"
                               visibleDecimals={2}
+                              sx={{ justifyContent: 'center' }}
                             />
                           </TableCell>
-                          <TableCell align="right">
+                          <TableCell align="center">
                             <Box>
-                              <FormattedNumber value={row.totalDebt} variant="body2" compact />
+                              <FormattedNumber
+                                value={row.totalDebt}
+                                variant="body1"
+                                compact
+                                sx={{ justifyContent: 'center' }}
+                              />
                               <Box>
                                 <FormattedNumber
                                   value={row.totalDebtUSD}
                                   variant="body2"
                                   symbol="USD"
                                   compact
-                                  sx={{ color: 'text.secondary' }}
+                                  sx={{ color: 'text.secondary', justifyContent: 'center' }}
                                 />
                               </Box>
                             </Box>
                           </TableCell>
-                          <TableCell align="right">
+                          <TableCell align="center">
                             {row.borrowingEnabled ? (
                               <FormattedNumber
                                 value={row.variableBorrowAPY}
                                 percent
-                                variant="body2"
+                                variant="body1"
                                 visibleDecimals={2}
+                                sx={{ justifyContent: 'center' }}
                               />
                             ) : (
-                              <Typography variant="body2">—</Typography>
+                              <Typography variant="body1">—</Typography>
                             )}
                           </TableCell>
                           <TableCell align="right">
@@ -367,11 +450,13 @@ export default function MarketsPage() {
                   {filteredReserves.map((row) => (
                     <MobileAssetCard key={row.underlyingAsset}>
                       <Box display="flex" alignItems="center" justifyContent="space-between">
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <TokenIcon symbol={row.iconSymbol} sx={{ fontSize: 24 }} />
+                        <Box display="flex" alignItems="center" gap={1.5}>
+                          <TokenIcon symbol={row.iconSymbol} sx={{ fontSize: 32 }} />
                           <Box>
-                            <Typography variant="body2">{row.name}</Typography>
-                            <Typography variant="body1">{row.symbol}</Typography>
+                            <Typography variant="body1">{row.name}</Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {row.symbol}
+                            </Typography>
                           </Box>
                         </Box>
                       </Box>

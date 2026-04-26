@@ -1,5 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
 
+import { TokenIcon } from 'src/components/primitives/TokenIcon';
+
 import { InfoCardType, InfoPosition } from '../data';
 import {
   ActionButton,
@@ -10,7 +12,6 @@ import {
   HeaderCell,
   SortIcon,
   SymbolText,
-  TableAssetIcon,
   TablePrimaryValue,
   TableSecondaryValue,
   ValueStack,
@@ -50,7 +51,7 @@ export function InfoCardDesktopTable({
           <DataRow key={position.id}>
             <TableCell>
               <AssetCell>
-                <TableAssetIcon symbol={position.iconSymbol} />
+                <TokenIcon symbol={position.iconSymbol} sx={{ width: 24, height: 24, fontSize: '24px' }} />
                 <SymbolText>{position.symbol}</SymbolText>
               </AssetCell>
             </TableCell>

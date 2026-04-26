@@ -10,6 +10,8 @@ import { useGhoPoolReserve } from 'src/hooks/pool/useGhoPoolReserve';
 import { useUserGhoPoolReserve } from 'src/hooks/pool/useUserGhoPoolReserve';
 import { useModalContext } from 'src/hooks/useModal';
 import { useRootStore } from 'src/store/root';
+import { useModalStore } from 'src/store/useModalStore';
+import { ModalType } from 'src/components/Modals/types';
 import { CustomMarket } from 'src/ui-config/marketsConfig';
 import { getMaxGhoMintAmount } from 'src/utils/getMaxAmountAvailableToBorrow';
 import { ghoUserQualifiesForDiscount, weightedAverageAPY } from 'src/utils/ghoUtilities';
@@ -28,7 +30,8 @@ import { ListValueColumn } from '../ListValueColumn';
 import { ListValueRow } from '../ListValueRow';
 
 export const GhoBorrowedPositionsListItem = ({ reserve }: ComputedUserReserveData) => {
-  const { openBorrow, openRepay, openDebtSwitch } = useModalContext();
+  const { openDebtSwitch } = useModalContext();
+  const openModal = useModalStore((s) => s.openModal);
   const currentMarket = useRootStore((store) => store.currentMarket);
   const currentMarketData = useRootStore((store) => store.currentMarketData);
   const { ghoLoadingData, ghoReserveData, ghoUserData, ghoUserLoadingData, user } =
@@ -81,9 +84,9 @@ export const GhoBorrowedPositionsListItem = ({ reserve }: ComputedUserReserveDat
     disableSwitch: !isActive || isPaused,
     disableRepay: !isActive || isPaused,
     onRepayClick: () =>
-      openRepay(reserve.underlyingAsset, isFrozen, currentMarket, reserve.name, 'dashboard'),
+      openModal(ModalType.Repay, { underlyingAsset: reserve.underlyingAsset, isFrozen }),
     onBorrowClick: () =>
-      openBorrow(reserve.underlyingAsset, currentMarket, reserve.name, 'dashboard'),
+      openModal(ModalType.Borrow, { underlyingAsset: reserve.underlyingAsset }),
     onSwitchClick: () => openDebtSwitch(reserve.underlyingAsset),
   };
 

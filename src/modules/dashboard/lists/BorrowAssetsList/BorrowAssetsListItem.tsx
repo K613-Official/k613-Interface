@@ -1,8 +1,9 @@
 import { ProtocolAction } from '@aave/contract-helpers';
 import { Trans } from '@lingui/macro';
 import { Button } from '@mui/material';
-import { useModalContext } from 'src/hooks/useModal';
 import { useRootStore } from 'src/store/root';
+import { useModalStore } from 'src/store/useModalStore';
+import { ModalType } from 'src/components/Modals/types';
 import { DashboardReserve } from 'src/utils/dashboardSortUtils';
 import { DASHBOARD } from 'src/utils/mixPanelEvents';
 import { showExternalIncentivesTooltip } from 'src/utils/utils';
@@ -30,7 +31,7 @@ export const BorrowAssetsListItem = ({
   underlyingAsset,
   isFreezed,
 }: DashboardReserve) => {
-  const { openBorrow } = useModalContext();
+  const openModal = useModalStore((s) => s.openModal);
 
   const disableBorrow = isFreezed || Number(availableBorrows) <= 0;
 
@@ -80,7 +81,7 @@ export const BorrowAssetsListItem = ({
           disabled={disableBorrow}
           variant="contained"
           onClick={() => {
-            openBorrow(underlyingAsset, currentMarket, name, 'dashboard');
+            openModal(ModalType.Borrow, { underlyingAsset });
           }}
         >
           <Trans>Borrow</Trans>
