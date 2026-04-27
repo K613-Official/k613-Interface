@@ -1,6 +1,10 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-npx lint-staged
-yarn i18n
+npx --no -- lint-staged
+
+# Avoid `yarn` here: on Windows it can resolve to a global shim under a path with
+# non-ASCII chars, which breaks Node module resolution. Call the local CLI directly.
+NODE_ENV=development npx --no -- lingui extract --clean --overwrite --locale en
+npx --no -- lingui compile
 git add ./src/locales
