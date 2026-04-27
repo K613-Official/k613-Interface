@@ -56,7 +56,7 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
         s.currentMarketData,
       ])
     );
-  const { sendTx } = useWeb3Context();
+  const { sendTx, currentAccount } = useWeb3Context();
   const { walletBalances } = useWalletBalances(currentMarketData);
   const queryClient = useQueryClient();
   const {
@@ -174,10 +174,11 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
 
   const handleApprove = async () => {
     try {
+      if (!currentAccount) return;
       setApprovalTxState({ ...approvalTxState, loading: true });
       let tx = generateApproval({
         amount: parseUnits(amount, reserve.decimals).toString(),
-        user: '',
+        user: currentAccount,
         token: poolAddress,
         spender: currentMarketData.addresses.LENDING_POOL,
       });
@@ -228,15 +229,21 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
     mainTxState.loading ||
     approvalTxState.loading;
 
-  const actionLabel =
-    requiresApproval && !approvalTxState.success ? 'Approve' : `Repay ${symbol}`;
+  const actionLabel = requiresApproval && !approvalTxState.success ? 'Approve' : `Repay ${symbol}`;
   const onAction = requiresApproval && !approvalTxState.success ? handleApprove : handleRepay;
 
   if (mainTxState.success) {
     return (
       <Dialog open={open} onClose={handleClose}>
         <ModalCard>
-          <SuccessView action="Repaid" amount={amount} symbol={symbol} iconSymbol={reserve.iconSymbol} txHash={mainTxState.txHash} onClose={handleClose} />
+          <SuccessView
+            action="Repaid"
+            amount={amount}
+            symbol={symbol}
+            iconSymbol={reserve.iconSymbol}
+            txHash={mainTxState.txHash}
+            onClose={handleClose}
+          />
         </ModalCard>
       </Dialog>
     );
@@ -286,9 +293,7 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
                 <Typography variant="caption">{symbol}</Typography>
               </Stack>
               <BalanceRow>
-                <Typography variant="caption">
-                  Wallet {Number(walletBalance).toFixed(4)}
-                </Typography>
+                <Typography variant="caption">Wallet {Number(walletBalance).toFixed(4)}</Typography>
                 <Typography
                   variant="caption"
                   color="primary"
@@ -330,7 +335,9 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
                 {Number(futureHealthFactor) > 0 ? Number(futureHealthFactor).toFixed(2) : '∞'}
               </Typography>
             ) : (
-              <Typography variant="body2" sx={{ opacity: 0.3 }}>—</Typography>
+              <Typography variant="body2" sx={{ opacity: 0.3 }}>
+                —
+              </Typography>
             )}
           </OverviewRow>
         </OverviewSection>
