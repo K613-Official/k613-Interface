@@ -703,7 +703,7 @@ function SupplyMobileCard({
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="body2">APY</Typography>
           <Typography variant="body2" fontWeight={600}>
-            {row.apyPercent.toFixed(2)}%
+            {(row.apyPercent * 100).toFixed(2)}%
           </Typography>
         </Box>
         <Box display="flex" justifyContent="space-between" alignItems="center">

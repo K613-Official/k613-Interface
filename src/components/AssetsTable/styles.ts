@@ -27,6 +27,7 @@ export const MobileCards = styled(Box)(({ theme }) => ({
   [theme.breakpoints.down('lg')]: {
     display: 'grid',
     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    marginTop: 16,
   },
 
   [theme.breakpoints.down('xsm')]: {
