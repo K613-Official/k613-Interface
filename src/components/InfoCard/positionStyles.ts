@@ -93,7 +93,6 @@ export const ActionButton = styled(Button)(() => ({
 export const SortIcon = styled(UnfoldMoreIcon)(() => ({
   color: '#7c8088',
   fontSize: 18,
-  marginLeft: 4,
   verticalAlign: 'middle',
 }));
 
@@ -148,7 +147,8 @@ export const MobileGrid = styled(Box)(({ theme }) => ({
   display: 'grid',
   gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
   gap: 14,
-  [theme.breakpoints.down('sm')]: {
+
+  [theme.breakpoints.down('xsm')]: {
     gridTemplateColumns: '1fr',
   },
 }));
@@ -156,7 +156,7 @@ export const MobileGrid = styled(Box)(({ theme }) => ({
 export const MobileCard = styled(Box)(() => ({
   border: '1px solid #5f636a',
   borderRadius: 14,
-  background: 'linear-gradient(180deg, #2f2f31 0%, #27282b 100%)',
+  background: '#333333',
   padding: 14,
 }));
 
