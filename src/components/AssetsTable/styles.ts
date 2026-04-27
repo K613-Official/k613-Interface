@@ -15,32 +15,33 @@ export const Paper = styled(PaperBase, {
 
 export const DesktopTable = styled(Box)(({ theme }) => ({
   display: 'block',
-  [theme.breakpoints.down('sm')]: {
+  [theme.breakpoints.down('lg')]: {
     display: 'none',
   },
 }));
 
 export const MobileCards = styled(Box)(({ theme }) => ({
   display: 'none',
-  flexDirection: 'column',
   gap: 12,
-  [theme.breakpoints.down('sm')]: {
-    display: 'flex',
+
+  [theme.breakpoints.down('lg')]: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+  },
+
+  [theme.breakpoints.down('xsm')]: {
+    gridTemplateColumns: '1fr',
   },
 }));
 
 export const MobileAssetCard = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
-  gap: 12,
+  gap: 24,
   padding: 16,
   border: `1px solid ${theme.palette.text.secondary}`,
   borderRadius: 12,
   backgroundColor: '#333333',
-
-  '&:first-of-type': {
-    marginTop: 14,
-  },
 }));
 
 export const MobilePagination = styled(Box)(({ theme }) => ({
