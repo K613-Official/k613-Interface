@@ -1,7 +1,7 @@
 import { Check } from '@mui/icons-material';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import { ReactNode, useState } from 'react';
-import { ATokenIcon, TokenIcon } from 'src/components/primitives/TokenIcon';
+import { TokenIcon } from 'src/components/primitives/TokenIcon';
 import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
 import { useRootStore } from 'src/store/root';
 
@@ -129,11 +129,7 @@ export function SuccessView({
             <Typography variant="caption" color="text.primary" textAlign="center">
               Add
             </Typography>
-            {addToWalletKind === 'aToken' ? (
-              <ATokenIcon symbol={baseIcon} sx={{ fontSize: 16 }} />
-            ) : (
-              <TokenIcon symbol={baseIcon} sx={{ fontSize: 16 }} />
-            )}
+            <TokenIcon symbol={baseIcon} sx={{ fontSize: 16 }} />
             <Typography variant="caption" color="text.primary">
               {walletSymbol}
             </Typography>
