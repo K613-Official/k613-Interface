@@ -19,8 +19,8 @@ export const ModalCard = styled(Box)({
   display: 'flex',
   flexDirection: 'column',
   gap: 16,
-  width: '95%',
-  maxWidth: 560,
+  width: '100%',
+  maxWidth: 380,
   margin: '0 auto',
 });
 
