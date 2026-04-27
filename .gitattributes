@@ -1,2 +1,7 @@
 # generated files
 src/locales/*.js linguist-vendored
+
+# husky hooks must use LF on every OS, otherwise Git Bash on Windows
+# fails to parse the `#!/bin/sh` shebang (CRLF breaks it)
+.husky/* text eol=lf
+.husky/_/* text eol=lf

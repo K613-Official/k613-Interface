@@ -1,7 +1,7 @@
 import { Check } from '@mui/icons-material';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import { ReactNode } from 'react';
-import { ATokenIcon, TokenIcon } from 'src/components/primitives/TokenIcon';
+import { TokenIcon } from 'src/components/primitives/TokenIcon';
 import { useRootStore } from 'src/store/root';
 
 interface SuccessViewProps {
@@ -39,6 +39,7 @@ export function SuccessView({
   const handleAddToWallet = async () => {
     if (!addToWalletAddress || !addToWalletSymbol) return;
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (window as any).ethereum?.request({
         method: 'wallet_watchAsset',
         params: {
@@ -117,11 +118,11 @@ export function SuccessView({
             <Typography variant="caption" color="text.primary" textAlign="center">
               Add
             </Typography>
-            {addToWalletKind === 'aToken' ? (
-              <ATokenIcon symbol={baseIcon} sx={{ fontSize: 16 }} />
-            ) : (
-              <TokenIcon symbol={baseIcon} sx={{ fontSize: 16 }} />
-            )}
+            <TokenIcon
+              symbol={baseIcon}
+              aToken={addToWalletKind === 'aToken'}
+              sx={{ fontSize: 16 }}
+            />
             <Typography variant="caption" color="text.primary">
               {addToWalletSymbol}
             </Typography>
