@@ -93,7 +93,12 @@ const CATEGORY_LABELS: Record<ReserveCategory, string> = {
   crypto: 'Crypto',
 };
 
-type SortField = 'symbol' | 'totalLiquidityUSD' | 'supplyAPY' | 'totalDebtUSD' | 'variableBorrowAPY';
+type SortField =
+  | 'symbol'
+  | 'totalLiquidityUSD'
+  | 'supplyAPY'
+  | 'totalDebtUSD'
+  | 'variableBorrowAPY';
 type SortOrder = 'asc' | 'desc';
 
 export default function MarketsPage() {
