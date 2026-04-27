@@ -1,7 +1,8 @@
 import { Check } from '@mui/icons-material';
 import { Box, Button, Stack, Typography } from '@mui/material';
-import { ReactNode } from 'react';
-import { TokenIcon } from 'src/components/primitives/TokenIcon';
+import { ReactNode, useState } from 'react';
+import { ATokenIcon, TokenIcon } from 'src/components/primitives/TokenIcon';
+import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
 import { useRootStore } from 'src/store/root';
 
 interface SuccessViewProps {
@@ -32,26 +33,36 @@ export function SuccessView({
   description,
 }: SuccessViewProps) {
   const currentNetworkConfig = useRootStore((s) => s.currentNetworkConfig);
+  const { addERC20Token } = useWeb3Context();
+  const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState<string | undefined>();
 
   const explorerUrl = txHash ? currentNetworkConfig.explorerLinkBuilder({ tx: txHash }) : undefined;
   const baseIcon = iconSymbol ?? symbol;
+  // MetaMask limits asset symbol to 11 chars. For debt tokens, shorten "variableDebtX" → "vDebtX".
+  const walletSymbol = addToWalletSymbol
+    ? addToWalletSymbol.startsWith('variableDebt')
+      ? `vDebt${addToWalletSymbol.slice('variableDebt'.length)}`.slice(0, 11)
+      : addToWalletSymbol.slice(0, 11)
+    : '';
 
   const handleAddToWallet = async () => {
-    if (!addToWalletAddress || !addToWalletSymbol) return;
+    if (!addToWalletAddress || !walletSymbol) return;
+    setAddError(undefined);
+    setAdding(true);
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (window as any).ethereum?.request({
-        method: 'wallet_watchAsset',
-        params: {
-          type: 'ERC20',
-          options: {
-            address: addToWalletAddress,
-            symbol: addToWalletSymbol.slice(0, 11),
-            decimals: addToWalletDecimals,
-          },
-        },
+      const ok = await addERC20Token({
+        address: addToWalletAddress,
+        symbol: walletSymbol,
+        decimals: addToWalletDecimals,
+        aToken: addToWalletKind === 'aToken',
       });
-    } catch {}
+      if (!ok) setAddError('Wallet rejected or unsupported.');
+    } catch (e) {
+      setAddError((e as Error)?.message ?? 'Failed to add token.');
+    } finally {
+      setAdding(false);
+    }
   };
 
   return (
@@ -118,21 +129,26 @@ export function SuccessView({
             <Typography variant="caption" color="text.primary" textAlign="center">
               Add
             </Typography>
-            <TokenIcon
-              symbol={baseIcon}
-              aToken={addToWalletKind === 'aToken'}
-              sx={{ fontSize: 16 }}
-            />
+            {addToWalletKind === 'aToken' ? (
+              <ATokenIcon symbol={baseIcon} sx={{ fontSize: 16 }} />
+            ) : (
+              <TokenIcon symbol={baseIcon} sx={{ fontSize: 16 }} />
+            )}
             <Typography variant="caption" color="text.primary">
-              {addToWalletSymbol}
+              {walletSymbol}
             </Typography>
             <Typography variant="caption" color="text.primary">
               to wallet to track your balance.
             </Typography>
           </Stack>
-          <Button variant="contained" size="small" onClick={handleAddToWallet}>
-            ADD TO WALLET →
+          <Button variant="contained" size="small" onClick={handleAddToWallet} disabled={adding}>
+            {adding ? 'Adding…' : 'ADD TO WALLET →'}
           </Button>
+          {addError && (
+            <Typography variant="caption" color="error.main" textAlign="center">
+              {addError}
+            </Typography>
+          )}
         </Box>
       )}
 
