@@ -1,4 +1,14 @@
-import { Box, IconButton, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
+import {
+  Box,
+  IconButton,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Typography,
+} from '@mui/material';
 import { useMemo, useState } from 'react';
 import { TokenIcon } from 'src/components/primitives/TokenIcon';
 
@@ -145,7 +155,22 @@ export function InfoCardDesktopTable({
 
             <TableCell align="right">
               <ValueStack>
-                <TablePrimaryValue>{position.primaryValue}</TablePrimaryValue>
+                <Stack
+                  direction="row"
+                  spacing={0.5}
+                  alignItems="baseline"
+                  justifyContent="flex-end"
+                >
+                  <TablePrimaryValue>{position.primaryValue}</TablePrimaryValue>
+                  {position.accrued && (
+                    <Typography
+                      variant="caption"
+                      sx={{ color: isSupply ? 'success.main' : 'error.main', fontWeight: 500 }}
+                    >
+                      ({position.accrued})
+                    </Typography>
+                  )}
+                </Stack>
                 <TableSecondaryValue>{position.secondaryValue}</TableSecondaryValue>
               </ValueStack>
             </TableCell>

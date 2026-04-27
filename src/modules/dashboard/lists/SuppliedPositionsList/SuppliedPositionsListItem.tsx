@@ -29,24 +29,13 @@ export const SuppliedPositionsListItem = ({
   underlyingAsset,
 }: DashboardReserve) => {
   const { user } = useAppDataContext();
-  const { data: netSupplied, isLoading: nsLoading, error: nsError } = useNetSupplied();
+  const { data: netSupplied } = useNetSupplied();
   const { isIsolated, aIncentivesData, aTokenAddress, isFrozen, isActive, isPaused } = reserve;
   const principal = netSupplied?.[underlyingAsset.toLowerCase()];
   const earned =
     principal && Number(underlyingBalance) > 0
       ? new BigNumber(underlyingBalance).minus(principal)
       : null;
-
-  console.warn('[NetSupplied DEBUG]', {
-    asset: reserve.symbol,
-    underlyingAsset: underlyingAsset.toLowerCase(),
-    keys: netSupplied ? Object.keys(netSupplied) : null,
-    principalStr: principal?.toString(),
-    underlyingBalance,
-    earnedStr: earned?.toString(),
-    loading: nsLoading,
-    error: nsError?.message,
-  });
   const { openSwap } = useModalContext();
   const openModal = useModalStore((s) => s.openModal);
   const { debtCeiling } = useAssetCaps();

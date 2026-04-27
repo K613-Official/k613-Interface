@@ -14,6 +14,7 @@ export type InfoPosition = {
   primaryLabel: 'Balance' | 'Debt';
   primaryValue: string;
   secondaryValue: string;
+  accrued?: string;
   apy: string;
   collateralEnabled?: boolean;
   canToggleCollateral?: boolean;
