@@ -11,9 +11,12 @@ import {
   CircularProgress,
   FormControlLabel,
   IconButton,
+  ListItemText,
+  ListSubheader,
   Menu,
   MenuItem,
   Select,
+  SelectChangeEvent,
   Stack,
   Table,
   TableBody,
@@ -50,6 +53,7 @@ import {
   displayGhoForMintableMarket,
   findAndFilterMintableGhoReserve,
 } from 'src/utils/ghoUtilities';
+import { CATEGORY_LABELS, ReserveCategory, reserveCategory } from 'src/utils/reserveCategory';
 
 import { DesktopTable, MobileAssetCard, MobileCards, MobilePagination, Paper } from './styles';
 
@@ -121,8 +125,22 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
     () =>
       typeof window !== 'undefined' && localStorage.getItem(SHOW_SUPPLY_ZERO_BALANCE_KEY) === 'true'
   );
+  const [categories, setCategories] = useState<string[]>([]);
 
   const dataLoading = loadingReserves || loadingWallet;
+
+  const availableCategories = useMemo(() => {
+    const present = new Set<ReserveCategory>();
+    reserves.forEach((r) => present.add(reserveCategory(r)));
+    return Array.from(present);
+  }, [reserves]);
+
+  const handleCategoriesChange = (event: SelectChangeEvent<string[]>) => {
+    const value = event.target.value;
+    setCategories(typeof value === 'string' ? value.split(',') : value);
+  };
+
+  const resetCategories = () => setCategories([]);
 
   const supplyRows: SupplyRow[] = useMemo(() => {
     if (!isSupply) return [];
@@ -405,11 +423,17 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
     return copy;
   }, [isSupply, borrowRows, sortKey, sortDirection]);
 
-  const displayRows = isSupply ? sortedSupplyRows : sortedBorrowRows;
+  const displayRows = useMemo(() => {
+    const base = isSupply ? sortedSupplyRows : sortedBorrowRows;
+    if (categories.length === 0) {
+      return base;
+    }
+    return base.filter((row) => categories.includes(reserveCategory({ symbol: row.symbol })));
+  }, [isSupply, sortedSupplyRows, sortedBorrowRows, categories]);
 
   useEffect(() => {
     setPage(0);
-  }, [type]);
+  }, [type, categories]);
 
   useEffect(() => {
     setPage((p) => {
@@ -452,8 +476,60 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
           <Typography variant="h6">{isSupply ? 'Assets to supply' : 'Assets to borrow'}</Typography>
 
           <Stack direction="row" spacing={2} alignItems="center">
-            <Select size="small" defaultValue="all">
-              <MenuItem value="all">All categories</MenuItem>
+            <Select
+              multiple
+              size="small"
+              value={categories}
+              onChange={handleCategoriesChange}
+              variant="outlined"
+              displayEmpty
+              renderValue={(selected) => {
+                const s = selected as string[];
+                if (s.length === 0) {
+                  return 'All categories';
+                }
+                return s.map((v) => CATEGORY_LABELS[v as ReserveCategory] ?? v).join(', ');
+              }}
+            >
+              <ListSubheader
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  bgcolor: 'background.paper',
+                  lineHeight: '32px',
+                  py: 0.5,
+                }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  Select
+                </Typography>
+                <Button
+                  size="small"
+                  variant="text"
+                  onClick={resetCategories}
+                  sx={{
+                    minWidth: 'auto',
+                    textTransform: 'none',
+                  }}
+                >
+                  Reset
+                </Button>
+              </ListSubheader>
+              {availableCategories.map((c) => (
+                <MenuItem key={c} value={c} sx={{ pr: 1 }}>
+                  <ListItemText primary={CATEGORY_LABELS[c]} />
+                  <Checkbox
+                    checked={categories.indexOf(c) > -1}
+                    size="small"
+                    sx={{
+                      p: 0,
+                      color: 'text.secondary',
+                      '&.Mui-checked': { color: 'primary.main' },
+                    }}
+                  />
+                </MenuItem>
+              ))}
             </Select>
             <Button variant="text" color="secondary" onClick={() => setIsOpen(!isOpen)}>
               {isOpen ? 'Hide –' : 'Show +'}

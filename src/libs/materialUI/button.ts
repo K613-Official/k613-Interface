@@ -37,6 +37,14 @@ const buttonConfig = () => ({
             color: theme.palette.text.primary,
           }),
 
+        ...(ownerState.variant === 'text' && {
+          '&:hover': {
+            background: 'transparent',
+
+            boxShadow: '4px 4px 8px 0px rgba(0, 0, 0, 0.2)',
+          },
+        }),
+
         ...(ownerState.variant === 'outlined' && {
           backgroundColor: '#FFFFFF1F',
           borderColor: '#FFFFFF4D',
