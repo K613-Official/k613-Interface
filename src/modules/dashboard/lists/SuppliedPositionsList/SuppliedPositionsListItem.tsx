@@ -88,7 +88,7 @@ export const SuppliedPositionsListItem = ({
             </Typography>
             {earned && earned.gt(0) && (
               <Typography variant="caption" sx={{ color: 'success.main' }}>
-                +{earned.toFixed(earned.gte(1) ? 2 : 4)}
+                (+{earned.toFixed(earned.gte(1) ? 2 : 4)})
               </Typography>
             )}
           </Box>

@@ -1,9 +1,11 @@
 import { ProtocolAction } from '@aave/contract-helpers';
 import { Trans } from '@lingui/macro';
-import { Box, Button } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
+import BigNumber from 'bignumber.js';
 import { ModalType } from 'src/components/Modals/types';
 import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { useAssetCaps } from 'src/hooks/useAssetCaps';
+import { useNetSupplied } from 'src/hooks/useNetSupplied';
 import { useRootStore } from 'src/store/root';
 import { useModalStore } from 'src/store/useModalStore';
 import { DashboardReserve } from 'src/utils/dashboardSortUtils';
@@ -27,6 +29,12 @@ export const SuppliedPositionsListMobileItem = ({
   underlyingAsset,
 }: DashboardReserve) => {
   const { user } = useAppDataContext();
+  const { data: netSupplied } = useNetSupplied();
+  const principal = netSupplied?.[underlyingAsset.toLowerCase()];
+  const earned =
+    principal && Number(underlyingBalance) > 0
+      ? new BigNumber(underlyingBalance).minus(principal)
+      : null;
   const [currentMarketData, currentMarket, trackEvent] = useRootStore(
     useShallow((state) => [state.currentMarketData, state.currentMarket, state.trackEvent])
   );
@@ -80,6 +88,13 @@ export const SuppliedPositionsListMobileItem = ({
         value={Number(underlyingBalance)}
         subValue={Number(underlyingBalanceUSD)}
         disabled={Number(underlyingBalance) === 0}
+        capsComponent={
+          earned && earned.gt(0) ? (
+            <Typography variant="caption" sx={{ ml: 0.5, color: 'success.main' }}>
+              (+{earned.toFixed(earned.gte(1) ? 2 : 4)})
+            </Typography>
+          ) : undefined
+        }
       />
 
       <Row caption={<Trans>Supply APY</Trans>} align="flex-start" captionVariant="body2" mb={2}>
