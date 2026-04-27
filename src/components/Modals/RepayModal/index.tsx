@@ -71,6 +71,7 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
   } = useModalContext();
 
   const [amount, setAmount] = useState('');
+  const [isMaxSelected, setIsMaxSelected] = useState(false);
 
   const reserve = useMemo(() => {
     const key = underlyingAsset.toLowerCase();
@@ -97,6 +98,7 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
 
   const handleClose = () => {
     setAmount('');
+    setIsMaxSelected(false);
     setMainTxState({});
     setApprovalTxState({});
     setTxError(undefined);
@@ -128,14 +130,21 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
     ? walletBalances[API_ETH_MOCK_ADDRESS.toLowerCase()]?.amount || '0'
     : walletBalances[reserve.underlyingAsset.toLowerCase()]?.amount || '0';
 
-  const maxRepay = Math.min(Number(debt), Number(walletBalance)).toString();
+  const maxRepay = valueToBigNumber(debt).lte(walletBalance)
+    ? valueToBigNumber(debt).toFixed()
+    : valueToBigNumber(walletBalance).toFixed();
+  const canRepayAllDebt = !isNative && valueToBigNumber(walletBalance).gte(debt);
 
   const handleAmountChange = (value: string) => {
     const truncated = roundToTokenDecimals(value, reserve.decimals);
     setAmount(truncated);
+    setIsMaxSelected(false);
   };
 
-  const handleMax = () => setAmount(maxRepay);
+  const handleMax = () => {
+    setAmount(maxRepay);
+    setIsMaxSelected(true);
+  };
 
   const amountInUsd = valueToBigNumber(amount || '0').multipliedBy(reserve.priceInUSD);
 
@@ -195,8 +204,12 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
   const handleRepay = async () => {
     try {
       setMainTxState({ ...mainTxState, loading: true });
+      const amountToRepay =
+        isMaxSelected && canRepayAllDebt
+          ? '-1'
+          : parseUnits(roundToTokenDecimals(amount, reserve.decimals), reserve.decimals).toString();
       let tx = repay({
-        amountToRepay: parseUnits(amount, reserve.decimals).toString(),
+        amountToRepay,
         poolAddress,
         repayWithATokens: false,
         debtType: InterestRate.Variable,
@@ -212,7 +225,10 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
         amount,
         assetName: reserve.name,
       });
-      queryClient.invalidateQueries({ queryKey: queryKeysFactory.pool });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeysFactory.pool }),
+        queryClient.invalidateQueries({ queryKey: queryKeysFactory.gho }),
+      ]);
     } catch (e) {
       setTxError(getErrorTextFromError(e, TxAction.GAS_ESTIMATION, false));
       setMainTxState({ txHash: undefined, loading: false });
@@ -220,8 +236,8 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
   };
 
   const amountNum = Number(amount || '0');
-  const exceedsBalance = amountNum > Number(walletBalance);
-  const exceedsDebt = amountNum > Number(debt);
+  const exceedsBalance = valueToBigNumber(amount || '0').gt(walletBalance);
+  const exceedsDebt = valueToBigNumber(amount || '0').gt(debt);
   const disabled =
     amountNum <= 0 ||
     exceedsBalance ||
