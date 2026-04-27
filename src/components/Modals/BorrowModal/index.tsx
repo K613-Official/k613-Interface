@@ -259,11 +259,13 @@ export default function BorrowModal({ open, onClose, underlyingAsset }: Props) {
             action="Borrowed"
             amount={amount}
             symbol={symbol}
+            iconSymbol={reserve.iconSymbol}
             txHash={mainTxState.txHash}
             onClose={handleClose}
             addToWalletAddress={reserve.variableDebtTokenAddress}
             addToWalletSymbol={`variableDebt${symbol}`}
             addToWalletDecimals={reserve.decimals}
+            addToWalletKind="debtToken"
           />
         </ModalCard>
       </Dialog>
