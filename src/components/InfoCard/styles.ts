@@ -92,14 +92,14 @@ export const StateText = styled(Typography)(() => ({
 
 export const DesktopOnly = styled(Box)(({ theme }) => ({
   display: 'block',
-  [theme.breakpoints.down('md')]: {
+  [theme.breakpoints.down('lg')]: {
     display: 'none',
   },
 }));
 
 export const TabletMobileOnly = styled(Box)(({ theme }) => ({
   display: 'none',
-  [theme.breakpoints.down('md')]: {
+  [theme.breakpoints.down('lg')]: {
     display: 'block',
   },
 }));

@@ -28,7 +28,8 @@ const formatToken = (value: string | number | undefined) => {
   });
 };
 
-const formatPercent = (value: string | number | undefined) => `${Number(value || 0).toFixed(2)}%`;
+const formatPercent = (value: string | number | undefined) =>
+  `${(Number(value || 0) * 100).toFixed(2)}%`;
 
 export function useInfoCardData(type: InfoCardType): {
   data: InfoCardViewData;

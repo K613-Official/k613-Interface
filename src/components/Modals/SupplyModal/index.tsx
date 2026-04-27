@@ -27,8 +27,8 @@ import { roundToTokenDecimals } from 'src/utils/utils';
 import { useShallow } from 'zustand/shallow';
 
 import { APPROVAL_GAS_LIMIT, checkRequiresApproval } from '../../transactions/utils';
-import { BaseModalProps, SupplyModalProps } from '../types';
 import { SuccessView } from '../SuccessView';
+import { BaseModalProps, SupplyModalProps } from '../types';
 import {
   AmountDisplay,
   AmountInput,
@@ -63,7 +63,7 @@ export default function SupplyModal({ open, onClose, underlyingAsset }: Props) {
       s.poolComputed.minRemainingBaseTokenBalance,
     ])
   );
-  const { sendTx } = useWeb3Context();
+  const { sendTx, currentAccount } = useWeb3Context();
   const { walletBalances } = useWalletBalances(currentMarketData);
   const queryClient = useQueryClient();
   const {
@@ -184,10 +184,11 @@ export default function SupplyModal({ open, onClose, underlyingAsset }: Props) {
 
   const handleApprove = async () => {
     try {
+      if (!currentAccount) return;
       setApprovalTxState({ ...approvalTxState, loading: true });
       let tx = generateApproval({
         amount: parseUnits(amount, reserve.decimals).toString(),
-        user: '',
+        user: currentAccount,
         token: poolAddress,
         spender: currentMarketData.addresses.LENDING_POOL,
       });
@@ -230,14 +231,9 @@ export default function SupplyModal({ open, onClose, underlyingAsset }: Props) {
   const exceedsBalance = amountNum > Number(walletBalance);
   const blocked = reserve.isFrozen;
   const disabled =
-    blocked ||
-    amountNum <= 0 ||
-    exceedsBalance ||
-    mainTxState.loading ||
-    approvalTxState.loading;
+    blocked || amountNum <= 0 || exceedsBalance || mainTxState.loading || approvalTxState.loading;
 
-  const actionLabel =
-    requiresApproval && !approvalTxState.success ? 'Approve' : `Supply ${symbol}`;
+  const actionLabel = requiresApproval && !approvalTxState.success ? 'Approve' : `Supply ${symbol}`;
   const onAction = requiresApproval && !approvalTxState.success ? handleApprove : handleSupply;
 
   if (mainTxState.success) {
@@ -248,6 +244,7 @@ export default function SupplyModal({ open, onClose, underlyingAsset }: Props) {
             action="Supplied"
             amount={amount}
             symbol={symbol}
+            iconSymbol={reserve.iconSymbol}
             txHash={mainTxState.txHash}
             onClose={handleClose}
             addToWalletAddress={reserve.aTokenAddress}
@@ -338,9 +335,7 @@ export default function SupplyModal({ open, onClose, underlyingAsset }: Props) {
             <Typography variant="body2" sx={{ opacity: 0.5 }}>
               Supply APY
             </Typography>
-            <Typography variant="body2">
-              {(Number(reserve.supplyAPY) * 100).toFixed(2)}%
-            </Typography>
+            <Typography variant="body2">{(Number(reserve.supplyAPY) * 100).toFixed(2)}%</Typography>
           </OverviewRow>
           <OverviewRow>
             <Typography variant="body2" sx={{ opacity: 0.5 }}>

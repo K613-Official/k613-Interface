@@ -11,9 +11,12 @@ import {
   CircularProgress,
   FormControlLabel,
   IconButton,
+  ListItemText,
+  ListSubheader,
   Menu,
   MenuItem,
   Select,
+  SelectChangeEvent,
   Stack,
   Table,
   TableBody,
@@ -22,11 +25,11 @@ import {
   TableHead,
   TablePagination,
   TableRow,
-  TableSortLabel,
   Typography,
 } from '@mui/material';
 import { BigNumber } from 'bignumber.js';
 import { useEffect, useMemo, useState } from 'react';
+import { SortIcon } from 'src/components/InfoCard/positionStyles';
 import { ModalType } from 'src/components/Modals/types';
 import { ROUTES } from 'src/components/primitives/Link';
 import { TokenIcon } from 'src/components/primitives/TokenIcon';
@@ -50,10 +53,11 @@ import {
   displayGhoForMintableMarket,
   findAndFilterMintableGhoReserve,
 } from 'src/utils/ghoUtilities';
+import { CATEGORY_LABELS, ReserveCategory, reserveCategory } from 'src/utils/reserveCategory';
 
 import { DesktopTable, MobileAssetCard, MobileCards, MobilePagination, Paper } from './styles';
 
-type SortKey = 'assets' | 'walletBalance' | 'apy';
+type SortKey = 'assets' | 'amount' | 'apy';
 
 type SupplyRow = {
   id: string;
@@ -82,6 +86,11 @@ type BorrowRow = {
 const ROWS_PER_PAGE = 10;
 
 const SHOW_SUPPLY_ZERO_BALANCE_KEY = 'showSupplyZeroAssets';
+const DEFAULT_SORT_DIRECTION: Record<SortKey, 'asc' | 'desc'> = {
+  assets: 'asc',
+  amount: 'desc',
+  apy: 'desc',
+};
 
 export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
   const isSupply = type === 'supply';
@@ -116,8 +125,22 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
     () =>
       typeof window !== 'undefined' && localStorage.getItem(SHOW_SUPPLY_ZERO_BALANCE_KEY) === 'true'
   );
+  const [categories, setCategories] = useState<string[]>([]);
 
   const dataLoading = loadingReserves || loadingWallet;
+
+  const availableCategories = useMemo(() => {
+    const present = new Set<ReserveCategory>();
+    reserves.forEach((r) => present.add(reserveCategory(r)));
+    return Array.from(present);
+  }, [reserves]);
+
+  const handleCategoriesChange = (event: SelectChangeEvent<string[]>) => {
+    const value = event.target.value;
+    setCategories(typeof value === 'string' ? value.split(',') : value);
+  };
+
+  const resetCategories = () => setCategories([]);
 
   const supplyRows: SupplyRow[] = useMemo(() => {
     if (!isSupply) return [];
@@ -353,23 +376,64 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
         case 'assets':
           diff = a.symbol.localeCompare(b.symbol);
           break;
-        case 'walletBalance':
-          diff = a.walletBalanceNum - b.walletBalanceNum;
+        case 'amount':
+          diff =
+            (Number.isFinite(a.walletBalanceNum) ? a.walletBalanceNum : 0) -
+            (Number.isFinite(b.walletBalanceNum) ? b.walletBalanceNum : 0);
           break;
         case 'apy':
-          diff = a.apyPercent - b.apyPercent;
+          diff =
+            (Number.isFinite(a.apyPercent) ? a.apyPercent : -Infinity) -
+            (Number.isFinite(b.apyPercent) ? b.apyPercent : -Infinity);
           break;
+      }
+      if (diff === 0) {
+        diff = a.symbol.localeCompare(b.symbol);
       }
       return sortDirection === 'asc' ? diff : -diff;
     });
     return copy;
   }, [isSupply, supplyRows, sortKey, sortDirection]);
 
-  const displayRows = isSupply ? sortedSupplyRows : borrowRows;
+  const sortedBorrowRows = useMemo(() => {
+    if (isSupply) return [];
+    const copy = [...borrowRows];
+    copy.sort((a, b) => {
+      let diff = 0;
+      switch (sortKey) {
+        case 'assets':
+          diff = a.symbol.localeCompare(b.symbol);
+          break;
+        case 'amount':
+          diff =
+            (Number.isFinite(a.availableBorrows) ? a.availableBorrows : 0) -
+            (Number.isFinite(b.availableBorrows) ? b.availableBorrows : 0);
+          break;
+        case 'apy':
+          diff =
+            (Number.isFinite(a.borrowApyPercent) ? a.borrowApyPercent : -Infinity) -
+            (Number.isFinite(b.borrowApyPercent) ? b.borrowApyPercent : -Infinity);
+          break;
+      }
+      if (diff === 0) {
+        diff = a.symbol.localeCompare(b.symbol);
+      }
+      return sortDirection === 'asc' ? diff : -diff;
+    });
+    return copy;
+  }, [isSupply, borrowRows, sortKey, sortDirection]);
+
+  const displayRows = useMemo(() => {
+    const base = isSupply ? sortedSupplyRows : sortedBorrowRows;
+    if (categories.length === 0) {
+      return base;
+    }
+    return base.filter((row) => categories.includes(reserveCategory({ symbol: row.symbol })));
+  }, [isSupply, sortedSupplyRows, sortedBorrowRows, categories]);
 
   useEffect(() => {
     setPage(0);
-  }, [type]);
+  }, [type, categories]);
 
   useEffect(() => {
     setPage((p) => {
@@ -386,12 +450,11 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
   const pageCount = Math.max(1, Math.ceil(displayRows.length / ROWS_PER_PAGE));
 
   const handleRequestSort = (key: SortKey) => {
-    if (!isSupply) return;
     if (sortKey === key) {
       setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortKey(key);
-      setSortDirection('asc');
+      setSortDirection(DEFAULT_SORT_DIRECTION[key]);
     }
   };
 
@@ -413,8 +476,60 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
           <Typography variant="h6">{isSupply ? 'Assets to supply' : 'Assets to borrow'}</Typography>
 
           <Stack direction="row" spacing={2} alignItems="center">
-            <Select size="small" defaultValue="all">
-              <MenuItem value="all">All categories</MenuItem>
+            <Select
+              multiple
+              size="small"
+              value={categories}
+              onChange={handleCategoriesChange}
+              variant="outlined"
+              displayEmpty
+              renderValue={(selected) => {
+                const s = selected as string[];
+                if (s.length === 0) {
+                  return 'All categories';
+                }
+                return s.map((v) => CATEGORY_LABELS[v as ReserveCategory] ?? v).join(', ');
+              }}
+            >
+              <ListSubheader
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  bgcolor: 'background.paper',
+                  lineHeight: '32px',
+                  py: 0.5,
+                }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  Select
+                </Typography>
+                <Button
+                  size="small"
+                  variant="text"
+                  onClick={resetCategories}
+                  sx={{
+                    minWidth: 'auto',
+                    textTransform: 'none',
+                  }}
+                >
+                  Reset
+                </Button>
+              </ListSubheader>
+              {availableCategories.map((c) => (
+                <MenuItem key={c} value={c} sx={{ pr: 1 }}>
+                  <ListItemText primary={CATEGORY_LABELS[c]} />
+                  <Checkbox
+                    checked={categories.indexOf(c) > -1}
+                    size="small"
+                    sx={{
+                      p: 0,
+                      color: 'text.secondary',
+                      '&.Mui-checked': { color: 'primary.main' },
+                    }}
+                  />
+                </MenuItem>
+              ))}
             </Select>
             <Button variant="text" color="secondary" onClick={() => setIsOpen(!isOpen)}>
               {isOpen ? 'Hide –' : 'Show +'}
@@ -472,43 +587,62 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
               <TableHead>
                 <TableRow>
                   <TableCell>
-                    {isSupply ? (
-                      <TableSortLabel
-                        active={sortKey === 'assets'}
-                        direction={sortKey === 'assets' ? sortDirection : 'asc'}
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                      <Typography variant="inherit">Assets</Typography>
+                      <IconButton
+                        size="small"
                         onClick={() => handleRequestSort('assets')}
+                        aria-label="Sort by assets"
                       >
-                        Assets
-                      </TableSortLabel>
-                    ) : (
-                      'Assets'
-                    )}
+                        <SortIcon
+                          sx={{ color: sortKey === 'assets' ? 'text.primary' : '#7c8088' }}
+                        />
+                      </IconButton>
+                    </Box>
                   </TableCell>
                   <TableCell align="center">
-                    {isSupply ? (
-                      <TableSortLabel
-                        active={sortKey === 'walletBalance'}
-                        direction={sortKey === 'walletBalance' ? sortDirection : 'asc'}
-                        onClick={() => handleRequestSort('walletBalance')}
+                    <Box
+                      sx={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 0.5,
+                      }}
+                    >
+                      <Typography variant="inherit">
+                        {isSupply ? 'Wallet Balance' : 'Available'}
+                      </Typography>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleRequestSort('amount')}
+                        aria-label={isSupply ? 'Sort by wallet balance' : 'Sort by available'}
                       >
-                        Wallet Balance
-                      </TableSortLabel>
-                    ) : (
-                      'Available'
-                    )}
+                        <SortIcon
+                          sx={{ color: sortKey === 'amount' ? 'text.primary' : '#7c8088' }}
+                        />
+                      </IconButton>
+                    </Box>
                   </TableCell>
                   <TableCell align="center">
-                    {isSupply ? (
-                      <TableSortLabel
-                        active={sortKey === 'apy'}
-                        direction={sortKey === 'apy' ? sortDirection : 'asc'}
+                    <Box
+                      sx={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 0.5,
+                      }}
+                    >
+                      <Typography variant="inherit">
+                        {isSupply ? 'APY' : 'APY, variable'}
+                      </Typography>
+                      <IconButton
+                        size="small"
                         onClick={() => handleRequestSort('apy')}
+                        aria-label={isSupply ? 'Sort by APY' : 'Sort by variable APY'}
                       >
-                        APY
-                      </TableSortLabel>
-                    ) : (
-                      'APY, variable'
-                    )}
+                        <SortIcon sx={{ color: sortKey === 'apy' ? 'text.primary' : '#7c8088' }} />
+                      </IconButton>
+                    </Box>
                   </TableCell>
                   {isSupply && <TableCell align="center">Can be collateral</TableCell>}
                   <TableCell />
@@ -630,12 +764,12 @@ function SupplyMobileCard({
     <MobileAssetCard>
       <Box display="flex" alignItems="center" justifyContent="space-between" gap={1}>
         <Stack direction="row" spacing={1} alignItems="center">
-          <TokenIcon symbol={row.iconSymbol} sx={{ width: 24, height: 24, fontSize: '24px' }} />
+          <TokenIcon symbol={row.iconSymbol} sx={{ width: 44, height: 44, fontSize: '24px' }} />
           <Typography variant="body1">{row.symbol}</Typography>
         </Stack>
       </Box>
 
-      <Box display="flex" flexDirection="column" gap={1}>
+      <Box display="flex" flexDirection="column" gap={2}>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="body2">Wallet balance</Typography>
           <Typography variant="body2">
@@ -644,7 +778,9 @@ function SupplyMobileCard({
         </Box>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="body2">APY</Typography>
-          <Typography variant="body2">{row.apyPercent.toFixed(2)}%</Typography>
+          <Typography variant="body2" fontWeight={600}>
+            {(row.apyPercent * 100).toFixed(2)}%
+          </Typography>
         </Box>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="body2">Can be collateral</Typography>
@@ -657,22 +793,22 @@ function SupplyMobileCard({
       <Stack direction="row" spacing={1}>
         <Button
           size="small"
-          variant="contained"
+          variant="outlined"
           color="inherit"
           fullWidth
           disabled={row.disableSupply}
           onClick={() => onSupply(row.underlyingAsset)}
         >
-          Supply
+          SUPPLY
         </Button>
         <Button
           size="small"
-          variant="text"
-          color="secondary"
+          variant="outlined"
+          color="inherit"
           fullWidth
           href={ROUTES.marketAssetDetails(row.underlyingAsset, currentMarket as CustomMarket)}
         >
-          Details
+          DETAILS
         </Button>
       </Stack>
     </MobileAssetCard>
@@ -693,11 +829,11 @@ function BorrowMobileCard({
   return (
     <MobileAssetCard>
       <Stack direction="row" spacing={1} alignItems="center">
-        <TokenIcon symbol={row.iconSymbol} sx={{ width: 24, height: 24, fontSize: '24px' }} />
+        <TokenIcon symbol={row.iconSymbol} sx={{ width: 44, height: 44, fontSize: '24px' }} />
         <Typography variant="body1">{row.symbol}</Typography>
       </Stack>
 
-      <Box display="flex" flexDirection="column" gap={1}>
+      <Box display="flex" flexDirection="column" gap={2}>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="body2">Available</Typography>
           <Typography variant="body2">
@@ -713,7 +849,7 @@ function BorrowMobileCard({
       <Stack direction="row" spacing={1}>
         <Button
           size="small"
-          variant="contained"
+          variant="outlined"
           color="inherit"
           fullWidth
           disabled={row.disableBorrow}
@@ -723,7 +859,7 @@ function BorrowMobileCard({
         </Button>
         <Button
           size="small"
-          variant="text"
+          variant="outlined"
           color="secondary"
           fullWidth
           href={ROUTES.marketAssetDetails(row.underlyingAsset, currentMarket)}

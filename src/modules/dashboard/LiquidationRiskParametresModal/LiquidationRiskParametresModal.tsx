@@ -79,7 +79,7 @@ export const LiquidationRiskParametresInfoModal = ({
       onClose={() => setOpen(false)}
       PaperProps={{
         sx: {
-          backgroundColor: '#FFFFFF14',
+          backgroundColor: 'rgba(255, 255, 255, 0.08)',
           backdropFilter: 'blur(200px)',
           backgroundImage: 'none',
           borderRadius: 1,
@@ -113,7 +113,7 @@ export const LiquidationRiskParametresInfoModal = ({
             </Typography>
           </Box>
           <Typography variant="h6" fontWeight={700}>
-            {hf > 0 ? (hf > 100 ? '∞' : hf.toFixed(2)) : '—'}
+            {hf > 0 ? hf.toFixed(2) : '—'}
           </Typography>
         </Box>
 

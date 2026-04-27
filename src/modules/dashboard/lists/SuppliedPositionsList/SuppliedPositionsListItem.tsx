@@ -1,10 +1,12 @@
 import { ProtocolAction } from '@aave/contract-helpers';
 import { Trans } from '@lingui/macro';
-import { Button } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
+import BigNumber from 'bignumber.js';
 import { ModalType } from 'src/components/Modals/types';
 import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { useAssetCaps } from 'src/hooks/useAssetCaps';
 import { useModalContext } from 'src/hooks/useModal';
+import { useNetSupplied } from 'src/hooks/useNetSupplied';
 import { useRootStore } from 'src/store/root';
 import { useModalStore } from 'src/store/useModalStore';
 import { DashboardReserve } from 'src/utils/dashboardSortUtils';
@@ -18,7 +20,6 @@ import { ListAPRColumn } from '../ListAPRColumn';
 import { ListButtonsColumn } from '../ListButtonsColumn';
 import { ListItemUsedAsCollateral } from '../ListItemUsedAsCollateral';
 import { ListItemWrapper } from '../ListItemWrapper';
-import { ListValueColumn } from '../ListValueColumn';
 
 export const SuppliedPositionsListItem = ({
   reserve,
@@ -28,7 +29,13 @@ export const SuppliedPositionsListItem = ({
   underlyingAsset,
 }: DashboardReserve) => {
   const { user } = useAppDataContext();
+  const { data: netSupplied } = useNetSupplied();
   const { isIsolated, aIncentivesData, aTokenAddress, isFrozen, isActive, isPaused } = reserve;
+  const principal = netSupplied?.[underlyingAsset.toLowerCase()];
+  const earned =
+    principal && Number(underlyingBalance) > 0
+      ? new BigNumber(underlyingBalance).minus(principal)
+      : null;
   const { openSwap } = useModalContext();
   const openModal = useModalStore((s) => s.openModal);
   const { debtCeiling } = useAssetCaps();
@@ -70,12 +77,28 @@ export const SuppliedPositionsListItem = ({
         ProtocolAction.supply
       )}
     >
-      <ListValueColumn
-        symbol={reserve.iconSymbol}
-        value={Number(underlyingBalance)}
-        subValue={Number(underlyingBalanceUSD)}
-        disabled={Number(underlyingBalance) === 0}
-      />
+      <ListColumn>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Typography
+              variant="body2"
+              color={Number(underlyingBalance) === 0 ? 'text.disabled' : 'text.main'}
+            >
+              {Number(underlyingBalance).toFixed(2)}
+            </Typography>
+            {earned && earned.gt(0) && (
+              <Typography variant="caption" sx={{ color: 'success.main' }}>
+                +{earned.toFixed(earned.gte(1) ? 2 : 4)}
+              </Typography>
+            )}
+          </Box>
+          {Number(underlyingBalance) > 0 && (
+            <Typography variant="caption" color="text.secondary">
+              ${Number(underlyingBalanceUSD).toFixed(2)}
+            </Typography>
+          )}
+        </Box>
+      </ListColumn>
 
       <ListAPRColumn
         value={Number(reserve.supplyAPY)}

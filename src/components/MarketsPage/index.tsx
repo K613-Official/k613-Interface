@@ -27,12 +27,10 @@ import { BigStat } from 'src/components/primitives/BigStat';
 import { FormattedNumber } from 'src/components/primitives/FormattedNumber';
 import { Link, ROUTES } from 'src/components/primitives/Link';
 import { TokenIcon } from 'src/components/primitives/TokenIcon';
-import {
-  ComputedReserveData,
-  useAppDataContext,
-} from 'src/hooks/app-data-provider/useAppDataProvider';
+import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { useRootStore } from 'src/store/root';
 import { CustomMarket } from 'src/ui-config/marketsConfig';
+import { CATEGORY_LABELS, ReserveCategory, reserveCategory } from 'src/utils/reserveCategory';
 
 import {
   CoreAssetsSection,
@@ -49,51 +47,12 @@ import {
   VerticalDivider,
 } from './styles';
 
-const STABLECOIN_SYMBOLS = new Set([
-  'USDC',
-  'USDT',
-  'DAI',
-  'FRAX',
-  'LUSD',
-  'GHO',
-  'TUSD',
-  'USDP',
-  'PYUSD',
-  'EURC',
-  'BUSD',
-  'SUSD',
-  'USDBC',
-  'USDS',
-  'CRVUSD',
-  'RLUSD',
-  'EUSD',
-  'USDE',
-  'AUSD',
-  'USDA',
-  'DOLA',
-  'MIM',
-]);
-
-type ReserveCategory = 'crypto' | 'stablecoin';
-
-function reserveCategory(reserve: ComputedReserveData): ReserveCategory {
-  const raw = reserve.symbol.toUpperCase();
-  const base = raw.split('.')[0];
-  if (STABLECOIN_SYMBOLS.has(raw) || STABLECOIN_SYMBOLS.has(base)) {
-    return 'stablecoin';
-  }
-  if (raw.endsWith('USDC') || raw.endsWith('USDT')) {
-    return 'stablecoin';
-  }
-  return 'crypto';
-}
-
-const CATEGORY_LABELS: Record<ReserveCategory, string> = {
-  stablecoin: 'Stablecoins',
-  crypto: 'Crypto',
-};
-
-type SortField = 'symbol' | 'totalLiquidityUSD' | 'supplyAPY' | 'totalDebtUSD' | 'variableBorrowAPY';
+type SortField =
+  | 'symbol'
+  | 'totalLiquidityUSD'
+  | 'supplyAPY'
+  | 'totalDebtUSD'
+  | 'variableBorrowAPY';
 type SortOrder = 'asc' | 'desc';
 
 export default function MarketsPage() {
@@ -239,11 +198,10 @@ export default function MarketsPage() {
                       </Typography>
                       <Button
                         size="small"
+                        variant="text"
                         onClick={resetCategories}
                         sx={{
                           minWidth: 'auto',
-                          p: 0,
-                          color: 'primary.main',
                           textTransform: 'none',
                         }}
                       >

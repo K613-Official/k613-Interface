@@ -56,7 +56,7 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
         s.currentMarketData,
       ])
     );
-  const { sendTx } = useWeb3Context();
+  const { sendTx, currentAccount } = useWeb3Context();
   const { walletBalances } = useWalletBalances(currentMarketData);
   const queryClient = useQueryClient();
   const {
@@ -71,6 +71,7 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
   } = useModalContext();
 
   const [amount, setAmount] = useState('');
+  const [isMaxSelected, setIsMaxSelected] = useState(false);
 
   const reserve = useMemo(() => {
     const key = underlyingAsset.toLowerCase();
@@ -97,6 +98,7 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
 
   const handleClose = () => {
     setAmount('');
+    setIsMaxSelected(false);
     setMainTxState({});
     setApprovalTxState({});
     setTxError(undefined);
@@ -128,14 +130,21 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
     ? walletBalances[API_ETH_MOCK_ADDRESS.toLowerCase()]?.amount || '0'
     : walletBalances[reserve.underlyingAsset.toLowerCase()]?.amount || '0';
 
-  const maxRepay = Math.min(Number(debt), Number(walletBalance)).toString();
+  const maxRepay = valueToBigNumber(debt).lte(walletBalance)
+    ? valueToBigNumber(debt).toFixed()
+    : valueToBigNumber(walletBalance).toFixed();
+  const canRepayAllDebt = !isNative && valueToBigNumber(walletBalance).gte(debt);
 
   const handleAmountChange = (value: string) => {
     const truncated = roundToTokenDecimals(value, reserve.decimals);
     setAmount(truncated);
+    setIsMaxSelected(false);
   };
 
-  const handleMax = () => setAmount(maxRepay);
+  const handleMax = () => {
+    setAmount(maxRepay);
+    setIsMaxSelected(true);
+  };
 
   const amountInUsd = valueToBigNumber(amount || '0').multipliedBy(reserve.priceInUSD);
 
@@ -174,10 +183,11 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
 
   const handleApprove = async () => {
     try {
+      if (!currentAccount) return;
       setApprovalTxState({ ...approvalTxState, loading: true });
       let tx = generateApproval({
         amount: parseUnits(amount, reserve.decimals).toString(),
-        user: '',
+        user: currentAccount,
         token: poolAddress,
         spender: currentMarketData.addresses.LENDING_POOL,
       });
@@ -194,8 +204,12 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
   const handleRepay = async () => {
     try {
       setMainTxState({ ...mainTxState, loading: true });
+      const amountToRepay =
+        isMaxSelected && canRepayAllDebt
+          ? '-1'
+          : parseUnits(roundToTokenDecimals(amount, reserve.decimals), reserve.decimals).toString();
       let tx = repay({
-        amountToRepay: parseUnits(amount, reserve.decimals).toString(),
+        amountToRepay,
         poolAddress,
         repayWithATokens: false,
         debtType: InterestRate.Variable,
@@ -211,7 +225,10 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
         amount,
         assetName: reserve.name,
       });
-      queryClient.invalidateQueries({ queryKey: queryKeysFactory.pool });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeysFactory.pool }),
+        queryClient.invalidateQueries({ queryKey: queryKeysFactory.gho }),
+      ]);
     } catch (e) {
       setTxError(getErrorTextFromError(e, TxAction.GAS_ESTIMATION, false));
       setMainTxState({ txHash: undefined, loading: false });
@@ -219,8 +236,8 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
   };
 
   const amountNum = Number(amount || '0');
-  const exceedsBalance = amountNum > Number(walletBalance);
-  const exceedsDebt = amountNum > Number(debt);
+  const exceedsBalance = valueToBigNumber(amount || '0').gt(walletBalance);
+  const exceedsDebt = valueToBigNumber(amount || '0').gt(debt);
   const disabled =
     amountNum <= 0 ||
     exceedsBalance ||
@@ -228,15 +245,21 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
     mainTxState.loading ||
     approvalTxState.loading;
 
-  const actionLabel =
-    requiresApproval && !approvalTxState.success ? 'Approve' : `Repay ${symbol}`;
+  const actionLabel = requiresApproval && !approvalTxState.success ? 'Approve' : `Repay ${symbol}`;
   const onAction = requiresApproval && !approvalTxState.success ? handleApprove : handleRepay;
 
   if (mainTxState.success) {
     return (
       <Dialog open={open} onClose={handleClose}>
         <ModalCard>
-          <SuccessView action="Repaid" amount={amount} symbol={symbol} txHash={mainTxState.txHash} onClose={handleClose} />
+          <SuccessView
+            action="Repaid"
+            amount={amount}
+            symbol={symbol}
+            iconSymbol={reserve.iconSymbol}
+            txHash={mainTxState.txHash}
+            onClose={handleClose}
+          />
         </ModalCard>
       </Dialog>
     );
@@ -286,9 +309,7 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
                 <Typography variant="caption">{symbol}</Typography>
               </Stack>
               <BalanceRow>
-                <Typography variant="caption">
-                  Wallet {Number(walletBalance).toFixed(4)}
-                </Typography>
+                <Typography variant="caption">Wallet {Number(walletBalance).toFixed(4)}</Typography>
                 <Typography
                   variant="caption"
                   color="primary"
@@ -330,7 +351,9 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
                 {Number(futureHealthFactor) > 0 ? Number(futureHealthFactor).toFixed(2) : '∞'}
               </Typography>
             ) : (
-              <Typography variant="body2" sx={{ opacity: 0.3 }}>—</Typography>
+              <Typography variant="body2" sx={{ opacity: 0.3 }}>
+                —
+              </Typography>
             )}
           </OverviewRow>
         </OverviewSection>

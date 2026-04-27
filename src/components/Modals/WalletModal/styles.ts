@@ -27,15 +27,13 @@ export const Header = styled(Box)({
 export const CloseButton = styled(IconButtonBase)({
   position: 'absolute',
   right: 10,
-  color: '#BDBDBD',
+  color: '#000',
   padding: 4,
 });
 
-export const AvatarCircle = styled(Box)({
-  width: 64,
-  height: 64,
-  borderRadius: '50%',
-  background: 'linear-gradient(180deg, #80FF00 0%, #33691E 100%)',
+export const AvatarSection = styled(Box)({
+  display: 'flex',
+  justifyContent: 'center',
   margin: '24px auto 16px',
 });
 
@@ -60,4 +58,6 @@ export const Balance = styled(Typography)({
 export const DisconnectButton = styled(ButtonBase)({
   marginTop: 24,
   width: '100%',
+  background: '#EEEEEE',
+  color: '#000',
 });

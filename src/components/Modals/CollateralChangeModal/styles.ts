@@ -2,6 +2,7 @@ import { Box, Dialog as DialogBase, styled } from '@mui/material';
 
 export const Dialog = styled(DialogBase)({
   '& .MuiPaper-root': {
+    width: '100%',
     backgroundColor: 'transparent',
     boxShadow: 'none',
     backgroundImage: 'none',
@@ -18,7 +19,7 @@ export const ModalCard = styled(Box)({
   display: 'flex',
   flexDirection: 'column',
   gap: 16,
-  width: '95%',
+  width: '100%',
   maxWidth: 500,
   margin: '0 auto',
 });
