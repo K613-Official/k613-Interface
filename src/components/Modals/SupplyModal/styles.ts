@@ -1,4 +1,4 @@
-import { Box, Dialog as DialogBase, styled, Tabs } from '@mui/material';
+import { Box, Dialog as DialogBase, styled } from '@mui/material';
 
 export const Dialog = styled(DialogBase)({
   '& .MuiPaper-root': {
@@ -27,14 +27,6 @@ export const Header = styled(Box)({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-});
-
-export const TabsFullWidth = styled(Tabs)({
-  minHeight: 36,
-  '& .MuiTab-root': {
-    flex: 1,
-    minHeight: 36,
-  },
 });
 
 export const TokenInputRow = styled(Box)(({ theme }) => ({

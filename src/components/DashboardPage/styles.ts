@@ -1,4 +1,4 @@
-import { Box, styled } from '@mui/material';
+import { Box, Paper, styled } from '@mui/material';
 
 export const FirstBlock = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -12,12 +12,11 @@ export const FirstBlock = styled(Box)(({ theme }) => ({
   },
 }));
 
-export const RightContainer = styled(Box)(({ theme }) => ({
+export const RightContainer = styled(Paper)(({ theme }) => ({
   display: 'flex',
   alignItems: 'stretch',
-  gap: 48,
-  backgroundColor: '#FFFFFF14',
-  border: `1px solid #FFFFFF4D`,
+  gap: 32,
+  border: '1px solid #FFFFFF4D',
   borderRadius: 4,
   paddingBlock: 24,
   paddingInline: 40,
@@ -36,8 +35,8 @@ export const RightContainer = styled(Box)(({ theme }) => ({
 
 export const HorizontalDivider = styled(Box)(({ theme }) => ({
   width: 1,
-  minHeight: 48,
-  backgroundColor: theme.palette.text.secondary,
+  minHeight: 56,
+  backgroundColor: 'rgba(255, 255, 255, 0.12)',
 
   [theme.breakpoints.down('sm')]: {
     width: '100%',

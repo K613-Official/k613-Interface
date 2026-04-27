@@ -41,14 +41,14 @@ import {
   LPSupplyWithPermitType,
 } from '@aave/contract-helpers/dist/esm/v3-pool-contract/lendingPoolTypes';
 import { AaveSafetyModule, AaveV3Ethereum } from '@bgd-labs/aave-address-book';
+import { SignatureLike } from '@ethersproject/bytes';
 import { BigNumber, PopulatedTransaction, Signature, utils } from 'ethers';
 import { splitSignature } from 'ethers/lib/utils';
 import { ClaimRewardsActionsProps } from 'src/components/transactions/ClaimRewards/ClaimRewardsActions';
 import { DebtSwitchActionProps } from 'src/components/transactions/DebtSwitch/DebtSwitchActions';
-import { CollateralRepayActionProps } from 'src/components/transactions/Repay/CollateralRepayActions';
 import { SwapActionProps } from 'src/components/transactions/Swap/SwapActions';
-import { WithdrawAndSwitchActionProps } from 'src/components/transactions/Withdraw/WithdrawAndSwitchActions';
 import { Approval } from 'src/helpers/useTransactionHandler';
+import { ComputedReserveData } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { FormattedReservesAndIncentives } from 'src/hooks/pool/usePoolFormattedReserves';
 import { minBaseTokenRemainingByNetwork, optimizedPath } from 'src/utils/utils';
 import { StateCreator } from 'zustand';
@@ -63,6 +63,36 @@ export type PoolReserve = {
   userEmodeCategoryId?: number;
   userReserves?: UserReserveDataHumanized[];
 };
+
+interface CollateralRepayActionProps {
+  rateMode: InterestRate;
+  repayAmount: string;
+  repayWithAmount: string;
+  fromAssetData: ComputedReserveData;
+  poolReserve: ComputedReserveData;
+  repayAllDebt: boolean;
+  useFlashLoan: boolean;
+  signature?: SignatureLike;
+  signedAmount?: string;
+  deadline?: string;
+  augustus: string;
+  swapCallData: string;
+}
+
+interface WithdrawAndSwitchActionProps {
+  amountToSwap: string;
+  amountToReceive: string;
+  poolReserve: ComputedReserveData;
+  targetReserve: ComputedReserveData;
+  isMaxSelected: boolean;
+  augustus: string;
+  signatureParams?: {
+    signature: SignatureLike;
+    deadline: string;
+    amount: string;
+  };
+  txCalldata: string;
+}
 
 type RepayArgs = {
   amountToRepay: string;

@@ -1,11 +1,11 @@
 import ErrorRoundedIcon from '@mui/icons-material/ErrorRounded';
 import { Box, Button, Paper as PaperBase, Stack, styled, Typography } from '@mui/material';
 
-export const Paper = styled(PaperBase)(() => ({
+export const Paper = styled(PaperBase)(({ theme }) => ({
   flex: 1,
-  border: '1px solid #ffffff4d',
-  borderRadius: 8,
-  backgroundColor: '#111114',
+  border: '1px solid #FFFFFF4D',
+  borderRadius: 4,
+  backgroundColor: theme.palette.background.paper,
   padding: 24,
 }));
 

@@ -19,7 +19,9 @@ export const ModalCard = styled(Box)({
   flexDirection: 'column',
   alignItems: 'center',
   gap: 16,
-  width: 500,
+  width: '95%',
+  maxWidth: 500,
+  margin: '0 auto',
 });
 
 export const CheckCircle = styled(Box)({

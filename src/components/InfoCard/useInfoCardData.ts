@@ -1,12 +1,14 @@
 import { API_ETH_MOCK_ADDRESS } from '@aave/contract-helpers';
 import { valueToBigNumber } from '@aave/math-utils';
 import { useMemo } from 'react';
+import { ModalType } from 'src/components/Modals/types';
 import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
-import { useModalContext } from 'src/hooks/useModal';
 import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
 import { useRootStore } from 'src/store/root';
+import { useModalStore } from 'src/store/useModalStore';
 import { fetchIconSymbolAndName } from 'src/ui-config/reservePatches';
 import { GHO_SYMBOL } from 'src/utils/ghoUtilities';
+import { GENERAL } from 'src/utils/mixPanelEvents';
 
 import { InfoCardType, InfoCardViewData, InfoPosition } from './data';
 
@@ -34,8 +36,9 @@ export function useInfoCardData(type: InfoCardType): {
 } {
   const { currentAccount } = useWeb3Context();
   const { user, loading } = useAppDataContext();
-  const { openWithdraw, openRepay, openCollateralChange } = useModalContext();
+  const openModal = useModalStore((s) => s.openModal);
   const currentMarket = useRootStore((s) => s.currentMarket);
+  const trackEvent = useRootStore((s) => s.trackEvent);
   const { baseAssetSymbol } = useRootStore((s) => s.currentNetworkConfig);
 
   const isLoading = Boolean(currentAccount) && loading;
@@ -72,20 +75,21 @@ export function useInfoCardData(type: InfoCardType): {
             canToggleCollateral,
             disableAction: !position.reserve.isActive || position.reserve.isPaused,
             onAction: () =>
-              openWithdraw(
-                position.underlyingAsset,
-                currentMarket,
-                position.reserve.name,
-                'dashboard'
-              ),
-            onToggleCollateral: () =>
-              openCollateralChange(
-                position.underlyingAsset,
-                currentMarket,
-                position.reserve.name,
-                'dashboard',
-                position.usageAsCollateralEnabledOnUser
-              ),
+              openModal(ModalType.Withdraw, { underlyingAsset: position.underlyingAsset }),
+            onToggleCollateral: () => {
+              trackEvent(GENERAL.OPEN_MODAL, {
+                modal: 'Toggle Collateral',
+                market: currentMarket,
+                assetName: position.reserve.name,
+                asset: position.underlyingAsset,
+                usageAsCollateralEnabledOnUser: position.usageAsCollateralEnabledOnUser,
+                funnel: 'dashboard',
+              });
+              openModal(ModalType.CollateralChange, {
+                underlyingAsset: position.underlyingAsset,
+                usageAsCollateralEnabledOnUser: position.usageAsCollateralEnabledOnUser,
+              });
+            },
             usdSortValue: Number(position.underlyingBalanceUSD),
           };
         })
@@ -114,13 +118,10 @@ export function useInfoCardData(type: InfoCardType): {
             apy: formatPercent(position.reserve.variableBorrowAPY),
             disableAction: !position.reserve.isActive || position.reserve.isPaused,
             onAction: () =>
-              openRepay(
-                position.underlyingAsset,
-                position.reserve.isFrozen,
-                currentMarket,
-                position.reserve.name,
-                'dashboard'
-              ),
+              openModal(ModalType.Repay, {
+                underlyingAsset: position.underlyingAsset,
+                isFrozen: position.reserve.isFrozen,
+              }),
             usdSortValue: Number(position.variableBorrowsUSD),
           };
         })
@@ -169,7 +170,7 @@ export function useInfoCardData(type: InfoCardType): {
     };
 
     return type === 'supply' ? supplyData : borrowData;
-  }, [user, type, baseAssetSymbol, currentMarket, openCollateralChange, openRepay, openWithdraw]);
+  }, [user, type, baseAssetSymbol, currentMarket, openModal, trackEvent]);
 
   return { data, isLoading };
 }

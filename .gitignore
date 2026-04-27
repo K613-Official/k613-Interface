@@ -48,3 +48,5 @@ package-lock.json
 .vscode
 .env.development
 .env
+.figma-cache
+.tmp

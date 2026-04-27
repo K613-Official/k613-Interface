@@ -8,7 +8,6 @@ import {
   DesktopOnly,
   ExtraText,
   HeaderRow,
-  MetricAlertIcon,
   MetricChip,
   MetricLabel,
   MetricsRow,
@@ -43,7 +42,6 @@ export default function InfoCard({ type }: { type: InfoCardType }) {
               <MetricChip key={`${metric.label}-${metric.value}`}>
                 <MetricLabel>{metric.label}</MetricLabel>
                 <MetricValue>{metric.value}</MetricValue>
-                {metric.showAlert ? <MetricAlertIcon /> : null}
               </MetricChip>
             ))}
           </MetricsRow>

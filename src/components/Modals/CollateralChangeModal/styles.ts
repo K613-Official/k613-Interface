@@ -1,4 +1,4 @@
-import { Box, Dialog as DialogBase, styled, Tabs } from '@mui/material';
+import { Box, Dialog as DialogBase, styled } from '@mui/material';
 
 export const Dialog = styled(DialogBase)({
   '& .MuiPaper-root': {
@@ -29,44 +29,35 @@ export const Header = styled(Box)({
   justifyContent: 'space-between',
 });
 
-export const TabsFullWidth = styled(Tabs)({
-  minHeight: 36,
-  '& .MuiTab-root': {
-    flex: 1,
-    minHeight: 36,
-  },
-});
-
-export const TokenInputRow = styled(Box)(({ theme }) => ({
+export const AssetSummary = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 12,
+  padding: '12px 16px',
   border: `1px solid ${theme.palette.divider}`,
   borderRadius: 4,
-  padding: '12px 16px',
   backgroundColor: theme.palette.background.paper,
 }));
 
-export const AmountInput = styled(Box)({
+export const AssetMeta = styled(Box)({
   display: 'flex',
   alignItems: 'center',
-  gap: 8,
+  gap: 12,
+  minWidth: 0,
 });
 
-export const AmountDisplay = styled(Box)({
-  flex: 1,
+export const AssetText = styled(Box)({
   display: 'flex',
   flexDirection: 'column',
+  minWidth: 0,
 });
 
-export const TokenInfo = styled(Box)({
+export const AssetAmount = styled(Box)({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'flex-end',
-  gap: 2,
-});
-
-export const BalanceRow = styled(Box)({
-  display: 'flex',
-  gap: 4,
-  alignItems: 'center',
+  textAlign: 'right',
 });
 
 export const OverviewSection = styled(Box)({
@@ -84,3 +75,9 @@ export const OverviewRow = styled(Box)(({ theme }) => ({
   border: `1px solid ${theme.palette.divider}`,
   borderRadius: 4,
 }));
+
+export const Transition = styled(Box)({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+});

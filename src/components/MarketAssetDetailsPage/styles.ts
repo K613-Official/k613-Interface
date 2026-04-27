@@ -31,9 +31,12 @@ export const PageWrapper = styled(Box)(({ theme }) => ({
 export const TopRows = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
-  gap: 16,
-  [theme.breakpoints.up('sm')]: {
-    gap: 24,
+  gap: 24,
+  alignItems: 'stretch',
+  [theme.breakpoints.up('lg')]: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 64,
   },
 }));
 
@@ -47,13 +50,15 @@ export const InstanceRow = styled(Box)(({ theme }) => ({
   },
 }));
 
-export const AssetTitleRow = styled(Box)({
+export const AssetTitleRow = styled(Box)(({ theme }) => ({
   display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
+  flexDirection: 'column',
   gap: 16,
-  flexWrap: 'wrap',
-});
+  flexShrink: 0,
+  [theme.breakpoints.up('lg')]: {
+    width: 266,
+  },
+}));
 
 export const AssetIdentity = styled(Box)({
   display: 'flex',
@@ -72,76 +77,33 @@ export const V3Badge = styled(Box)(({ theme }) => ({
 export const StatsStrip = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
-  gap: 0,
-
-  [theme.breakpoints.up('sm')]: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.palette.action.hover,
-    border: `1px solid ${theme.palette.divider}`,
-    borderRadius: 4,
-    paddingBlock: 24,
-    paddingInline: 24,
-    overflowX: 'auto',
-    WebkitOverflowScrolling: 'touch',
-  },
+  gap: 16,
+  backgroundColor: theme.palette.action.hover,
+  border: `1px solid ${theme.palette.divider}`,
+  borderRadius: 4,
+  paddingBlock: 24,
+  paddingInline: 24,
 
   [theme.breakpoints.up('md')]: {
-    flexDirection: 'column',
-    alignItems: 'stretch',
-    justifyContent: 'space-between',
     paddingInline: 40,
-    overflowX: 'visible',
-  },
-}));
-
-export const StatCell = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: 8,
-
-  [theme.breakpoints.up('sm')]: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    justifyContent: 'flex-start',
-    gap: 8,
-    paddingInline: 16,
+    justifyContent: 'space-between',
     flex: '1 1 auto',
-    minWidth: 120,
-  },
-
-  [theme.breakpoints.up('md')]: {
-    paddingInline: 0,
-    flex: 'none',
-    minWidth: 'auto',
   },
 }));
 
-export const StatDivider = styled(Box)(({ theme }) => ({
+export const StatCell = styled(Box)({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'flex-start',
+  gap: 4,
+});
+
+export const StatDivider = styled(Box)({
   height: 1,
   width: '100%',
   backgroundColor: 'rgba(255, 255, 255, 0.1)',
   flexShrink: 0,
-
-  [theme.breakpoints.up('sm')]: {
-    height: 'auto',
-    width: 1,
-    alignSelf: 'stretch',
-    minHeight: 40,
-    backgroundColor: theme.palette.divider,
-  },
-
-  [theme.breakpoints.up('md')]: {
-    height: 1,
-    width: '100%',
-    alignSelf: 'auto',
-    minHeight: 'auto',
-    marginBlock: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-}));
+});
 
 export const OracleActions = styled(Box)({
   display: 'flex',
@@ -399,9 +361,14 @@ export const ActionButtonsRow = styled(Box)({
 export const StatValueGroup = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'baseline',
-  ...theme.typography.h4,
-  fontWeight: 600,
+  gap: 4,
+  fontSize: 32,
+  lineHeight: 1.1,
+  fontWeight: 500,
   color: theme.palette.text.primary,
+  [theme.breakpoints.up('lg')]: {
+    fontSize: 36,
+  },
 }));
 
 export const OracleValueRow = styled(Box)({
@@ -461,6 +428,8 @@ export const StatsAndInfoRow = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   gap: 16,
+  flex: 1,
+  minWidth: 0,
   [theme.breakpoints.up('md')]: {
     flexDirection: 'row',
     alignItems: 'stretch',
