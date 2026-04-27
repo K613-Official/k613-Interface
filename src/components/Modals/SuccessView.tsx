@@ -40,8 +40,11 @@ export function SuccessView({
 
   const explorerUrl = txHash ? currentNetworkConfig.explorerLinkBuilder({ tx: txHash }) : undefined;
   const baseIcon = iconSymbol ?? symbol;
-  // MetaMask validates the symbol against the on-chain contract, so pass it verbatim.
+  // MetaMask validates the symbol against the on-chain contract AND limits it to 11 chars.
+  // Long debt symbols like `variableDebtUSDC` cannot satisfy both, so we fall back to copying the address.
   const walletSymbol = addToWalletSymbol ?? '';
+  const canAutoAdd = walletSymbol.length > 0 && walletSymbol.length <= 11;
+  const [copied, setCopied] = useState(false);
 
   const { isMobile } = useDevice();
 
@@ -62,6 +65,15 @@ export function SuccessView({
     } finally {
       setAdding(false);
     }
+  };
+
+  const handleCopyAddress = async () => {
+    if (!addToWalletAddress) return;
+    try {
+      await navigator.clipboard.writeText(addToWalletAddress);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {}
   };
 
   return (
@@ -142,9 +154,20 @@ export function SuccessView({
               to wallet to track your balance.
             </Typography>
           </Stack>
-          <Button variant="contained" size="small" onClick={handleAddToWallet} disabled={adding}>
-            {adding ? 'Adding…' : 'ADD TO WALLET →'}
-          </Button>
+          {canAutoAdd ? (
+            <Button variant="contained" size="small" onClick={handleAddToWallet} disabled={adding}>
+              {adding ? 'Adding…' : 'ADD TO WALLET →'}
+            </Button>
+          ) : (
+            <Button variant="contained" size="small" onClick={handleCopyAddress}>
+              {copied ? 'COPIED ✓' : 'COPY ADDRESS'}
+            </Button>
+          )}
+          {!canAutoAdd && (
+            <Typography variant="caption" color="text.secondary" textAlign="center">
+              Symbol too long for MetaMask — paste this address into &quot;Import token&quot;.
+            </Typography>
+          )}
           {addError && (
             <Typography variant="caption" color="error.main" textAlign="center">
               {addError}
