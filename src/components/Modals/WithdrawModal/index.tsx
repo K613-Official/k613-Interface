@@ -160,14 +160,20 @@ export default function WithdrawModal({ open, onClose, underlyingAsset }: Props)
   const amountNum = Number(amount || '0');
   const exceedsSupply = amountNum > Number(supplied);
   const wouldLiquidate = futureHealthFactor && Number(futureHealthFactor) < 1;
-  const disabled =
-    amountNum <= 0 || exceedsSupply || !!wouldLiquidate || mainTxState.loading;
+  const disabled = amountNum <= 0 || exceedsSupply || !!wouldLiquidate || mainTxState.loading;
 
   if (mainTxState.success) {
     return (
       <Dialog open={open} onClose={handleClose}>
         <ModalCard>
-          <SuccessView action="Withdrew" amount={amount} symbol={symbol} iconSymbol={reserve.iconSymbol} txHash={mainTxState.txHash} onClose={handleClose} />
+          <SuccessView
+            action="Withdraw"
+            amount={amount}
+            symbol={symbol}
+            iconSymbol={reserve.iconSymbol}
+            txHash={mainTxState.txHash}
+            onClose={handleClose}
+          />
         </ModalCard>
       </Dialog>
     );
@@ -217,9 +223,7 @@ export default function WithdrawModal({ open, onClose, underlyingAsset }: Props)
                 <Typography variant="caption">{symbol}</Typography>
               </Stack>
               <BalanceRow>
-                <Typography variant="caption">
-                  Supplied {Number(supplied).toFixed(4)}
-                </Typography>
+                <Typography variant="caption">Supplied {Number(supplied).toFixed(4)}</Typography>
                 <Typography
                   variant="caption"
                   color="primary"
@@ -264,7 +268,9 @@ export default function WithdrawModal({ open, onClose, underlyingAsset }: Props)
                 {Number(futureHealthFactor) > 0 ? Number(futureHealthFactor).toFixed(2) : '∞'}
               </Typography>
             ) : (
-              <Typography variant="body2" sx={{ opacity: 0.3 }}>—</Typography>
+              <Typography variant="body2" sx={{ opacity: 0.3 }}>
+                —
+              </Typography>
             )}
           </OverviewRow>
         </OverviewSection>
@@ -276,7 +282,9 @@ export default function WithdrawModal({ open, onClose, underlyingAsset }: Props)
         )}
         {exceedsSupply && <Alert severity="warning">Amount exceeds supplied balance.</Alert>}
         {wouldLiquidate && (
-          <Alert severity="error">Withdrawal would put your position below liquidation threshold.</Alert>
+          <Alert severity="error">
+            Withdrawal would put your position below liquidation threshold.
+          </Alert>
         )}
 
         <Button
