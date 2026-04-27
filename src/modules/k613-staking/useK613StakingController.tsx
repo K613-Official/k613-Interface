@@ -49,10 +49,7 @@ export function useK613StakingController() {
   const { address: userAddress, chainId } = useAccount();
   const { switchChainAsync, isPending: isSwitchChainPending } = useSwitchChain();
   const stakingChainId = useRootStore((s) => s.currentMarketData.chainId) as number;
-  const stakingNetworkName = useMemo(
-    () => getNetworkConfig(stakingChainId).name,
-    [stakingChainId]
-  );
+  const stakingNetworkName = useMemo(() => getNetworkConfig(stakingChainId).name, [stakingChainId]);
 
   const [mainTab, setMainTab] = useState<K613MainTab>('rewardPool');
   const [rewardPoolSubTab, setRewardPoolSubTab] = useState<K613RewardPoolSubTab>('claimRewards');
@@ -604,7 +601,6 @@ export function useK613StakingController() {
           </StateText>
           <CtaButton
             variant="contained"
-            color="primary"
             disabled={!switchChainAsync || isSwitchChainPending}
             onClick={() => switchChainAsync?.({ chainId: stakingChainId })}
           >
