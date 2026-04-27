@@ -248,6 +248,7 @@ export default function SupplyModal({ open, onClose, underlyingAsset }: Props) {
             action="Supplied"
             amount={amount}
             symbol={symbol}
+            iconSymbol={reserve.iconSymbol}
             txHash={mainTxState.txHash}
             onClose={handleClose}
             addToWalletAddress={reserve.aTokenAddress}

@@ -1,17 +1,20 @@
 import { Check } from '@mui/icons-material';
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Button, Stack, Typography } from '@mui/material';
 import { ReactNode } from 'react';
+import { ATokenIcon, TokenIcon } from 'src/components/primitives/TokenIcon';
 import { useRootStore } from 'src/store/root';
 
 interface SuccessViewProps {
   action: string;
   amount?: string;
   symbol: string;
+  iconSymbol?: string;
   txHash?: string;
   onClose: () => void;
   addToWalletAddress?: string;
   addToWalletSymbol?: string;
   addToWalletDecimals?: number;
+  addToWalletKind?: 'aToken' | 'debtToken';
   description?: ReactNode;
 }
 
@@ -19,16 +22,19 @@ export function SuccessView({
   action,
   amount,
   symbol,
+  iconSymbol,
   txHash,
   onClose,
   addToWalletAddress,
   addToWalletSymbol,
   addToWalletDecimals = 18,
+  addToWalletKind = 'aToken',
   description,
 }: SuccessViewProps) {
   const currentNetworkConfig = useRootStore((s) => s.currentNetworkConfig);
 
   const explorerUrl = txHash ? currentNetworkConfig.explorerLinkBuilder({ tx: txHash }) : undefined;
+  const baseIcon = iconSymbol ?? symbol;
 
   const handleAddToWallet = async () => {
     if (!addToWalletAddress || !addToWalletSymbol) return;
@@ -48,11 +54,20 @@ export function SuccessView({
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2.5, py: 1 }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 2,
+        py: 0.5,
+        width: '100%',
+      }}
+    >
       <Box
         sx={{
-          width: 72,
-          height: 72,
+          width: 56,
+          height: 56,
           borderRadius: '50%',
           backgroundColor: 'rgba(97, 208, 0, 0.15)',
           display: 'flex',
@@ -60,24 +75,27 @@ export function SuccessView({
           justifyContent: 'center',
         }}
       >
-        <Check sx={{ fontSize: 36, color: '#61d000' }} />
+        <Check sx={{ fontSize: 30, color: '#61d000' }} />
       </Box>
 
       <Box sx={{ textAlign: 'center' }}>
-        <Typography variant="h4" fontWeight={700} mb={0.5}>
+        <Typography variant="h5" fontWeight={700} mb={0.5}>
           All done
         </Typography>
         {description ? (
-          <Typography variant="body1" color="text.secondary">
+          <Typography variant="body2" color="text.secondary">
             {description}
           </Typography>
         ) : (
-          <Typography variant="body1" color="text.secondary">
-            You {action}{' '}
-            <Box component="span" color="text.primary" fontWeight={600}>
+          <Stack direction="row" spacing={0.75} alignItems="center" justifyContent="center">
+            <Typography variant="body2" color="text.secondary">
+              You {action}
+            </Typography>
+            <TokenIcon symbol={baseIcon} sx={{ fontSize: 16 }} />
+            <Typography variant="body2" color="text.primary" fontWeight={600}>
               {Number(amount ?? 0).toFixed(7)} {symbol}
-            </Box>
-          </Typography>
+            </Typography>
+          </Stack>
         )}
       </Box>
 
@@ -88,23 +106,36 @@ export function SuccessView({
             border: '1px solid #FFFFFF4D',
             backgroundColor: '#FFFFFF1F',
             borderRadius: 1,
-            p: 2,
+            p: 1.5,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: 1.5,
+            gap: 1,
           }}
         >
-          <Typography variant="body2" color="text.primary" textAlign="center">
-            Add {addToWalletSymbol} to wallet to track your balance.
-          </Typography>
+          <Stack direction="row" spacing={0.75} alignItems="center" justifyContent="center">
+            <Typography variant="caption" color="text.primary" textAlign="center">
+              Add
+            </Typography>
+            {addToWalletKind === 'aToken' ? (
+              <ATokenIcon symbol={baseIcon} sx={{ fontSize: 16 }} />
+            ) : (
+              <TokenIcon symbol={baseIcon} sx={{ fontSize: 16 }} />
+            )}
+            <Typography variant="caption" color="text.primary">
+              {addToWalletSymbol}
+            </Typography>
+            <Typography variant="caption" color="text.primary">
+              to wallet to track your balance.
+            </Typography>
+          </Stack>
           <Button variant="contained" size="small" onClick={handleAddToWallet}>
             ADD TO WALLET →
           </Button>
         </Box>
       )}
 
-      <Button variant="contained" size="large" fullWidth onClick={onClose}>
+      <Button variant="contained" size="medium" fullWidth onClick={onClose}>
         OK, CLOSE
       </Button>
 
@@ -112,7 +143,7 @@ export function SuccessView({
         <Button
           variant="contained"
           color="secondary"
-          size="large"
+          size="medium"
           fullWidth
           href={explorerUrl}
           target="_blank"

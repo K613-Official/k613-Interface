@@ -1,10 +1,12 @@
 import { ProtocolAction } from '@aave/contract-helpers';
 import { Trans } from '@lingui/macro';
-import { Button } from '@mui/material';
+import { Button, Typography } from '@mui/material';
+import BigNumber from 'bignumber.js';
 import { ModalType } from 'src/components/Modals/types';
 import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { useAssetCaps } from 'src/hooks/useAssetCaps';
 import { useModalContext } from 'src/hooks/useModal';
+import { useNetSupplied } from 'src/hooks/useNetSupplied';
 import { useRootStore } from 'src/store/root';
 import { useModalStore } from 'src/store/useModalStore';
 import { DashboardReserve } from 'src/utils/dashboardSortUtils';
@@ -28,7 +30,13 @@ export const SuppliedPositionsListItem = ({
   underlyingAsset,
 }: DashboardReserve) => {
   const { user } = useAppDataContext();
+  const { data: netSupplied } = useNetSupplied();
   const { isIsolated, aIncentivesData, aTokenAddress, isFrozen, isActive, isPaused } = reserve;
+  const principal = netSupplied?.[underlyingAsset.toLowerCase()];
+  const earned =
+    principal && Number(underlyingBalance) > 0
+      ? new BigNumber(underlyingBalance).minus(principal)
+      : null;
   const { openSwap } = useModalContext();
   const openModal = useModalStore((s) => s.openModal);
   const { debtCeiling } = useAssetCaps();
@@ -75,6 +83,16 @@ export const SuppliedPositionsListItem = ({
         value={Number(underlyingBalance)}
         subValue={Number(underlyingBalanceUSD)}
         disabled={Number(underlyingBalance) === 0}
+        capsComponent={
+          earned && earned.gt(0) ? (
+            <Typography
+              variant="caption"
+              sx={{ ml: 0.75, color: 'success.main' }}
+            >
+              +{earned.toFixed(Math.min(reserve.decimals, 6))}
+            </Typography>
+          ) : undefined
+        }
       />
 
       <ListAPRColumn

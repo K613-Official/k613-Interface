@@ -236,7 +236,7 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
     return (
       <Dialog open={open} onClose={handleClose}>
         <ModalCard>
-          <SuccessView action="Repaid" amount={amount} symbol={symbol} txHash={mainTxState.txHash} onClose={handleClose} />
+          <SuccessView action="Repaid" amount={amount} symbol={symbol} iconSymbol={reserve.iconSymbol} txHash={mainTxState.txHash} onClose={handleClose} />
         </ModalCard>
       </Dialog>
     );

@@ -20,7 +20,7 @@ export const ModalCard = styled(Box)({
   flexDirection: 'column',
   gap: 16,
   width: '95%',
-  maxWidth: 500,
+  maxWidth: 560,
   margin: '0 auto',
 });
 
