@@ -2,6 +2,7 @@ import { Check } from '@mui/icons-material';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import { ReactNode, useState } from 'react';
 import { TokenIcon } from 'src/components/primitives/TokenIcon';
+import { useDevice } from 'src/hooks';
 import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
 import { useRootStore } from 'src/store/root';
 
@@ -42,6 +43,8 @@ export function SuccessView({
   // MetaMask validates the symbol against the on-chain contract, so pass it verbatim.
   const walletSymbol = addToWalletSymbol ?? '';
 
+  const { isMobile } = useDevice();
+
   const handleAddToWallet = async () => {
     if (!addToWalletAddress || !walletSymbol) return;
     setAddError(undefined);
@@ -69,13 +72,14 @@ export function SuccessView({
         alignItems: 'center',
         gap: 2,
         py: 0.5,
+        pt: 4,
         width: '100%',
       }}
     >
       <Box
         sx={{
-          width: 56,
-          height: 56,
+          width: 100,
+          height: 100,
           borderRadius: '50%',
           backgroundColor: 'rgba(97, 208, 0, 0.15)',
           display: 'flex',
@@ -83,11 +87,11 @@ export function SuccessView({
           justifyContent: 'center',
         }}
       >
-        <Check sx={{ fontSize: 30, color: '#61d000' }} />
+        <Check sx={{ fontSize: 60, color: '#61d000' }} />
       </Box>
 
       <Box sx={{ textAlign: 'center' }}>
-        <Typography variant="h5" fontWeight={700} mb={0.5}>
+        <Typography variant="h5" fontSize={32} fontWeight={500} mb={0.5}>
           All done
         </Typography>
         {description ? (
@@ -95,14 +99,19 @@ export function SuccessView({
             {description}
           </Typography>
         ) : (
-          <Stack direction="row" spacing={0.75} alignItems="center" justifyContent="center">
-            <Typography variant="body2" color="text.secondary">
-              You {action}
-            </Typography>
-            <TokenIcon symbol={baseIcon} sx={{ fontSize: 16 }} />
-            <Typography variant="body2" color="text.primary" fontWeight={600}>
-              {Number(amount ?? 0).toFixed(7)} {symbol}
-            </Typography>
+          <Stack
+            direction={isMobile ? 'column' : 'row'}
+            spacing={0.75}
+            alignItems="center"
+            justifyContent="center"
+          >
+            <Typography variant="h5">You {action}</Typography>
+            <Box display="flex" gap={0.75} alignItems="center">
+              <TokenIcon symbol={baseIcon} sx={{ fontSize: 24 }} />
+              <Typography variant="h5" color="text.primary" fontWeight={500}>
+                {Number(amount ?? 0).toFixed(7)} {symbol}
+              </Typography>
+            </Box>
           </Stack>
         )}
       </Box>
