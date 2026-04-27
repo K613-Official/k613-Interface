@@ -2,6 +2,7 @@ import { Box, Dialog as DialogBase, styled } from '@mui/material';
 
 export const Dialog = styled(DialogBase)({
   '& .MuiPaper-root': {
+    width: '100%',
     backgroundColor: 'transparent',
     boxShadow: 'none',
     backgroundImage: 'none',
