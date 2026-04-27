@@ -31,6 +31,12 @@ const buttonConfig = () => ({
           },
         }),
 
+        ...(ownerState.color === 'secondary' &&
+          ownerState.variant === 'contained' && {
+            backgroundColor: '#FFFFFF14',
+            color: theme.palette.text.primary,
+          }),
+
         ...(ownerState.variant === 'outlined' && {
           backgroundColor: '#FFFFFF1F',
           borderColor: '#FFFFFF4D',

@@ -13,4 +13,5 @@ export const MODAL_COMPONENTS: { [K in ModalType]: React.LazyExoticComponent<Mod
     [ModalType.Withdraw]: lazy(() => import('./WithdrawModal')),
     [ModalType.Borrow]: lazy(() => import('./BorrowModal')),
     [ModalType.Repay]: lazy(() => import('./RepayModal')),
+    [ModalType.CollateralChange]: lazy(() => import('./CollateralChangeModal')),
   };

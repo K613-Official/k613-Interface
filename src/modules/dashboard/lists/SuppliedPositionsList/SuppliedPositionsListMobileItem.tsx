@@ -1,18 +1,19 @@
 import { ProtocolAction } from '@aave/contract-helpers';
 import { Trans } from '@lingui/macro';
 import { Box, Button } from '@mui/material';
+import { ModalType } from 'src/components/Modals/types';
 import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { useAssetCaps } from 'src/hooks/useAssetCaps';
 import { useRootStore } from 'src/store/root';
+import { useModalStore } from 'src/store/useModalStore';
 import { DashboardReserve } from 'src/utils/dashboardSortUtils';
+import { GENERAL } from 'src/utils/mixPanelEvents';
 import { showExternalIncentivesTooltip } from 'src/utils/utils';
 import { useShallow } from 'zustand/shallow';
 
 import { IncentivesCard } from '../../../../components/incentives/IncentivesCard';
 import { Row } from '../../../../components/primitives/Row';
 import { useModalContext } from '../../../../hooks/useModal';
-import { useModalStore } from 'src/store/useModalStore';
-import { ModalType } from 'src/components/Modals/types';
 import { isFeatureEnabled } from '../../../../utils/marketsAndNetworksConfig';
 import { ListItemUsedAsCollateral } from '../ListItemUsedAsCollateral';
 import { ListMobileItemWrapper } from '../ListMobileItemWrapper';
@@ -26,10 +27,10 @@ export const SuppliedPositionsListMobileItem = ({
   underlyingAsset,
 }: DashboardReserve) => {
   const { user } = useAppDataContext();
-  const [currentMarketData, currentMarket] = useRootStore(
-    useShallow((state) => [state.currentMarketData, state.currentMarket])
+  const [currentMarketData, currentMarket, trackEvent] = useRootStore(
+    useShallow((state) => [state.currentMarketData, state.currentMarket, state.trackEvent])
   );
-  const { openSwap, openCollateralChange } = useModalContext();
+  const { openSwap } = useModalContext();
   const openModal = useModalStore((s) => s.openModal);
   const { debtCeiling } = useAssetCaps();
   const isSwapButton = isFeatureEnabled.liquiditySwap(currentMarketData);
@@ -81,12 +82,7 @@ export const SuppliedPositionsListMobileItem = ({
         disabled={Number(underlyingBalance) === 0}
       />
 
-      <Row
-        caption={<Trans>Supply APY</Trans>}
-        align="flex-start"
-        captionVariant="body2"
-        mb={2}
-      >
+      <Row caption={<Trans>Supply APY</Trans>} align="flex-start" captionVariant="body2" mb={2}>
         <IncentivesCard
           value={Number(supplyAPY)}
           incentives={aIncentivesData}
@@ -109,15 +105,20 @@ export const SuppliedPositionsListMobileItem = ({
           isIsolated={isIsolated}
           usageAsCollateralEnabledOnUser={usageAsCollateralEnabledOnUser}
           canBeEnabledAsCollateral={canBeEnabledAsCollateral}
-          onToggleSwitch={() =>
-            openCollateralChange(
+          onToggleSwitch={() => {
+            trackEvent(GENERAL.OPEN_MODAL, {
+              modal: 'Toggle Collateral',
+              market: currentMarket,
+              assetName: reserve.name,
+              asset: underlyingAsset,
+              usageAsCollateralEnabledOnUser,
+              funnel: 'dashboard',
+            });
+            openModal(ModalType.CollateralChange, {
               underlyingAsset,
-              currentMarket,
-              reserve.name,
-              'dashboard',
-              usageAsCollateralEnabledOnUser
-            )
-          }
+              usageAsCollateralEnabledOnUser,
+            });
+          }}
         />
       </Row>
 

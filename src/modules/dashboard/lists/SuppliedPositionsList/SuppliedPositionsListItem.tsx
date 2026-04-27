@@ -1,12 +1,12 @@
 import { ProtocolAction } from '@aave/contract-helpers';
 import { Trans } from '@lingui/macro';
 import { Button } from '@mui/material';
+import { ModalType } from 'src/components/Modals/types';
 import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { useAssetCaps } from 'src/hooks/useAssetCaps';
 import { useModalContext } from 'src/hooks/useModal';
 import { useRootStore } from 'src/store/root';
 import { useModalStore } from 'src/store/useModalStore';
-import { ModalType } from 'src/components/Modals/types';
 import { DashboardReserve } from 'src/utils/dashboardSortUtils';
 import { GENERAL } from 'src/utils/mixPanelEvents';
 import { showExternalIncentivesTooltip } from 'src/utils/utils';
@@ -29,7 +29,7 @@ export const SuppliedPositionsListItem = ({
 }: DashboardReserve) => {
   const { user } = useAppDataContext();
   const { isIsolated, aIncentivesData, aTokenAddress, isFrozen, isActive, isPaused } = reserve;
-  const { openCollateralChange, openSwap } = useModalContext();
+  const { openSwap } = useModalContext();
   const openModal = useModalStore((s) => s.openModal);
   const { debtCeiling } = useAssetCaps();
   const [trackEvent, currentMarketData, currentMarket] = useRootStore(
@@ -93,13 +93,18 @@ export const SuppliedPositionsListItem = ({
           usageAsCollateralEnabledOnUser={usageAsCollateralEnabledOnUser}
           canBeEnabledAsCollateral={canBeEnabledAsCollateral}
           onToggleSwitch={() => {
-            openCollateralChange(
+            trackEvent(GENERAL.OPEN_MODAL, {
+              modal: 'Toggle Collateral',
+              market: currentMarket,
+              assetName: reserve.name,
+              asset: underlyingAsset,
+              usageAsCollateralEnabledOnUser,
+              funnel: 'dashboard',
+            });
+            openModal(ModalType.CollateralChange, {
               underlyingAsset,
-              currentMarket,
-              reserve.name,
-              'dashboard',
-              usageAsCollateralEnabledOnUser
-            );
+              usageAsCollateralEnabledOnUser,
+            });
           }}
           data-cy={`collateralStatus`}
         />

@@ -20,7 +20,7 @@ export const SOCIAL_LINKS = [
   {
     id: 3,
     alt: 'gitbook',
-    href: '',
+    href: 'https://docs.k613.net/',
     icon: '/icons/gitbook.svg',
   },
 ];

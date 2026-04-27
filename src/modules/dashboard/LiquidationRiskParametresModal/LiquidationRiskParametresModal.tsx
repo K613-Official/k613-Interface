@@ -79,9 +79,10 @@ export const LiquidationRiskParametresInfoModal = ({
       onClose={() => setOpen(false)}
       PaperProps={{
         sx: {
-          bgcolor: 'background.paper',
+          backgroundColor: '#FFFFFF14',
+          backdropFilter: 'blur(200px)',
           backgroundImage: 'none',
-          borderRadius: 3,
+          borderRadius: 1,
           p: 3,
           width: 440,
           maxWidth: '100%',

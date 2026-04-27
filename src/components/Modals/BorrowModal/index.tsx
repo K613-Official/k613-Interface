@@ -246,8 +246,7 @@ export default function BorrowModal({ open, onClose, underlyingAsset }: Props) {
   const amountNum = Number(amount || '0');
   const exceedsLiquidity = amountNum > Number(reserve.formattedAvailableLiquidity);
   const blocked = !reserve.borrowingEnabled || exceedsLiquidity;
-  const disabled =
-    blocked || amountNum <= 0 || mainTxState.loading || approvalTxState.loading;
+  const disabled = blocked || amountNum <= 0 || mainTxState.loading || approvalTxState.loading;
 
   const actionLabel = requiresApproval && !approvalTxState.success ? 'Approve' : `Borrow ${symbol}`;
   const onAction = requiresApproval && !approvalTxState.success ? handleApprove : handleBorrow;
@@ -288,7 +287,9 @@ export default function BorrowModal({ open, onClose, underlyingAsset }: Props) {
         <TokenInputRow>
           <AmountInput>
             <AmountDisplay>
-              <Typography variant="h6" component="input"
+              <Typography
+                variant="h6"
+                component="input"
                 value={amount}
                 onChange={(e) => handleAmountChange((e.target as HTMLInputElement).value)}
                 placeholder="0"
@@ -313,7 +314,9 @@ export default function BorrowModal({ open, onClose, underlyingAsset }: Props) {
                 <Typography variant="caption">{symbol}</Typography>
               </Stack>
               <BalanceRow>
-                <Typography variant="caption">Available {Number(maxAmountToBorrow).toFixed(4)}</Typography>
+                <Typography variant="caption">
+                  Available {Number(maxAmountToBorrow).toFixed(4)}
+                </Typography>
                 <Typography
                   variant="caption"
                   color="primary"
@@ -332,7 +335,11 @@ export default function BorrowModal({ open, onClose, underlyingAsset }: Props) {
           </AmountInput>
         </TokenInputRow>
 
-        {isMaxSelected && <Typography variant="caption" color="primary">MAX selected</Typography>}
+        {isMaxSelected && (
+          <Typography variant="caption" color="primary">
+            MAX selected
+          </Typography>
+        )}
 
         <OverviewSection>
           <Typography variant="caption" sx={{ opacity: 0.5 }}>
@@ -345,12 +352,16 @@ export default function BorrowModal({ open, onClose, underlyingAsset }: Props) {
             <Typography
               variant="body2"
               color={
-                futureHealthFactor && Number(futureHealthFactor) < 1.5 ? 'error.main' : 'success.main'
+                futureHealthFactor && Number(futureHealthFactor) < 1.5
+                  ? 'error.main'
+                  : 'success.main'
               }
             >
               {Number(user.healthFactor) > 0 ? Number(user.healthFactor).toFixed(2) : '∞'}
               {futureHealthFactor &&
-                ` → ${Number(futureHealthFactor) > 0 ? Number(futureHealthFactor).toFixed(2) : '∞'}`}
+                ` → ${
+                  Number(futureHealthFactor) > 0 ? Number(futureHealthFactor).toFixed(2) : '∞'
+                }`}
             </Typography>
           </OverviewRow>
           <OverviewRow>
