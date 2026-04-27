@@ -18,11 +18,6 @@ import { GasStationProvider } from 'src/components/transactions/GasStation/GasSt
 import { AppDataProvider } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { ModalContextProvider } from 'src/hooks/useModal';
 
-const CollateralChangeModal = dynamic(() =>
-  import('src/components/transactions/CollateralChange/CollateralChangeModal').then(
-    (m) => m.CollateralChangeModal
-  )
-);
 const EmodeModal = dynamic(() =>
   import('src/components/transactions/Emode/EmodeModal').then((m) => m.EmodeModal)
 );
@@ -109,7 +104,6 @@ export default function MyApp(props: MyAppProps) {
                             <GasStationProvider>
                               <ModalProvider />
                               {getLayout(<Component {...pageProps} />)}
-                              <CollateralChangeModal />
                               <EmodeModal />
                               <FaucetModal />
                             </GasStationProvider>
