@@ -39,12 +39,8 @@ export function SuccessView({
 
   const explorerUrl = txHash ? currentNetworkConfig.explorerLinkBuilder({ tx: txHash }) : undefined;
   const baseIcon = iconSymbol ?? symbol;
-  // MetaMask limits asset symbol to 11 chars. For debt tokens, shorten "variableDebtX" → "vDebtX".
-  const walletSymbol = addToWalletSymbol
-    ? addToWalletSymbol.startsWith('variableDebt')
-      ? `vDebt${addToWalletSymbol.slice('variableDebt'.length)}`.slice(0, 11)
-      : addToWalletSymbol.slice(0, 11)
-    : '';
+  // MetaMask validates the symbol against the on-chain contract, so pass it verbatim.
+  const walletSymbol = addToWalletSymbol ?? '';
 
   const handleAddToWallet = async () => {
     if (!addToWalletAddress || !walletSymbol) return;
