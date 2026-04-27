@@ -27,6 +27,7 @@ import {
 } from '@mui/material';
 import { BigNumber } from 'bignumber.js';
 import { useEffect, useMemo, useState } from 'react';
+import { ModalType } from 'src/components/Modals/types';
 import { ROUTES } from 'src/components/primitives/Link';
 import { TokenIcon } from 'src/components/primitives/TokenIcon';
 import { toggleLocalStorageClick } from 'src/helpers/toggle-local-storage-click';
@@ -39,7 +40,6 @@ import { useWrappedTokens } from 'src/hooks/useWrappedTokens';
 import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
 import { useRootStore } from 'src/store/root';
 import { useModalStore } from 'src/store/useModalStore';
-import { ModalType } from 'src/components/Modals/types';
 import { CustomMarket } from 'src/ui-config/marketsConfig';
 import { fetchIconSymbolAndName } from 'src/ui-config/reservePatches';
 import {
@@ -113,7 +113,8 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
   const [isAlertShown, setIsAlertShown] = useState(true);
   const [page, setPage] = useState(0);
   const [showZeroBalanceSupplyAssets, setShowZeroBalanceSupplyAssets] = useState(
-    () => typeof window !== 'undefined' && localStorage.getItem(SHOW_SUPPLY_ZERO_BALANCE_KEY) === 'true'
+    () =>
+      typeof window !== 'undefined' && localStorage.getItem(SHOW_SUPPLY_ZERO_BALANCE_KEY) === 'true'
   );
 
   const dataLoading = loadingReserves || loadingWallet;
@@ -237,8 +238,8 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
     const list = showZeroBalanceSupplyAssets
       ? sortedSupplyReserves
       : filteredSupplyReserves.length >= 1
-        ? filteredSupplyReserves
-        : sortedSupplyReserves;
+      ? filteredSupplyReserves
+      : sortedSupplyReserves;
 
     return list.map((item) => {
       const wb = item.walletBalance ?? '0';
@@ -423,7 +424,7 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
 
         {isSupply && (
           <FormControlLabel
-            sx={{ m: 0, alignSelf: 'flex-start' }}
+            sx={{ m: 0, paddingTop: 1, alignSelf: 'flex-start' }}
             control={<Checkbox size="small" sx={{ py: 0.5 }} />}
             checked={showZeroBalanceSupplyAssets}
             onChange={() =>
@@ -483,7 +484,7 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
                       'Assets'
                     )}
                   </TableCell>
-                  <TableCell align="right">
+                  <TableCell align="center">
                     {isSupply ? (
                       <TableSortLabel
                         active={sortKey === 'walletBalance'}
@@ -496,7 +497,7 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
                       'Available'
                     )}
                   </TableCell>
-                  <TableCell align="right">
+                  <TableCell align="center">
                     {isSupply ? (
                       <TableSortLabel
                         active={sortKey === 'apy'}
@@ -561,18 +562,14 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
                   key={(row as SupplyRow).id}
                   row={row as SupplyRow}
                   currentMarket={currentMarket}
-                  onSupply={(underlyingAsset) =>
-                    openModal(ModalType.Supply, { underlyingAsset })
-                  }
+                  onSupply={(underlyingAsset) => openModal(ModalType.Supply, { underlyingAsset })}
                 />
               ) : (
                 <BorrowMobileCard
                   key={(row as BorrowRow).id}
                   row={row as BorrowRow}
                   currentMarket={currentMarket as CustomMarket}
-                  onBorrow={(underlyingAsset) =>
-                    openModal(ModalType.Borrow, { underlyingAsset })
-                  }
+                  onBorrow={(underlyingAsset) => openModal(ModalType.Borrow, { underlyingAsset })}
                 />
               )
             )}
@@ -758,10 +755,10 @@ function SupplyTableRow({
         </Stack>
       </TableCell>
 
-      <TableCell align="right">
+      <TableCell align="center">
         {Number(row.walletBalanceStr).toLocaleString(undefined, { maximumFractionDigits: 6 })}
       </TableCell>
-      <TableCell align="right">{row.apyPercent.toFixed(2)}%</TableCell>
+      <TableCell align="center">{(row.apyPercent * 100).toFixed(2)}%</TableCell>
 
       <TableCell align="center">
         {row.canBeCollateral ? (
@@ -771,7 +768,7 @@ function SupplyTableRow({
         ) : null}
       </TableCell>
 
-      <TableCell align="right">
+      <TableCell align="center">
         <Stack direction="row" spacing={1} justifyContent="flex-end">
           <Button
             size="small"
@@ -817,12 +814,12 @@ function BorrowTableRow({
         </Stack>
       </TableCell>
 
-      <TableCell align="right">
+      <TableCell align="center">
         {row.availableBorrows.toLocaleString(undefined, { maximumFractionDigits: 6 })}
       </TableCell>
-      <TableCell align="right">{apyLabel}</TableCell>
+      <TableCell align="center">{apyLabel}</TableCell>
 
-      <TableCell align="right">
+      <TableCell align="center">
         <Stack direction="row" spacing={2} justifyContent="flex-end">
           <Button
             size="small"

@@ -6,6 +6,7 @@ export enum ModalType {
   Withdraw = 'Withdraw',
   Borrow = 'Borrow',
   Repay = 'Repay',
+  CollateralChange = 'CollateralChange',
 }
 
 export interface WalletModalProps {
@@ -36,6 +37,11 @@ export interface RepayModalProps {
   isFrozen?: boolean;
 }
 
+export interface CollateralChangeModalProps {
+  underlyingAsset: string;
+  usageAsCollateralEnabledOnUser: boolean;
+}
+
 export interface ModalPropsMap {
   [ModalType.Wallet]: WalletModalProps;
   [ModalType.ClaimRewards]: ClaimRewardsModalProps;
@@ -44,6 +50,7 @@ export interface ModalPropsMap {
   [ModalType.Withdraw]: WithdrawModalProps;
   [ModalType.Borrow]: BorrowModalProps;
   [ModalType.Repay]: RepayModalProps;
+  [ModalType.CollateralChange]: CollateralChangeModalProps;
 }
 
 export interface BaseModalProps {

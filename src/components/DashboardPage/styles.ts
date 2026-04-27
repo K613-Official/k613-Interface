@@ -1,4 +1,4 @@
-import { Box, styled } from '@mui/material';
+import { Box, Paper, styled } from '@mui/material';
 
 export const FirstBlock = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -12,11 +12,11 @@ export const FirstBlock = styled(Box)(({ theme }) => ({
   },
 }));
 
-export const RightContainer = styled(Box)(({ theme }) => ({
+export const RightContainer = styled(Paper)(({ theme }) => ({
   display: 'flex',
   alignItems: 'stretch',
   gap: 32,
-  backgroundColor: theme.palette.background.paper,
+  border: '1px solid #FFFFFF4D',
   borderRadius: 4,
   paddingBlock: 24,
   paddingInline: 40,

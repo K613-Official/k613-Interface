@@ -146,13 +146,13 @@ export default function DashboardPage() {
               </Box>
 
               {currentAccount && user?.healthFactor ? (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                   <Box sx={{ display: 'block' }}>
                     <HealthFactorNumber
                       value={user.healthFactor}
                       sx={{
                         ml: 0,
-                        fontSize: { xs: 26, md: 32 },
+                        fontSize: { xs: 14, md: 20 },
                         fontWeight: 500,
                         lineHeight: 1.1,
                       }}
@@ -166,12 +166,9 @@ export default function DashboardPage() {
                       onClick={() => setRiskDetailsOpen(true)}
                       sx={{
                         minWidth: 'unset',
-                        backgroundColor: '#B6F000',
-                        color: '#000',
                         fontSize: 11,
                         fontWeight: 700,
                         px: 1,
-                        '&:hover': { backgroundColor: '#ceff00' },
                       }}
                     >
                       RISK DETAILS

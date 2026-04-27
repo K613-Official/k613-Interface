@@ -8,7 +8,6 @@ import { GENERAL } from 'src/utils/mixPanelEvents';
 import { Proposal } from './governance/useProposals';
 
 export enum ModalType {
-  CollateralChange,
   Stake,
   Unstake,
   StakeCooldown,
@@ -32,6 +31,7 @@ export enum ModalType {
 
 export interface ModalArgsType {
   underlyingAsset?: string;
+  usageAsCollateralEnabledOnUser?: boolean;
   proposal?: Proposal;
   support?: boolean;
   power?: string;
@@ -52,13 +52,6 @@ export type TxStateType = {
 type CallbackFn = () => void;
 
 export interface ModalContextType<T extends ModalArgsType> {
-  openCollateralChange: (
-    underlyingAsset: string,
-    currentMarket: string,
-    name: string,
-    funnel: string,
-    usageAsCollateralEnabledOnUser: boolean
-  ) => void;
   openStake: (stakeAssetName: Stake, icon: string) => void;
   openUnstake: (stakeAssetName: Stake, icon: string) => void;
   openStakeCooldown: (stakeAssetName: Stake, icon: string) => void;
@@ -118,24 +111,6 @@ export const ModalContextProvider: React.FC<PropsWithChildren> = ({ children }) 
       value={{
         openReadMode: () => {
           setType(ModalType.ReadMode);
-        },
-        openCollateralChange: (
-          underlyingAsset,
-          currentMarket,
-          name,
-          funnel,
-          usageAsCollateralEnabledOnUser
-        ) => {
-          setType(ModalType.CollateralChange);
-          setArgs({ underlyingAsset });
-          trackEvent(GENERAL.OPEN_MODAL, {
-            modal: 'Toggle Collateral',
-            market: currentMarket,
-            assetName: name,
-            asset: underlyingAsset,
-            usageAsCollateralEnabledOnUser: usageAsCollateralEnabledOnUser,
-            funnel,
-          });
         },
         openStake: (stakeAssetName, icon) => {
           trackEvent(GENERAL.OPEN_MODAL, { modal: 'Stake', assetName: stakeAssetName });

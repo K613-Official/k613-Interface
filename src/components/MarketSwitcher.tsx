@@ -154,14 +154,15 @@ export const MarketSwitcher = () => {
                 />
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Typography
-                    variant={upToLG ? 'body1' : 'h1'}
+                    variant={'body1'}
                     sx={{
                       fontSize: downToXSM ? '1.55rem' : undefined,
                       color: 'common.white',
                       mr: 0.5,
                     }}
                   >
-                    {getMarketHelpData(market.marketTitle).name} {market.isFork ? 'Fork' : ''} Market
+                    {getMarketHelpData(market.marketTitle).name} {market.isFork ? 'Fork' : ''}{' '}
+                    Market
                   </Typography>
                   <Box
                     sx={{

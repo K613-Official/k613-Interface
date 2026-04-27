@@ -3,27 +3,27 @@ import { valueToBigNumber } from '@aave/math-utils';
 import { Trans } from '@lingui/macro';
 import { Typography, useMediaQuery, useTheme } from '@mui/material';
 import { useState } from 'react';
+import { BorrowPowerTooltip } from 'src/components/infoTooltips/BorrowPowerTooltip';
+import { TotalBorrowAPYTooltip } from 'src/components/infoTooltips/TotalBorrowAPYTooltip';
 import { ListColumn } from 'src/components/lists/ListColumn';
 import { ListHeaderTitle } from 'src/components/lists/ListHeaderTitle';
 import { ListHeaderWrapper } from 'src/components/lists/ListHeaderWrapper';
-import { useRootStore } from 'src/store/root';
-import { fetchIconSymbolAndName } from 'src/ui-config/reservePatches';
-import { GHO_SYMBOL } from 'src/utils/ghoUtilities';
-import { GENERAL } from 'src/utils/mixPanelEvents';
-import { useShallow } from 'zustand/shallow';
-
-import { BorrowPowerTooltip } from '../../../../components/infoTooltips/BorrowPowerTooltip';
-import { TotalBorrowAPYTooltip } from '../../../../components/infoTooltips/TotalBorrowAPYTooltip';
-import { ListWrapper } from '../../../../components/lists/ListWrapper';
+import { ListWrapper } from 'src/components/lists/ListWrapper';
 import {
   ComputedUserReserveData,
   useAppDataContext,
-} from '../../../../hooks/app-data-provider/useAppDataProvider';
+} from 'src/hooks/app-data-provider/useAppDataProvider';
+import { useRootStore } from 'src/store/root';
+import { fetchIconSymbolAndName } from 'src/ui-config/reservePatches';
 import {
   DASHBOARD_LIST_COLUMN_WIDTHS,
   DashboardReserve,
   handleSortDashboardReserves,
-} from '../../../../utils/dashboardSortUtils';
+} from 'src/utils/dashboardSortUtils';
+import { GHO_SYMBOL } from 'src/utils/ghoUtilities';
+import { GENERAL } from 'src/utils/mixPanelEvents';
+import { useShallow } from 'zustand/shallow';
+
 import { DashboardContentNoData } from '../../DashboardContentNoData';
 import { DashboardEModeButton } from '../../DashboardEModeButton';
 import { ListButtonsColumn } from '../ListButtonsColumn';
