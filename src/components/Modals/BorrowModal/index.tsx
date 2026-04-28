@@ -99,43 +99,27 @@ export default function BorrowModal({ open, onClose, underlyingAsset }: Props) {
     onClose();
   };
 
-  if (!reserve || !user) {
-    return (
-      <Dialog open={open} onClose={handleClose}>
-        <ModalCard>
-          <Header>
-            <Typography variant="h5">Borrow</Typography>
-            <IconButton size="small" onClick={handleClose}>
-              <Close fontSize="small" />
-            </IconButton>
-          </Header>
-          <Typography variant="body2" sx={{ opacity: 0.6 }}>
-            Loading reserve…
-          </Typography>
-        </ModalCard>
-      </Dialog>
-    );
-  }
-
-  const symbol = reserve.symbol;
-  const maxAmountToBorrow = getMaxAmountAvailableToBorrow(reserve, user);
+  const symbol = reserve?.symbol ?? '';
+  const maxAmountToBorrow = reserve && user ? getMaxAmountAvailableToBorrow(reserve, user) : '0';
   const isMaxSelected = amount !== '' && amount === maxAmountToBorrow;
 
   const handleAmountChange = (value: string) => {
+    if (!reserve) return;
     const truncated = roundToTokenDecimals(value, reserve.decimals);
     setAmount(truncated);
   };
 
   const handleMax = () => setAmount(maxAmountToBorrow);
 
-  const amountInUsd = valueToBigNumber(amount || '0').multipliedBy(reserve.priceInUSD);
+  const amountInUsd = valueToBigNumber(amount || '0').multipliedBy(reserve?.priceInUSD ?? '0');
 
   const amountToBorrowInMarketRef = valueToBigNumber(amount || '0')
-    .multipliedBy(reserve.formattedPriceInMarketReferenceCurrency)
+    .multipliedBy(reserve?.formattedPriceInMarketReferenceCurrency ?? '0')
     .multipliedBy(marketReferencePriceInUsd)
     .shiftedBy(-USD_DECIMALS);
 
   const futureHealthFactor = useMemo(() => {
+    if (!user) return null;
     if (!amount || Number(amount) === 0) return null;
     return calculateHealthFactorFromBalancesBigUnits({
       collateralBalanceMarketReferenceCurrency: user.totalCollateralUSD,
@@ -150,6 +134,7 @@ export default function BorrowModal({ open, onClose, underlyingAsset }: Props) {
 
   const fetchApprovedAmount = useCallback(
     async (forceCheck?: boolean) => {
+      if (!reserve) return;
       if (isNativeBorrow && (approvedAmount === undefined || forceCheck)) {
         setLoadingTxns(true);
         const data = await getCreditDelegationApprovedAmount({
@@ -179,7 +164,7 @@ export default function BorrowModal({ open, onClose, underlyingAsset }: Props) {
       currentMarketData.addresses.WETH_GATEWAY,
       getCreditDelegationApprovedAmount,
       isNativeBorrow,
-      reserve.variableDebtTokenAddress,
+      reserve,
       setApprovalTxState,
       setLoadingTxns,
     ]
@@ -196,6 +181,24 @@ export default function BorrowModal({ open, onClose, underlyingAsset }: Props) {
     }
     setGasLimit(gas.toString());
   }, [requiresApproval, approvalTxState.success, setGasLimit]);
+
+  if (!reserve || !user) {
+    return (
+      <Dialog open={open} onClose={handleClose}>
+        <ModalCard>
+          <Header>
+            <Typography variant="h5">Borrow</Typography>
+            <IconButton size="small" onClick={handleClose}>
+              <Close fontSize="small" />
+            </IconButton>
+          </Header>
+          <Typography variant="body2" sx={{ opacity: 0.6 }}>
+            Loading reserve…
+          </Typography>
+        </ModalCard>
+      </Dialog>
+    );
+  }
 
   const handleApprove = async () => {
     try {
@@ -262,10 +265,6 @@ export default function BorrowModal({ open, onClose, underlyingAsset }: Props) {
             iconSymbol={reserve.iconSymbol}
             txHash={mainTxState.txHash}
             onClose={handleClose}
-            addToWalletAddress={reserve.variableDebtTokenAddress}
-            addToWalletSymbol={`variableDebt${symbol}`}
-            addToWalletDecimals={reserve.decimals}
-            addToWalletKind="debtToken"
           />
         </ModalCard>
       </Dialog>

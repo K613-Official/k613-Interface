@@ -9,6 +9,9 @@ interface BigStatProps {
   percent?: boolean;
   showDollar?: boolean;
   visibleDecimals?: number;
+  fontSizeXs?: number;
+  fontSizeMd?: number;
+  fontWeight?: number;
 }
 
 export function BigStat({
@@ -18,6 +21,9 @@ export function BigStat({
   percent,
   showDollar = true,
   visibleDecimals,
+  fontSizeXs = 14,
+  fontSizeMd = 20,
+  fontWeight = 500,
 }: BigStatProps) {
   if (loading) {
     return <Skeleton width={120} height={36} sx={{ mt: 0.5 }} />;
@@ -28,7 +34,7 @@ export function BigStat({
         <Typography
           component="span"
           color="text.secondary"
-          sx={{ fontSize: { xs: 12, md: 20 }, fontWeight: 500, lineHeight: 1 }}
+          sx={{ fontSize: { xs: fontSizeXs, md: fontSizeMd }, fontWeight: fontWeight, lineHeight: 1 }}
         >
           $
         </Typography>
@@ -41,7 +47,7 @@ export function BigStat({
         symbol={symbol}
         percent={percent}
         visibleDecimals={visibleDecimals}
-        sx={{ fontSize: { xs: 14, md: 20 }, fontWeight: 500, lineHeight: 1.1 }}
+        sx={{ fontSize: { xs: fontSizeXs, md: fontSizeMd }, fontWeight: fontWeight, lineHeight: 1.1 }}
       />
     </Box>
   );

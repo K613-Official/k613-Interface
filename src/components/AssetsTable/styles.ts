@@ -15,6 +15,7 @@ export const Paper = styled(PaperBase, {
 
 export const DesktopTable = styled(Box)(({ theme }) => ({
   display: 'block',
+
   [theme.breakpoints.down('lg')]: {
     display: 'none',
   },

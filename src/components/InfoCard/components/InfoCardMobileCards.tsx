@@ -1,4 +1,4 @@
-import { Box, Button } from '@mui/material';
+import { Box, Button, Stack, Typography } from '@mui/material';
 import { TokenIcon } from 'src/components/primitives/TokenIcon';
 
 import { InfoCardType, InfoPosition } from '../data';
@@ -46,7 +46,17 @@ export function InfoCardMobileCards({
           <MobileRow>
             <MobileLabel>{position.primaryLabel}</MobileLabel>
             <ValueStack>
-              <PrimaryValue>{position.primaryValue}</PrimaryValue>
+              <Stack direction="row" spacing={0.5} alignItems="baseline" justifyContent="flex-end">
+                <PrimaryValue>{position.primaryValue}</PrimaryValue>
+                {position.accrued && (
+                  <Typography
+                    variant="caption"
+                    sx={{ color: isSupply ? 'success.main' : 'error.main', fontWeight: 500 }}
+                  >
+                    ({position.accrued})
+                  </Typography>
+                )}
+              </Stack>
               <SecondaryValue>{position.secondaryValue}</SecondaryValue>
             </ValueStack>
           </MobileRow>

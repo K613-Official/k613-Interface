@@ -1,17 +1,20 @@
 import { ProtocolAction } from '@aave/contract-helpers';
 import { ReserveIncentiveResponse } from '@aave/math-utils/dist/esm/formatters/incentive/calculate-reserve-incentives';
 import { Trans } from '@lingui/macro';
-import { Box, Button, useMediaQuery, useTheme } from '@mui/material';
+import { Box, Button, Typography, useMediaQuery, useTheme } from '@mui/material';
+import BigNumber from 'bignumber.js';
 import { IncentivesCard } from 'src/components/incentives/IncentivesCard';
+import { ModalType } from 'src/components/Modals/types';
 import { Row } from 'src/components/primitives/Row';
 import { useAssetCaps } from 'src/hooks/useAssetCaps';
 import { useModalContext } from 'src/hooks/useModal';
+import { useNetBorrowed } from 'src/hooks/useNetSupplied';
 import { useRootStore } from 'src/store/root';
 import { useModalStore } from 'src/store/useModalStore';
-import { ModalType } from 'src/components/Modals/types';
 import { DashboardReserve } from 'src/utils/dashboardSortUtils';
 import { isFeatureEnabled } from 'src/utils/marketsAndNetworksConfig';
 import { showExternalIncentivesTooltip } from 'src/utils/utils';
+
 import { ListAPRColumn } from '../ListAPRColumn';
 import { ListButtonsColumn } from '../ListButtonsColumn';
 import { ListItemWrapper } from '../ListItemWrapper';
@@ -105,6 +108,10 @@ const BorrowedPositionsListItemDesktop = ({
   onOpenRepay,
 }: BorrowedPositionsListItemProps) => {
   const currentMarket = useRootStore((state) => state.currentMarket);
+  const { data: netBorrowed } = useNetBorrowed();
+  const principal = netBorrowed?.[reserve.underlyingAsset.toLowerCase()];
+  const accruedDebt =
+    principal && Number(totalBorrows) > 0 ? new BigNumber(totalBorrows).minus(principal) : null;
 
   return (
     <ListItemWrapper
@@ -124,7 +131,18 @@ const BorrowedPositionsListItemDesktop = ({
         ProtocolAction.borrow
       )}
     >
-      <ListValueColumn symbol={reserve.symbol} value={totalBorrows} subValue={totalBorrowsUSD} />
+      <ListValueColumn
+        symbol={reserve.symbol}
+        value={totalBorrows}
+        subValue={totalBorrowsUSD}
+        capsComponent={
+          accruedDebt && accruedDebt.gt(0) ? (
+            <Typography variant="caption" sx={{ ml: 0.5, color: 'error.main' }}>
+              (+{accruedDebt.toFixed(accruedDebt.gte(1) ? 2 : 4)})
+            </Typography>
+          ) : undefined
+        }
+      />
 
       <ListAPRColumn
         value={borrowAPY}
@@ -174,6 +192,10 @@ const BorrowedPositionsListItemMobile = ({
   onOpenRepay,
 }: BorrowedPositionsListItemProps) => {
   const currentMarket = useRootStore((state) => state.currentMarket);
+  const { data: netBorrowed } = useNetBorrowed();
+  const principal = netBorrowed?.[reserve.underlyingAsset.toLowerCase()];
+  const accruedDebt =
+    principal && Number(totalBorrows) > 0 ? new BigNumber(totalBorrows).minus(principal) : null;
 
   const { symbol, iconSymbol, name } = reserve;
 
@@ -198,6 +220,13 @@ const BorrowedPositionsListItemMobile = ({
         value={totalBorrows}
         subValue={totalBorrowsUSD}
         disabled={Number(totalBorrows) === 0}
+        capsComponent={
+          accruedDebt && accruedDebt.gt(0) ? (
+            <Typography variant="caption" sx={{ ml: 0.5, color: 'error.main' }}>
+              (+{accruedDebt.toFixed(accruedDebt.gte(1) ? 2 : 4)})
+            </Typography>
+          ) : undefined
+        }
       />
 
       <Row caption={<Trans>APY</Trans>} align="flex-start" captionVariant="body2" mb={2}>

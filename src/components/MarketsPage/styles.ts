@@ -41,16 +41,20 @@ export const CoreInstanceInfo = styled(Box)({
 export const StatsCard = styled(Box)(({ theme }) => ({
   display: 'flex',
   gap: 16,
-  backgroundColor: theme.palette.background.paper,
+  justifyContent: 'space-between',
+  backgroundColor: '#FFFFFF14',
+  border: '1px solid #FFFFFF4D',
   borderRadius: 4,
   paddingBlock: 24,
   paddingInline: 40,
   flexWrap: 'wrap',
   [theme.breakpoints.down('md')]: {
     paddingBlock: 16,
-    paddingInline: 20,
+    paddingInline: 40,
   },
   [theme.breakpoints.down('sm')]: {
+    backgroundColor: 'transparent',
+    border: 'none',
     paddingInline: 16,
   },
   [theme.breakpoints.down('xsm')]: {
@@ -58,23 +62,28 @@ export const StatsCard = styled(Box)(({ theme }) => ({
   },
 }));
 
-export const StatItem = styled(Box)({
+export const StatItem = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   gap: 8,
-});
+
+  [theme.breakpoints.down('sm')]: {
+    flexDirection: 'row',
+    width: '100%',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+}));
 
 export const VerticalDivider = styled(Box)(({ theme }) => ({
   width: 1,
   minHeight: 56,
   backgroundColor: 'rgba(255, 255, 255, 0.12)',
+
   [theme.breakpoints.down('sm')]: {
-    width: 1,
-    minHeight: 40,
-  },
-  [theme.breakpoints.down('xsm')]: {
-    width: 1,
-    minHeight: 40,
+    width: '100%',
+    minHeight: 1,
+    height: 1,
   },
 }));
 
