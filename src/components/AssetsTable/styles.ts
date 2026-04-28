@@ -2,19 +2,24 @@ import { Box, Link, Paper as PaperBase, styled } from '@mui/material';
 
 export const Paper = styled(PaperBase, {
   shouldForwardProp: (prop) => prop !== 'isOpen',
-})<{ isOpen?: boolean }>(({ isOpen }) => ({
+})<{ isOpen?: boolean }>(({ theme, isOpen }) => ({
   flex: 1,
   border: '1px solid #FFFFFF4D',
   borderRadius: 4,
   padding: 24,
   maxBlockSize: 'fit-content',
-  blockSize: isOpen ? 1200 : 88,
+  blockSize: isOpen ? 800 : 88,
   overflow: 'hidden',
   transition: 'block-size .25s ease',
+
+  [theme.breakpoints.down('lg')]: {
+    blockSize: isOpen ? 1300 : 88,
+  },
 }));
 
 export const DesktopTable = styled(Box)(({ theme }) => ({
   display: 'block',
+
   [theme.breakpoints.down('lg')]: {
     display: 'none',
   },
