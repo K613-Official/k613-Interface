@@ -30,7 +30,12 @@ import { TokenIcon } from 'src/components/primitives/TokenIcon';
 import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { useRootStore } from 'src/store/root';
 import { CustomMarket } from 'src/ui-config/marketsConfig';
-import { CATEGORY_LABELS, ReserveCategory, reserveCategory } from 'src/utils/reserveCategory';
+import {
+  ALL_RESERVE_CATEGORIES,
+  CATEGORY_LABELS,
+  ReserveCategory,
+  reserveCategory,
+} from 'src/utils/reserveCategory';
 
 import {
   CoreAssetsSection,
@@ -87,12 +92,6 @@ export default function MarketsPage() {
     );
   }, [reserves]);
 
-  const availableCategories = useMemo(() => {
-    const present = new Set<ReserveCategory>();
-    reserves.forEach((r) => present.add(reserveCategory(r)));
-    return Array.from(present);
-  }, [reserves]);
-
   const handleCategoriesChange = (event: SelectChangeEvent<string[]>) => {
     const value = event.target.value;
     setCategories(typeof value === 'string' ? value.split(',') : value);
@@ -144,21 +143,39 @@ export default function MarketsPage() {
                 <Typography variant="body2" color="text.secondary">
                   Total market size
                 </Typography>
-                <BigStat fontSizeXs={32} fontSizeMd={32} fontWeight={600} value={totals.supplyUsd.toString()} loading={showStatsSkeleton} />
+                <BigStat
+                  fontSizeXs={32}
+                  fontSizeMd={32}
+                  fontWeight={600}
+                  value={totals.supplyUsd.toString()}
+                  loading={showStatsSkeleton}
+                />
               </StatItem>
               <VerticalDivider />
               <StatItem>
                 <Typography variant="body2" color="text.secondary">
                   Total available
                 </Typography>
-                <BigStat fontSizeXs={32} fontSizeMd={32} fontWeight={600} value={totals.availableUsd.toString()} loading={showStatsSkeleton} />
+                <BigStat
+                  fontSizeXs={32}
+                  fontSizeMd={32}
+                  fontWeight={600}
+                  value={totals.availableUsd.toString()}
+                  loading={showStatsSkeleton}
+                />
               </StatItem>
               <VerticalDivider />
               <StatItem>
                 <Typography variant="body2" color="text.secondary">
                   Total borrows
                 </Typography>
-                <BigStat fontSizeXs={32} fontSizeMd={32} fontWeight={600} value={totals.borrowUsd.toString()} loading={showStatsSkeleton} />
+                <BigStat
+                  fontSizeXs={32}
+                  fontSizeMd={32}
+                  fontWeight={600}
+                  value={totals.borrowUsd.toString()}
+                  loading={showStatsSkeleton}
+                />
               </StatItem>
             </StatsCard>
           </CoreInstanceBlock>
@@ -175,6 +192,7 @@ export default function MarketsPage() {
                     onChange={handleCategoriesChange}
                     variant="outlined"
                     displayEmpty
+                    MenuProps={{ disableScrollLock: true }}
                     renderValue={(selected) => {
                       const s = selected as string[];
                       if (s.length === 0) {
@@ -208,7 +226,7 @@ export default function MarketsPage() {
                         Reset
                       </Button>
                     </ListSubheader>
-                    {availableCategories.map((c) => (
+                    {ALL_RESERVE_CATEGORIES.map((c) => (
                       <MenuItem key={c} value={c} sx={{ pr: 1 }}>
                         <ListItemText primary={CATEGORY_LABELS[c]} />
                         <Checkbox
