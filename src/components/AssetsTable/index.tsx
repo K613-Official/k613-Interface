@@ -126,10 +126,10 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
   const [menuRow, setMenuRow] = useState<SupplyRow | null>(null);
   const [isAlertShown, setIsAlertShown] = useState(true);
   const [page, setPage] = useState(0);
-  const [showZeroBalanceSupplyAssets, setShowZeroBalanceSupplyAssets] = useState(
-    () =>
-      typeof window !== 'undefined' && localStorage.getItem(SHOW_SUPPLY_ZERO_BALANCE_KEY) === 'true'
-  );
+  const [showZeroBalanceSupplyAssets, setShowZeroBalanceSupplyAssets] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return localStorage.getItem(SHOW_SUPPLY_ZERO_BALANCE_KEY) !== 'false';
+  });
   const [categories, setCategories] = useState<string[]>([]);
 
   const dataLoading = loadingReserves || loadingWallet;
