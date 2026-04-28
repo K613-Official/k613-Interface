@@ -8,6 +8,7 @@ import { formatReservesAndIncentives } from '@aave/math-utils';
 import dayjs from 'dayjs';
 import memoize from 'micro-memoize';
 import { reserveSortFn } from 'src/store/poolSelectors';
+import { isReserveHidden } from 'src/ui-config/hiddenReserves';
 import { MarketDataType } from 'src/ui-config/marketsConfig';
 import { fetchIconSymbolAndName, IconMapInterface } from 'src/ui-config/reservePatches';
 import { getNetworkConfig, NetworkConfig } from 'src/utils/marketsAndNetworksConfig';
@@ -29,9 +30,12 @@ const formatReserves = memoize(
     reservesData: ReservesDataHumanized,
     incentivesData: ReservesIncentiveDataHumanized[],
     poolsEModesData: EmodeDataHumanized[],
-    networkConfig: NetworkConfig
+    networkConfig: NetworkConfig,
+    chainId: number
   ) => {
-    const reserves = reservesData.reservesData;
+    const reserves = reservesData.reservesData.filter(
+      (r) => !isReserveHidden(chainId, r.underlyingAsset)
+    );
     const baseCurrencyData = reservesData.baseCurrencyData;
     return formatReservesAndIncentives({
       reserves,
@@ -68,7 +72,13 @@ export const usePoolsFormattedReserves = (
       incentivesData: ReservesIncentiveDataHumanized[],
       poolsEModesData: EmodeDataHumanized[]
     ) => {
-      return formatReserves(reservesData, incentivesData, poolsEModesData, networkConfig);
+      return formatReserves(
+        reservesData,
+        incentivesData,
+        poolsEModesData,
+        networkConfig,
+        marketData.chainId
+      );
     };
     return combineQueries(
       [poolReservesQuery, poolReservesIncentivesQuery, poolEModesQuery] as const,
