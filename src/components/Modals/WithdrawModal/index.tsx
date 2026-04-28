@@ -73,6 +73,22 @@ export default function WithdrawModal({ open, onClose, underlyingAsset }: Props)
   const isNative = underlyingAsset.toLowerCase() === API_ETH_MOCK_ADDRESS.toLowerCase();
   const poolAddress = isNative ? API_ETH_MOCK_ADDRESS : reserve?.underlyingAsset || '';
 
+  const futureHealthFactor = useMemo(() => {
+    if (!user || !reserve) return null;
+    if (!amount || Number(amount) === 0 || !reserve.usageAsCollateralEnabled) return null;
+    const amountInMarketRef = valueToBigNumber(amount)
+      .multipliedBy(reserve.formattedPriceInMarketReferenceCurrency)
+      .multipliedBy(marketReferencePriceInUsd)
+      .shiftedBy(-USD_DECIMALS);
+    return calculateHealthFactorFromBalancesBigUnits({
+      collateralBalanceMarketReferenceCurrency: valueToBigNumber(user.totalCollateralUSD).minus(
+        amountInMarketRef
+      ),
+      borrowBalanceMarketReferenceCurrency: user.totalBorrowsUSD,
+      currentLiquidationThreshold: user.currentLiquidationThreshold,
+    }).toString();
+  }, [amount, user, reserve, marketReferencePriceInUsd]);
+
   const handleClose = () => {
     setAmount('');
     setMainTxState({});
@@ -111,22 +127,6 @@ export default function WithdrawModal({ open, onClose, underlyingAsset }: Props)
 
   const amountInUsd = valueToBigNumber(amount || '0').multipliedBy(reserve.priceInUSD);
 
-  const amountInMarketRef = valueToBigNumber(amount || '0')
-    .multipliedBy(reserve.formattedPriceInMarketReferenceCurrency)
-    .multipliedBy(marketReferencePriceInUsd)
-    .shiftedBy(-USD_DECIMALS);
-
-  const futureHealthFactor = useMemo(() => {
-    if (!amount || Number(amount) === 0 || !reserve.usageAsCollateralEnabled) return null;
-    return calculateHealthFactorFromBalancesBigUnits({
-      collateralBalanceMarketReferenceCurrency: valueToBigNumber(user.totalCollateralUSD).minus(
-        amountInMarketRef
-      ),
-      borrowBalanceMarketReferenceCurrency: user.totalBorrowsUSD,
-      currentLiquidationThreshold: user.currentLiquidationThreshold,
-    }).toString();
-  }, [amount, user, amountInMarketRef, reserve.usageAsCollateralEnabled]);
-
   const handleWithdraw = async () => {
     try {
       setMainTxState({ ...mainTxState, loading: true });
@@ -159,7 +159,8 @@ export default function WithdrawModal({ open, onClose, underlyingAsset }: Props)
 
   const amountNum = Number(amount || '0');
   const exceedsSupply = amountNum > Number(supplied);
-  const wouldLiquidate = futureHealthFactor && Number(futureHealthFactor) < 1;
+  const wouldLiquidate =
+    futureHealthFactor && Number(futureHealthFactor) > 0 && Number(futureHealthFactor) < 1;
   const disabled = amountNum <= 0 || exceedsSupply || !!wouldLiquidate || mainTxState.loading;
 
   if (mainTxState.success) {
