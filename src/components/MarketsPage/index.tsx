@@ -144,21 +144,21 @@ export default function MarketsPage() {
                 <Typography variant="body2" color="text.secondary">
                   Total market size
                 </Typography>
-                <BigStat value={totals.supplyUsd.toString()} loading={showStatsSkeleton} />
+                <BigStat fontSizeXs={32} fontSizeMd={32} fontWeight={600} value={totals.supplyUsd.toString()} loading={showStatsSkeleton} />
               </StatItem>
               <VerticalDivider />
               <StatItem>
                 <Typography variant="body2" color="text.secondary">
                   Total available
                 </Typography>
-                <BigStat value={totals.availableUsd.toString()} loading={showStatsSkeleton} />
+                <BigStat fontSizeXs={32} fontSizeMd={32} fontWeight={600} value={totals.availableUsd.toString()} loading={showStatsSkeleton} />
               </StatItem>
               <VerticalDivider />
               <StatItem>
                 <Typography variant="body2" color="text.secondary">
                   Total borrows
                 </Typography>
-                <BigStat value={totals.borrowUsd.toString()} loading={showStatsSkeleton} />
+                <BigStat fontSizeXs={32} fontSizeMd={32} fontWeight={600} value={totals.borrowUsd.toString()} loading={showStatsSkeleton} />
               </StatItem>
             </StatsCard>
           </CoreInstanceBlock>
