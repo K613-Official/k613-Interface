@@ -109,6 +109,12 @@ export const FiltersRow = styled(Box)(({ theme }) => ({
   flexWrap: 'wrap',
   gap: 16,
   alignItems: 'center',
+
+  [theme.breakpoints.down('sm')]: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+  },
+
   [theme.breakpoints.down('xsm')]: {
     flexDirection: 'column',
     alignItems: 'stretch',
@@ -134,11 +140,11 @@ export const TablePaper = styled(PaperBase)(({ theme }) => ({
 export const MobileAssetCard = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
-  gap: 12,
+  gap: 24,
   padding: 16,
   border: `1px solid ${theme.palette.divider}`,
   borderRadius: 12,
-  backgroundColor: theme.palette.background.paper,
+  backgroundColor: '#FFFFFF14',
 }));
 
 export const DesktopTable = styled(Box)(({ theme }) => ({
@@ -156,4 +162,3 @@ export const MobileCards = styled(Box)(({ theme }) => ({
     display: 'flex',
   },
 }));
-
