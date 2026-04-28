@@ -27,6 +27,7 @@ import { BigStat } from 'src/components/primitives/BigStat';
 import { FormattedNumber } from 'src/components/primitives/FormattedNumber';
 import { Link, ROUTES } from 'src/components/primitives/Link';
 import { TokenIcon } from 'src/components/primitives/TokenIcon';
+import { useDevice } from 'src/hooks';
 import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { useRootStore } from 'src/store/root';
 import { CustomMarket } from 'src/ui-config/marketsConfig';
@@ -67,6 +68,7 @@ export default function MarketsPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const currentMarket = useRootStore((s) => s.currentMarket) as CustomMarket;
   const { reserves, loading } = useAppDataContext();
+  const { isMobile } = useDevice();
 
   const handleSort = (field: SortField) => {
     if (sortBy === field) {
@@ -181,7 +183,12 @@ export default function MarketsPage() {
           </CoreInstanceBlock>
 
           <CoreAssetsSection>
-            <Box display="flex" gap={2} justifyContent="space-between">
+            <Box
+              display="flex"
+              flexDirection={isMobile ? 'column' : 'row'}
+              gap={2}
+              justifyContent="space-between"
+            >
               <Typography variant="h5">Core assets</Typography>
               <FiltersRow>
                 <Box display="flex" gap={2} flexWrap="wrap" justifyContent="flex-end">
@@ -427,7 +434,7 @@ export default function MarketsPage() {
                     <MobileAssetCard key={row.underlyingAsset}>
                       <Box display="flex" alignItems="center" justifyContent="space-between">
                         <Box display="flex" alignItems="center" gap={1.5}>
-                          <TokenIcon symbol={row.iconSymbol} sx={{ fontSize: 32 }} />
+                          <TokenIcon symbol={row.iconSymbol} sx={{ fontSize: 44 }} />
                           <Box>
                             <Typography variant="body1">{row.name}</Typography>
                             <Typography variant="body2" color="text.secondary">
