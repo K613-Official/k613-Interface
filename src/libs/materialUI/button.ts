@@ -37,6 +37,12 @@ const buttonConfig = () => ({
             color: theme.palette.text.primary,
           }),
 
+        ...(ownerState.color === 'info' &&
+          ownerState.variant === 'contained' && {
+            backgroundColor: theme.palette.secondary.main,
+            color: '#000000DE',
+          }),
+
         ...(ownerState.variant === 'text' && {
           '&:hover': {
             background: 'transparent',
