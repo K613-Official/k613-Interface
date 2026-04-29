@@ -53,7 +53,12 @@ import {
   displayGhoForMintableMarket,
   findAndFilterMintableGhoReserve,
 } from 'src/utils/ghoUtilities';
-import { CATEGORY_LABELS, ReserveCategory, reserveCategory } from 'src/utils/reserveCategory';
+import {
+  ALL_RESERVE_CATEGORIES,
+  CATEGORY_LABELS,
+  ReserveCategory,
+  reserveCategory,
+} from 'src/utils/reserveCategory';
 
 import { DesktopTable, MobileAssetCard, MobileCards, MobilePagination, Paper } from './styles';
 
@@ -121,19 +126,13 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
   const [menuRow, setMenuRow] = useState<SupplyRow | null>(null);
   const [isAlertShown, setIsAlertShown] = useState(true);
   const [page, setPage] = useState(0);
-  const [showZeroBalanceSupplyAssets, setShowZeroBalanceSupplyAssets] = useState(
-    () =>
-      typeof window !== 'undefined' && localStorage.getItem(SHOW_SUPPLY_ZERO_BALANCE_KEY) === 'true'
-  );
+  const [showZeroBalanceSupplyAssets, setShowZeroBalanceSupplyAssets] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return localStorage.getItem(SHOW_SUPPLY_ZERO_BALANCE_KEY) !== 'false';
+  });
   const [categories, setCategories] = useState<string[]>([]);
 
   const dataLoading = loadingReserves || loadingWallet;
-
-  const availableCategories = useMemo(() => {
-    const present = new Set<ReserveCategory>();
-    reserves.forEach((r) => present.add(reserveCategory(r)));
-    return Array.from(present);
-  }, [reserves]);
 
   const handleCategoriesChange = (event: SelectChangeEvent<string[]>) => {
     const value = event.target.value;
@@ -483,6 +482,7 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
               onChange={handleCategoriesChange}
               variant="outlined"
               displayEmpty
+              MenuProps={{ disableScrollLock: true }}
               renderValue={(selected) => {
                 const s = selected as string[];
                 if (s.length === 0) {
@@ -516,7 +516,7 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
                   Reset
                 </Button>
               </ListSubheader>
-              {availableCategories.map((c) => (
+              {ALL_RESERVE_CATEGORIES.map((c) => (
                 <MenuItem key={c} value={c} sx={{ pr: 1 }}>
                   <ListItemText primary={CATEGORY_LABELS[c]} />
                   <Checkbox

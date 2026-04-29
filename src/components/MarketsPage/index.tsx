@@ -27,10 +27,16 @@ import { BigStat } from 'src/components/primitives/BigStat';
 import { FormattedNumber } from 'src/components/primitives/FormattedNumber';
 import { Link, ROUTES } from 'src/components/primitives/Link';
 import { TokenIcon } from 'src/components/primitives/TokenIcon';
+import { useDevice } from 'src/hooks';
 import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { useRootStore } from 'src/store/root';
 import { CustomMarket } from 'src/ui-config/marketsConfig';
-import { CATEGORY_LABELS, ReserveCategory, reserveCategory } from 'src/utils/reserveCategory';
+import {
+  ALL_RESERVE_CATEGORIES,
+  CATEGORY_LABELS,
+  ReserveCategory,
+  reserveCategory,
+} from 'src/utils/reserveCategory';
 
 import {
   CoreAssetsSection,
@@ -47,12 +53,7 @@ import {
   VerticalDivider,
 } from './styles';
 
-type SortField =
-  | 'symbol'
-  | 'totalLiquidityUSD'
-  | 'supplyAPY'
-  | 'totalDebtUSD'
-  | 'variableBorrowAPY';
+type SortField = 'asset' | 'totalLiquidityUSD' | 'supplyAPY' | 'totalDebtUSD' | 'variableBorrowAPY';
 type SortOrder = 'asc' | 'desc';
 
 export default function MarketsPage() {
@@ -62,6 +63,7 @@ export default function MarketsPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const currentMarket = useRootStore((s) => s.currentMarket) as CustomMarket;
   const { reserves, loading } = useAppDataContext();
+  const { isMobile } = useDevice();
 
   const handleSort = (field: SortField) => {
     if (sortBy === field) {
@@ -87,12 +89,6 @@ export default function MarketsPage() {
     );
   }, [reserves]);
 
-  const availableCategories = useMemo(() => {
-    const present = new Set<ReserveCategory>();
-    reserves.forEach((r) => present.add(reserveCategory(r)));
-    return Array.from(present);
-  }, [reserves]);
-
   const handleCategoriesChange = (event: SelectChangeEvent<string[]>) => {
     const value = event.target.value;
     setCategories(typeof value === 'string' ? value.split(',') : value);
@@ -113,7 +109,9 @@ export default function MarketsPage() {
       return matchesSearch && matchesCategory;
     });
     const sorted = [...filtered].sort((a, b) => {
-      if (sortBy === 'symbol') {
+      if (sortBy === 'asset') {
+        const byName = a.name.localeCompare(b.name);
+        if (byName !== 0) return byName;
         return a.symbol.localeCompare(b.symbol);
       }
       const av = Number(a[sortBy] ?? 0);
@@ -144,30 +142,75 @@ export default function MarketsPage() {
                 <Typography variant="body2" color="text.secondary">
                   Total market size
                 </Typography>
-                <BigStat fontSizeXs={32} fontSizeMd={32} fontWeight={600} value={totals.supplyUsd.toString()} loading={showStatsSkeleton} />
+                <BigStat
+                  fontSizeXs={32}
+                  fontSizeMd={32}
+                  fontWeight={600}
+                  value={totals.supplyUsd.toString()}
+                  loading={showStatsSkeleton}
+                />
               </StatItem>
               <VerticalDivider />
               <StatItem>
                 <Typography variant="body2" color="text.secondary">
                   Total available
                 </Typography>
-                <BigStat fontSizeXs={32} fontSizeMd={32} fontWeight={600} value={totals.availableUsd.toString()} loading={showStatsSkeleton} />
+                <BigStat
+                  fontSizeXs={32}
+                  fontSizeMd={32}
+                  fontWeight={600}
+                  value={totals.availableUsd.toString()}
+                  loading={showStatsSkeleton}
+                />
               </StatItem>
               <VerticalDivider />
               <StatItem>
                 <Typography variant="body2" color="text.secondary">
                   Total borrows
                 </Typography>
-                <BigStat fontSizeXs={32} fontSizeMd={32} fontWeight={600} value={totals.borrowUsd.toString()} loading={showStatsSkeleton} />
+                <BigStat
+                  fontSizeXs={32}
+                  fontSizeMd={32}
+                  fontWeight={600}
+                  value={totals.borrowUsd.toString()}
+                  loading={showStatsSkeleton}
+                />
               </StatItem>
             </StatsCard>
           </CoreInstanceBlock>
 
           <CoreAssetsSection>
-            <Box display="flex" gap={2} justifyContent="space-between">
+            <Box
+              display="flex"
+              flexDirection={isMobile ? 'column' : 'row'}
+              gap={2}
+              justifyContent="space-between"
+            >
               <Typography variant="h5">Core assets</Typography>
               <FiltersRow>
                 <Box display="flex" gap={2} flexWrap="wrap" justifyContent="flex-end">
+                  <Select
+                    size="small"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as SortField)}
+                    variant="outlined"
+                    MenuProps={{ disableScrollLock: true }}
+                    sx={{ minWidth: 160, display: { xs: 'flex', sm: 'none' } }}
+                  >
+                    <MenuItem value="asset">Asset</MenuItem>
+                    <MenuItem value="totalLiquidityUSD">Total supplied</MenuItem>
+                    <MenuItem value="supplyAPY">Supply APY</MenuItem>
+                    <MenuItem value="totalDebtUSD">Total borrowed</MenuItem>
+                    <MenuItem value="variableBorrowAPY">Borrow APY, variable</MenuItem>
+                  </Select>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => setSortOrder((p) => (p === 'asc' ? 'desc' : 'asc'))}
+                    sx={{ display: { xs: 'flex', sm: 'none' }, minWidth: 120 }}
+                  >
+                    {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                  </Button>
                   <Select
                     multiple
                     size="small"
@@ -175,6 +218,7 @@ export default function MarketsPage() {
                     onChange={handleCategoriesChange}
                     variant="outlined"
                     displayEmpty
+                    MenuProps={{ disableScrollLock: true }}
                     renderValue={(selected) => {
                       const s = selected as string[];
                       if (s.length === 0) {
@@ -208,7 +252,7 @@ export default function MarketsPage() {
                         Reset
                       </Button>
                     </ListSubheader>
-                    {availableCategories.map((c) => (
+                    {ALL_RESERVE_CATEGORIES.map((c) => (
                       <MenuItem key={c} value={c} sx={{ pr: 1 }}>
                         <ListItemText primary={CATEGORY_LABELS[c]} />
                         <Checkbox
@@ -259,9 +303,9 @@ export default function MarketsPage() {
                       <TableRow>
                         <TableCell sx={{ width: '22%' }}>
                           <TableSortLabel
-                            active={sortBy === 'symbol'}
-                            direction={sortBy === 'symbol' ? sortOrder : 'asc'}
-                            onClick={() => handleSort('symbol')}
+                            active={sortBy === 'asset'}
+                            direction={sortBy === 'asset' ? sortOrder : 'asc'}
+                            onClick={() => handleSort('asset')}
                             IconComponent={UnfoldMoreIcon}
                           >
                             Asset
@@ -388,7 +432,7 @@ export default function MarketsPage() {
                             <Button
                               size="small"
                               variant="contained"
-                              color="secondary"
+                              color="info"
                               component={Link}
                               href={ROUTES.marketAssetDetails(row.underlyingAsset, currentMarket)}
                               noLinkStyle
@@ -409,7 +453,7 @@ export default function MarketsPage() {
                     <MobileAssetCard key={row.underlyingAsset}>
                       <Box display="flex" alignItems="center" justifyContent="space-between">
                         <Box display="flex" alignItems="center" gap={1.5}>
-                          <TokenIcon symbol={row.iconSymbol} sx={{ fontSize: 32 }} />
+                          <TokenIcon symbol={row.iconSymbol} sx={{ fontSize: 44 }} />
                           <Box>
                             <Typography variant="body1">{row.name}</Typography>
                             <Typography variant="body2" color="text.secondary">

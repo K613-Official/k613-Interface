@@ -4,30 +4,35 @@ import { FC } from 'react';
 import MaxWidthContainer from 'src/components/MaxWidthContainer';
 
 import { SOCIAL_LINKS } from './const';
-import { Container, Wrapper } from './styles';
+import { Container, LinksWrapper, Wrapper } from './styles';
 
 const Footer: FC = () => {
   return (
     <Container>
       <MaxWidthContainer>
         <Wrapper>
-          {/* <LinksWrapper>
-            <Typography fontWeight={400} fontSize={12}>
+          <LinksWrapper>
+            <Link
+              href="/terms-of-service.pdf"
+              fontWeight={400}
+              fontSize={12}
+              underline="none"
+              color="inherit"
+              target="_blank"
+            >
               TERMS
-            </Typography>
-            <Typography fontWeight={400} fontSize={12}>
+            </Link>
+            <Link
+              href="/privacy-policy.pdf"
+              fontWeight={400}
+              fontSize={12}
+              underline="none"
+              color="inherit"
+              target="_blank"
+            >
               PRIVACY
-            </Typography>
-            <Typography fontWeight={400} fontSize={12}>
-              DOCS
-            </Typography>
-            <Typography fontWeight={400} fontSize={12}>
-              FAQ
-            </Typography>
-            <Typography fontWeight={400} fontSize={12}>
-              GET SUPPORT
-            </Typography>
-          </LinksWrapper> */}
+            </Link>
+          </LinksWrapper>
 
           <Box display="flex" alignItems="center" gap={2}>
             {SOCIAL_LINKS.map((link) => {
