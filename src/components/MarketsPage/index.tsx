@@ -53,12 +53,7 @@ import {
   VerticalDivider,
 } from './styles';
 
-type SortField =
-  | 'symbol'
-  | 'totalLiquidityUSD'
-  | 'supplyAPY'
-  | 'totalDebtUSD'
-  | 'variableBorrowAPY';
+type SortField = 'asset' | 'totalLiquidityUSD' | 'supplyAPY' | 'totalDebtUSD' | 'variableBorrowAPY';
 type SortOrder = 'asc' | 'desc';
 
 export default function MarketsPage() {
@@ -114,7 +109,9 @@ export default function MarketsPage() {
       return matchesSearch && matchesCategory;
     });
     const sorted = [...filtered].sort((a, b) => {
-      if (sortBy === 'symbol') {
+      if (sortBy === 'asset') {
+        const byName = a.name.localeCompare(b.name);
+        if (byName !== 0) return byName;
         return a.symbol.localeCompare(b.symbol);
       }
       const av = Number(a[sortBy] ?? 0);
@@ -192,6 +189,28 @@ export default function MarketsPage() {
               <Typography variant="h5">Core assets</Typography>
               <FiltersRow>
                 <Box display="flex" gap={2} flexWrap="wrap" justifyContent="flex-end">
+                  <Select
+                    size="small"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as SortField)}
+                    variant="outlined"
+                    MenuProps={{ disableScrollLock: true }}
+                    sx={{ minWidth: 160, display: { xs: 'flex', sm: 'none' } }}
+                  >
+                    <MenuItem value="asset">Asset</MenuItem>
+                    <MenuItem value="totalLiquidityUSD">Total supplied</MenuItem>
+                    <MenuItem value="supplyAPY">Supply APY</MenuItem>
+                    <MenuItem value="totalDebtUSD">Total borrowed</MenuItem>
+                    <MenuItem value="variableBorrowAPY">Borrow APY, variable</MenuItem>
+                  </Select>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => setSortOrder((p) => (p === 'asc' ? 'desc' : 'asc'))}
+                    sx={{ display: { xs: 'flex', sm: 'none' }, minWidth: 120 }}
+                  >
+                    {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                  </Button>
                   <Select
                     multiple
                     size="small"
@@ -284,9 +303,9 @@ export default function MarketsPage() {
                       <TableRow>
                         <TableCell sx={{ width: '22%' }}>
                           <TableSortLabel
-                            active={sortBy === 'symbol'}
-                            direction={sortBy === 'symbol' ? sortOrder : 'asc'}
-                            onClick={() => handleSort('symbol')}
+                            active={sortBy === 'asset'}
+                            direction={sortBy === 'asset' ? sortOrder : 'asc'}
+                            onClick={() => handleSort('asset')}
                             IconComponent={UnfoldMoreIcon}
                           >
                             Asset
@@ -413,7 +432,7 @@ export default function MarketsPage() {
                             <Button
                               size="small"
                               variant="contained"
-                              color="secondary"
+                              color="info"
                               component={Link}
                               href={ROUTES.marketAssetDetails(row.underlyingAsset, currentMarket)}
                               noLinkStyle

@@ -1,14 +1,5 @@
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { Box, Button, Tooltip, Typography } from '@mui/material';
 import { formatUnits } from 'ethers/lib/utils';
 import { useMemo, useState } from 'react';
 import AssetsTable from 'src/components/AssetsTable';
@@ -48,7 +39,6 @@ export default function DashboardPage() {
   const { isTablet } = useDevice();
   const [table, setTable] = useState<DASHBOARD_TABLES>(DASHBOARD_TABLES.SUPPLY);
   const [riskDetailsOpen, setRiskDetailsOpen] = useState(false);
-  const [notifyOpen, setNotifyOpen] = useState(false);
 
   const { currentAccount } = useWeb3Context();
   const loanToValue =
@@ -173,23 +163,6 @@ export default function DashboardPage() {
                     >
                       RISK DETAILS
                     </Button>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      disabled={loading}
-                      onClick={() => setNotifyOpen(true)}
-                      sx={{
-                        minWidth: 'unset',
-                        borderColor: 'rgba(255,255,255,0.3)',
-                        color: '#fff',
-                        fontSize: 11,
-                        fontWeight: 700,
-                        px: 1,
-                        '&:hover': { borderColor: 'rgba(255,255,255,0.6)' },
-                      }}
-                    >
-                      NOTIFY
-                    </Button>
                   </Box>
                 </Box>
               ) : (
@@ -243,19 +216,6 @@ export default function DashboardPage() {
           currentLoanToValue={user?.currentLoanToValue || '0'}
           currentLiquidationThreshold={user?.currentLiquidationThreshold || '0'}
         />
-        <Dialog open={notifyOpen} onClose={() => setNotifyOpen(false)} maxWidth="xs" fullWidth>
-          <DialogTitle>Notify</DialogTitle>
-          <DialogContent>
-            <Typography variant="body2" color="text.secondary">
-              Notifications for health factor changes are not configured yet.
-            </Typography>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setNotifyOpen(false)} variant="contained" size="small">
-              OK
-            </Button>
-          </DialogActions>
-        </Dialog>
 
         {currentAccount ? (
           <>
