@@ -1,10 +1,10 @@
 import { valueToBigNumber } from '@aave/math-utils';
 import { ArrowBack, OpenInNew } from '@mui/icons-material';
 import { Box, Button, Link as MuiLink, Typography } from '@mui/material';
-import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { FormattedNumber } from 'src/components/primitives/FormattedNumber';
 import { Link, ROUTES } from 'src/components/primitives/Link';
+import { TokenIcon } from 'src/components/primitives/TokenIcon';
 import { getEmodeMessage } from 'src/components/transactions/Emode/EmodeNaming';
 import { ComputedReserveData } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { useAssetCaps } from 'src/hooks/useAssetCaps';
@@ -99,8 +99,6 @@ export function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveDa
     ? currentNetworkConfig.explorerLinkBuilder({ address: collectorAddress })
     : '';
 
-  const tokenIconSrc = `/icons/tokens/${reserve.iconSymbol.toLowerCase()}.svg`;
-
   const canBeCollateral = reserve.reserveLiquidationThreshold !== '0';
 
   return (
@@ -122,7 +120,10 @@ export function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveDa
             {currentMarketData.marketTitle}
           </Typography>
           <AssetIdentity>
-            <Image src={tokenIconSrc} width={40} height={40} alt={reserve.symbol} />
+            <TokenIcon
+              symbol={reserve.iconSymbol}
+              sx={{ width: 40, height: 40, fontSize: '40px' }}
+            />
             <Box display="flex" flexDirection="column" gap={0.25}>
               <Typography variant="h6">{reserve.name}</Typography>
               <Typography variant="body2" color="text.secondary">
@@ -134,74 +135,78 @@ export function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveDa
 
         <StatsAndInfoRow>
           <StatsStrip>
-          <StatCell>
-            <Typography variant="body2" color="text.secondary">
-              Reserve Size
-            </Typography>
-            <StatValueGroup>
-              <Typography variant="inherit" color="text.secondary">
-                $
+            <StatCell>
+              <Typography variant="body2" color="text.secondary">
+                Reserve Size
               </Typography>
-              <FormattedNumber
-                value={Math.max(Number(reserve.totalLiquidityUSD), 0)}
-                variant="inherit"
-                compact
-              />
-            </StatValueGroup>
-          </StatCell>
-          <StatDivider />
-          <StatCell>
-            <Typography variant="body2" color="text.secondary">
-              Available liquidity
-            </Typography>
-            <StatValueGroup>
-              <Typography variant="inherit" color="text.secondary">
-                $
-              </Typography>
-              <FormattedNumber
-                value={Math.max(Number(reserve.availableLiquidityUSD), 0)}
-                variant="inherit"
-                compact
-              />
-            </StatValueGroup>
-          </StatCell>
-          <StatDivider />
-          <StatCell>
-            <Typography variant="body2" color="text.secondary">
-              Utilization Rate
-            </Typography>
-            <StatValueGroup>
-              <FormattedNumber
-                value={reserve.borrowUsageRatio}
-                percent
-                variant="inherit"
-                visibleDecimals={2}
-              />
-            </StatValueGroup>
-          </StatCell>
-          <StatDivider />
-          <StatCell>
-            <Typography variant="body2" color="text.secondary">
-              Oracle price
-            </Typography>
-            <OracleValueRow>
               <StatValueGroup>
                 <Typography variant="inherit" color="text.secondary">
                   $
                 </Typography>
-                <FormattedNumber value={reserve.priceInUSD} variant="inherit" visibleDecimals={2} />
+                <FormattedNumber
+                  value={Math.max(Number(reserve.totalLiquidityUSD), 0)}
+                  variant="inherit"
+                  compact
+                />
               </StatValueGroup>
-              <SmallIconButton
-                href={oracleExplorerUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                size="small"
-              >
-                <OpenInNew fontSize="small" />
-              </SmallIconButton>
-            </OracleValueRow>
-          </StatCell>
-        </StatsStrip>
+            </StatCell>
+            <StatDivider />
+            <StatCell>
+              <Typography variant="body2" color="text.secondary">
+                Available liquidity
+              </Typography>
+              <StatValueGroup>
+                <Typography variant="inherit" color="text.secondary">
+                  $
+                </Typography>
+                <FormattedNumber
+                  value={Math.max(Number(reserve.availableLiquidityUSD), 0)}
+                  variant="inherit"
+                  compact
+                />
+              </StatValueGroup>
+            </StatCell>
+            <StatDivider />
+            <StatCell>
+              <Typography variant="body2" color="text.secondary">
+                Utilization Rate
+              </Typography>
+              <StatValueGroup>
+                <FormattedNumber
+                  value={reserve.borrowUsageRatio}
+                  percent
+                  variant="inherit"
+                  visibleDecimals={2}
+                />
+              </StatValueGroup>
+            </StatCell>
+            <StatDivider />
+            <StatCell>
+              <Typography variant="body2" color="text.secondary">
+                Oracle price
+              </Typography>
+              <OracleValueRow>
+                <StatValueGroup>
+                  <Typography variant="inherit" color="text.secondary">
+                    $
+                  </Typography>
+                  <FormattedNumber
+                    value={reserve.priceInUSD}
+                    variant="inherit"
+                    visibleDecimals={4}
+                  />
+                </StatValueGroup>
+                <SmallIconButton
+                  href={oracleExplorerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="small"
+                >
+                  <OpenInNew fontSize="small" />
+                </SmallIconButton>
+              </OracleValueRow>
+            </StatCell>
+          </StatsStrip>
 
           <YourInfoPanel reserve={reserve} />
         </StatsAndInfoRow>

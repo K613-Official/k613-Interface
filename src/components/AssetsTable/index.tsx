@@ -824,7 +824,7 @@ function BorrowMobileCard({
   currentMarket: CustomMarket;
   onBorrow: (underlyingAsset: string) => void;
 }) {
-  const apyLabel = row.borrowApyPercent < 0 ? '—' : `${row.borrowApyPercent.toFixed(2)}%`;
+  const apyLabel = row.borrowApyPercent < 0 ? '—' : `${(row.borrowApyPercent * 100).toFixed(2)}%`;
 
   return (
     <MobileAssetCard>
@@ -939,7 +939,7 @@ function BorrowTableRow({
   currentMarket: CustomMarket;
   onBorrow: (underlyingAsset: string) => void;
 }) {
-  const apyLabel = row.borrowApyPercent < 0 ? '—' : `${row.borrowApyPercent.toFixed(2)}%`;
+  const apyLabel = row.borrowApyPercent < 0 ? '—' : `${(row.borrowApyPercent * 100).toFixed(2)}%`;
 
   return (
     <TableRow>
