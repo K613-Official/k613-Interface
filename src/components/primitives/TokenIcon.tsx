@@ -139,7 +139,7 @@ interface TokenIconProps extends IconProps {
  * @param param0
  * @returns
  */
-const PNG_ONLY_SYMBOLS = new Set(['mon', 'wmon', 'gmon', 'smon', 'shmon']);
+const PNG_ONLY_SYMBOLS = new Set(['mon', 'wmon', 'gmon', 'smon', 'shmon', 'wsrusd']);
 
 const initialIconSrc = (symbol: string) => {
   const key = symbol.toLowerCase();
