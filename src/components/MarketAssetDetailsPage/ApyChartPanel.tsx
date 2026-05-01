@@ -25,7 +25,7 @@ export function ApyChartPanel({
   onRangeChange: (r: ChartRange) => void;
   accent: 'supply' | 'borrow';
 }) {
-  const stroke = accent === 'supply' ? '#4CAF50' : '#29B6F6';
+  const stroke = accent === 'supply' ? '#80FF00' : '#29B6F6';
   const gradId = `grad-${accent}`;
 
   return (

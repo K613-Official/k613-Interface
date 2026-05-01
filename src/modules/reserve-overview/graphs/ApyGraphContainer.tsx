@@ -28,10 +28,7 @@ type ApyGraphContainerProps = {
  * This likely may need to be turned into two different container components if the graphs become wildly different.
  * This graph gets its data via an external API call, thus having loading/error states
  */
-export const ApyGraphContainer = ({
-  graphKey,
-  reserve,
-}: ApyGraphContainerProps): JSX.Element => {
+export const ApyGraphContainer = ({ graphKey, reserve }: ApyGraphContainerProps): JSX.Element => {
   const [selectedTimeRange, setSelectedTimeRange] = useState<ReserveRateTimeRange>(
     ESupportedTimeRanges.OneMonth
   );
@@ -44,7 +41,7 @@ export const ApyGraphContainer = ({
   );
 
   // Supply fields
-  const supplyFields: Fields = [{ name: 'liquidityRate', color: '#2EBAC6', text: 'Supply APR' }];
+  const supplyFields: Fields = [{ name: 'liquidityRate', color: '#80FF00', text: 'Supply APR' }];
 
   // Borrow fields
   const borrowFields: Fields = [

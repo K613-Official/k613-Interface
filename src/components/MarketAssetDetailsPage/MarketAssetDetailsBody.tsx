@@ -223,7 +223,7 @@ export function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveDa
           </CardBlockTitle>
           <SupplyBorrowMain>
             <DonutBlock>
-              <DonutRing pct={supplyDonutPct} accent="#B9F6CA">
+              <DonutRing pct={supplyDonutPct} accent="#80FF00">
                 <DonutInner>
                   <DonutPct variant="subtitle1">{supplyDonutPct.toFixed(2)}%</DonutPct>
                 </DonutInner>
