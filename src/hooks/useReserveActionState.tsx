@@ -65,7 +65,11 @@ export const useReserveActionState = ({
         {balance === '0' && !isGho && (
           <>
             {currentNetworkConfig.isTestnet ? (
-              <Warning sx={{ mb: 0 }} severity="info" icon={false}>
+              <Warning
+                sx={{ mb: 0, backgroundColor: '#E5F6FD', color: '#014361' }}
+                severity="info"
+                icon={false}
+              >
                 <Trans>
                   Your {networkName} wallet is empty. Get free test {reserve.name} at
                 </Trans>{' '}
@@ -101,7 +105,7 @@ export const useReserveActionState = ({
               </Warning>
             ) : (
               <WalletEmptyInfo
-                sx={{ mb: 0 }}
+                sx={{ mb: 0, backgroundColor: '#E5F6FD', color: '#014361' }}
                 name={networkName}
                 bridge={bridge}
                 icon={false}

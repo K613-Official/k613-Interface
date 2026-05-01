@@ -280,14 +280,18 @@ export const FlagItem = styled(Box)({
   gap: 8,
 });
 
-export const ParamRows = styled(Box)({
+export const ParamRows = styled(Box)(({ theme }) => ({
   display: 'flex',
-  flexDirection: 'column',
   gap: 8,
-});
+
+  [theme.breakpoints.down('md')]: {
+    flexDirection: 'column',
+  },
+}));
 
 export const ParamRow = styled(Box)(({ theme }) => ({
   display: 'flex',
+  flex: 1,
   flexDirection: 'column',
   gap: 4,
   padding: 12,
