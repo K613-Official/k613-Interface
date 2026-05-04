@@ -141,14 +141,22 @@ export const ConfigCard = styled(Box)(({ theme }) => ({
   backgroundColor:
     theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : theme.palette.background.default,
   display: 'flex',
-  flexDirection: 'column',
   gap: 20,
+
   [theme.breakpoints.up('sm')]: {
     padding: 20,
   },
+
+  [theme.breakpoints.down('md')]: {
+    flexDirection: 'column',
+  },
 }));
 
-export const CardBlockTitle = styled(Box)({});
+export const CardBlockTitle = styled(Box)({
+  width: 150,
+  flexGrow: 1,
+  flexShrink: 0,
+});
 
 export const SupplyBorrowMain = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -170,8 +178,8 @@ export const DonutBlock = styled(Box)({
 export const DonutRing = styled(Box, {
   shouldForwardProp: (p) => p !== 'pct' && p !== 'accent',
 })<{ pct: number; accent: string }>(({ pct, accent, theme }) => ({
-  width: 88,
-  height: 88,
+  width: 116,
+  height: 116,
   borderRadius: '50%',
   background: `conic-gradient(${accent} ${pct * 3.6}deg, ${theme.palette.divider} 0deg)`,
   display: 'grid',
@@ -179,11 +187,11 @@ export const DonutRing = styled(Box, {
   flexShrink: 0,
 }));
 
-export const DonutInner = styled(Box)(({ theme }) => ({
-  width: 68,
-  height: 68,
+export const DonutInner = styled(Box)(() => ({
+  width: 108,
+  height: 108,
   borderRadius: '50%',
-  backgroundColor: theme.palette.background.paper,
+  backgroundColor: '#151515',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
