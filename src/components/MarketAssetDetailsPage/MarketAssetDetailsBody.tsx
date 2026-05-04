@@ -221,275 +221,293 @@ export function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveDa
           <CardBlockTitle>
             <Typography variant="body1">Supply Info</Typography>
           </CardBlockTitle>
-          <SupplyBorrowMain>
-            <DonutBlock>
-              <DonutRing pct={supplyDonutPct} accent="#80FF00">
-                <DonutInner>
-                  <DonutPct variant="subtitle1">{supplyDonutPct.toFixed(2)}%</DonutPct>
-                </DonutInner>
-              </DonutRing>
-            </DonutBlock>
-            <MetricsRow>
-              <MetricCell>
-                <Typography variant="body2" color="text.secondary">
-                  Total supplied
-                </Typography>
-                <Typography variant="h6" component="div">
-                  {showSupplyCap ? (
-                    <>
-                      <FormattedNumber
-                        value={reserve.totalLiquidity}
-                        variant="inherit"
-                        component="span"
-                        compact
-                      />
-                      <Typography component="span" variant="h6">
-                        {' '}
-                        of{' '}
-                      </Typography>
-                      <FormattedNumber
-                        value={reserve.supplyCap}
-                        variant="inherit"
-                        component="span"
-                        compact
-                      />
-                    </>
-                  ) : (
-                    <FormattedNumber value={reserve.totalLiquidity} variant="inherit" compact />
-                  )}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" component="div">
-                  {showSupplyCap ? (
-                    <>
+          <Box
+            display="flex"
+            flexDirection="column"
+            gap={2}
+            width="100%"
+            flexGrow={0}
+            flexShrink={1}
+          >
+            <SupplyBorrowMain>
+              <DonutBlock>
+                <DonutRing pct={supplyDonutPct} accent="#80FF00">
+                  <DonutInner>
+                    <DonutPct variant="subtitle1">{supplyDonutPct.toFixed(2)}%</DonutPct>
+                  </DonutInner>
+                </DonutRing>
+              </DonutBlock>
+              <MetricsRow>
+                <MetricCell>
+                  <Typography variant="body2" color="text.secondary">
+                    Total supplied
+                  </Typography>
+                  <Typography variant="h6" component="div">
+                    {showSupplyCap ? (
+                      <>
+                        <FormattedNumber
+                          value={reserve.totalLiquidity}
+                          variant="inherit"
+                          component="span"
+                          compact
+                        />
+                        <Typography component="span" variant="h6">
+                          {' '}
+                          of{' '}
+                        </Typography>
+                        <FormattedNumber
+                          value={reserve.supplyCap}
+                          variant="inherit"
+                          component="span"
+                          compact
+                        />
+                      </>
+                    ) : (
+                      <FormattedNumber value={reserve.totalLiquidity} variant="inherit" compact />
+                    )}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" component="div">
+                    {showSupplyCap ? (
+                      <>
+                        <FormattedNumber
+                          value={reserve.totalLiquidityUSD}
+                          variant="inherit"
+                          component="span"
+                          symbol="USD"
+                          compact
+                        />
+                        <Typography component="span" variant="body2" color="text.secondary">
+                          {' '}
+                          of{' '}
+                        </Typography>
+                        <FormattedNumber
+                          value={reserve.supplyCapUSD}
+                          variant="inherit"
+                          component="span"
+                          symbol="USD"
+                          compact
+                        />
+                      </>
+                    ) : (
                       <FormattedNumber
                         value={reserve.totalLiquidityUSD}
                         variant="inherit"
-                        component="span"
                         symbol="USD"
                         compact
                       />
-                      <Typography component="span" variant="body2" color="text.secondary">
-                        {' '}
-                        of{' '}
-                      </Typography>
-                      <FormattedNumber
-                        value={reserve.supplyCapUSD}
-                        variant="inherit"
-                        component="span"
-                        symbol="USD"
-                        compact
-                      />
-                    </>
-                  ) : (
-                    <FormattedNumber
-                      value={reserve.totalLiquidityUSD}
-                      variant="inherit"
-                      symbol="USD"
-                      compact
-                    />
-                  )}
-                </Typography>
-              </MetricCell>
-              <MetricDivider />
-              <MetricCell>
-                <Typography variant="body2" color="text.secondary">
-                  APY
-                </Typography>
-                <FormattedNumber
-                  value={reserve.supplyAPY}
-                  percent
-                  variant="h6"
-                  visibleDecimals={2}
-                />
-              </MetricCell>
-            </MetricsRow>
-          </SupplyBorrowMain>
+                    )}
+                  </Typography>
+                </MetricCell>
+                <MetricDivider />
+                <MetricCell>
+                  <Typography variant="body2" color="text.secondary">
+                    APY
+                  </Typography>
+                  <FormattedNumber
+                    value={reserve.supplyAPY}
+                    percent
+                    variant="h6"
+                    visibleDecimals={2}
+                  />
+                </MetricCell>
+              </MetricsRow>
+            </SupplyBorrowMain>
 
-          {renderCharts ? (
-            <GraphHost>
-              <ApyGraphContainer graphKey="supply" reserve={reserve} />
-            </GraphHost>
-          ) : (
-            <ApyChartPanel
-              title="Supply ARP"
-              avgLabel={formatLiveApyCaption(reserve.supplyAPY)}
-              range={supplyRange}
-              onRangeChange={setSupplyRange}
-              accent="supply"
-            />
-          )}
-
-          <Subsection>
-            <Typography variant="body1">Collateral usage</Typography>
-            <FlagRow>
-              <StatusFlag ok={canBeCollateral} label="Can be collateral" />
-            </FlagRow>
-            {canBeCollateral && (
-              <ParamRows>
-                <ParamRow>
-                  <Typography variant="body2" color="text.secondary">
-                    Max LTV
-                  </Typography>
-                  <FormattedNumber
-                    value={reserve.formattedBaseLTVasCollateral}
-                    percent
-                    variant="h6"
-                    visibleDecimals={2}
-                  />
-                </ParamRow>
-                <ParamRow>
-                  <Typography variant="body2" color="text.secondary">
-                    Liquidation threshold
-                  </Typography>
-                  <FormattedNumber
-                    value={reserve.formattedReserveLiquidationThreshold}
-                    percent
-                    variant="h6"
-                    visibleDecimals={2}
-                  />
-                </ParamRow>
-                <ParamRow>
-                  <Typography variant="body2" color="text.secondary">
-                    Liquidation penalty
-                  </Typography>
-                  <FormattedNumber
-                    value={reserve.formattedReserveLiquidationBonus}
-                    percent
-                    variant="h6"
-                    visibleDecimals={2}
-                  />
-                </ParamRow>
-              </ParamRows>
+            {renderCharts ? (
+              <GraphHost>
+                <ApyGraphContainer graphKey="supply" reserve={reserve} />
+              </GraphHost>
+            ) : (
+              <ApyChartPanel
+                title="Supply ARP"
+                avgLabel={formatLiveApyCaption(reserve.supplyAPY)}
+                range={supplyRange}
+                onRangeChange={setSupplyRange}
+                accent="supply"
+              />
             )}
-          </Subsection>
+
+            <Subsection>
+              <Typography variant="body1">Collateral usage</Typography>
+              <FlagRow>
+                <StatusFlag ok={canBeCollateral} label="Can be collateral" />
+              </FlagRow>
+              {canBeCollateral && (
+                <ParamRows>
+                  <ParamRow>
+                    <Typography variant="body2" color="text.secondary">
+                      Max LTV
+                    </Typography>
+                    <FormattedNumber
+                      value={reserve.formattedBaseLTVasCollateral}
+                      percent
+                      variant="h6"
+                      visibleDecimals={2}
+                    />
+                  </ParamRow>
+                  <ParamRow>
+                    <Typography variant="body2" color="text.secondary">
+                      Liquidation threshold
+                    </Typography>
+                    <FormattedNumber
+                      value={reserve.formattedReserveLiquidationThreshold}
+                      percent
+                      variant="h6"
+                      visibleDecimals={2}
+                    />
+                  </ParamRow>
+                  <ParamRow>
+                    <Typography variant="body2" color="text.secondary">
+                      Liquidation penalty
+                    </Typography>
+                    <FormattedNumber
+                      value={reserve.formattedReserveLiquidationBonus}
+                      percent
+                      variant="h6"
+                      visibleDecimals={2}
+                    />
+                  </ParamRow>
+                </ParamRows>
+              )}
+            </Subsection>
+          </Box>
         </ConfigCard>
 
         <ConfigCard>
           <CardBlockTitle>
             <Typography variant="body1">Borrow info</Typography>
           </CardBlockTitle>
-          <SupplyBorrowMain>
-            <DonutBlock>
-              <DonutRing pct={borrowDonutPct} accent="#81D4FA">
-                <DonutInner>
-                  <DonutPct variant="subtitle1">{borrowDonutPct.toFixed(2)}%</DonutPct>
-                </DonutInner>
-              </DonutRing>
-            </DonutBlock>
-            <MetricsRow>
-              <MetricCell>
-                <Typography variant="body2" color="text.secondary">
-                  Total borrowed
-                </Typography>
-                <Typography variant="h6" component="div">
-                  {showBorrowCap ? (
-                    <>
-                      <FormattedNumber
-                        value={reserve.totalDebt}
-                        variant="inherit"
-                        component="span"
-                        compact
-                      />
-                      <Typography component="span" variant="h6">
-                        {' '}
-                        of{' '}
-                      </Typography>
-                      <FormattedNumber
-                        value={reserve.borrowCap}
-                        variant="inherit"
-                        component="span"
-                        compact
-                      />
-                    </>
-                  ) : (
-                    <FormattedNumber value={reserve.totalDebt} variant="inherit" compact />
-                  )}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" component="div">
-                  {showBorrowCap ? (
-                    <>
+          <Box
+            display="flex"
+            flexDirection="column"
+            gap={2}
+            width="100%"
+            flexGrow={0}
+            flexShrink={1}
+          >
+            <SupplyBorrowMain>
+              <DonutBlock>
+                <DonutRing pct={borrowDonutPct} accent="#81D4FA">
+                  <DonutInner>
+                    <DonutPct variant="subtitle1">{borrowDonutPct.toFixed(2)}%</DonutPct>
+                  </DonutInner>
+                </DonutRing>
+              </DonutBlock>
+              <MetricsRow>
+                <MetricCell>
+                  <Typography variant="body2" color="text.secondary">
+                    Total borrowed
+                  </Typography>
+                  <Typography variant="h6" component="div">
+                    {showBorrowCap ? (
+                      <>
+                        <FormattedNumber
+                          value={reserve.totalDebt}
+                          variant="inherit"
+                          component="span"
+                          compact
+                        />
+                        <Typography component="span" variant="h6">
+                          {' '}
+                          of{' '}
+                        </Typography>
+                        <FormattedNumber
+                          value={reserve.borrowCap}
+                          variant="inherit"
+                          component="span"
+                          compact
+                        />
+                      </>
+                    ) : (
+                      <FormattedNumber value={reserve.totalDebt} variant="inherit" compact />
+                    )}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" component="div">
+                    {showBorrowCap ? (
+                      <>
+                        <FormattedNumber
+                          value={reserve.totalDebtUSD}
+                          variant="inherit"
+                          component="span"
+                          symbol="USD"
+                          compact
+                        />
+                        <Typography component="span" variant="body2" color="text.secondary">
+                          {' '}
+                          of{' '}
+                        </Typography>
+                        <FormattedNumber
+                          value={reserve.borrowCapUSD}
+                          variant="inherit"
+                          component="span"
+                          symbol="USD"
+                          compact
+                        />
+                      </>
+                    ) : (
                       <FormattedNumber
                         value={reserve.totalDebtUSD}
                         variant="inherit"
-                        component="span"
                         symbol="USD"
                         compact
                       />
-                      <Typography component="span" variant="body2" color="text.secondary">
-                        {' '}
-                        of{' '}
-                      </Typography>
+                    )}
+                  </Typography>
+                </MetricCell>
+                <MetricDivider />
+                <MetricCell>
+                  <Typography variant="body2" color="text.secondary">
+                    APY, variable
+                  </Typography>
+                  <FormattedNumber
+                    value={reserve.variableBorrowAPY}
+                    percent
+                    variant="h6"
+                    visibleDecimals={2}
+                  />
+                </MetricCell>
+                <MetricDivider />
+                <MetricCell>
+                  <Typography variant="body2" color="text.secondary">
+                    Borrow cap
+                  </Typography>
+                  {showBorrowCap ? (
+                    <>
+                      <FormattedNumber value={reserve.borrowCap} variant="h6" compact />
                       <FormattedNumber
                         value={reserve.borrowCapUSD}
-                        variant="inherit"
-                        component="span"
+                        variant="body2"
                         symbol="USD"
                         compact
+                        color="text.secondary"
                       />
                     </>
                   ) : (
-                    <FormattedNumber
-                      value={reserve.totalDebtUSD}
-                      variant="inherit"
-                      symbol="USD"
-                      compact
-                    />
+                    <>
+                      <Typography variant="h6">—</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        —
+                      </Typography>
+                    </>
                   )}
-                </Typography>
-              </MetricCell>
-              <MetricDivider />
-              <MetricCell>
-                <Typography variant="body2" color="text.secondary">
-                  APY, variable
-                </Typography>
-                <FormattedNumber
-                  value={reserve.variableBorrowAPY}
-                  percent
-                  variant="h6"
-                  visibleDecimals={2}
-                />
-              </MetricCell>
-              <MetricDivider />
-              <MetricCell>
-                <Typography variant="body2" color="text.secondary">
-                  Borrow cap
-                </Typography>
-                {showBorrowCap ? (
-                  <>
-                    <FormattedNumber value={reserve.borrowCap} variant="h6" compact />
-                    <FormattedNumber
-                      value={reserve.borrowCapUSD}
-                      variant="body2"
-                      symbol="USD"
-                      compact
-                      color="text.secondary"
-                    />
-                  </>
-                ) : (
-                  <>
-                    <Typography variant="h6">—</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      —
-                    </Typography>
-                  </>
-                )}
-              </MetricCell>
-            </MetricsRow>
-          </SupplyBorrowMain>
+                </MetricCell>
+              </MetricsRow>
+            </SupplyBorrowMain>
 
-          {renderCharts && showBorrowApyChart ? (
-            <GraphHost>
-              <ApyGraphContainer graphKey="borrow" reserve={reserve} />
-            </GraphHost>
-          ) : !renderCharts ? (
-            <ApyChartPanel
-              title="Borrow APR, variable"
-              avgLabel={formatLiveApyCaption(reserve.variableBorrowAPY)}
-              range={borrowRange}
-              onRangeChange={setBorrowRange}
-              accent="borrow"
-            />
-          ) : null}
+            {renderCharts && showBorrowApyChart ? (
+              <GraphHost>
+                <ApyGraphContainer graphKey="borrow" reserve={reserve} />
+              </GraphHost>
+            ) : !renderCharts ? (
+              <ApyChartPanel
+                title="Borrow APR, variable"
+                avgLabel={formatLiveApyCaption(reserve.variableBorrowAPY)}
+                range={borrowRange}
+                onRangeChange={setBorrowRange}
+                accent="borrow"
+              />
+            ) : null}
+          </Box>
         </ConfigCard>
 
         {collectorAddress ? (
@@ -559,7 +577,16 @@ export function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveDa
           <CardBlockTitle>
             <Typography variant="body1">Interest rate model</Typography>
           </CardBlockTitle>
-          <InterestRateModelGraphContainer reserve={reserve} />
+          <Box
+            display="flex"
+            flexDirection="column"
+            gap={2}
+            width="100%"
+            flexGrow={0}
+            flexShrink={1}
+          >
+            <InterestRateModelGraphContainer reserve={reserve} />
+          </Box>
         </ConfigCard>
       </SectionShell>
     </PageWrapper>
