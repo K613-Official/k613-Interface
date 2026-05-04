@@ -6,7 +6,7 @@ import { localPoint } from '@visx/event';
 import { GridRows } from '@visx/grid';
 import { Group } from '@visx/group';
 import { scaleLinear, scaleTime } from '@visx/scale';
-import { Bar, Line, LinePath } from '@visx/shape';
+import { AreaClosed, Bar, Line, LinePath } from '@visx/shape';
 import { defaultStyles, TooltipWithBounds, withTooltip } from '@visx/tooltip';
 import { WithTooltipProvidedProps } from '@visx/tooltip/lib/enhancers/withTooltip';
 import { bisector, extent, max } from 'd3-array';
@@ -197,6 +197,22 @@ export const ApyGraph = withTooltip<AreaProps, TooltipData>(
     return (
       <>
         <svg width={width} height={height}>
+          <defs>
+            {fields.map((field, index) => (
+              <linearGradient
+                key={`apy-graph-gradient-${field.name}-${index}`}
+                id={`apy-graph-gradient-${field.name}-${index}`}
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
+                <stop offset="0%" stopColor={field.color} stopOpacity={0.28} />
+                <stop offset="100%" stopColor={field.color} stopOpacity={0} />
+              </linearGradient>
+            ))}
+          </defs>
+
           <Group left={margin.left} top={margin.top}>
             {/* Horizontal Background Lines */}
             <GridRows
@@ -207,6 +223,21 @@ export const ApyGraph = withTooltip<AreaProps, TooltipData>(
               pointerEvents="none"
               numTicks={3}
             />
+
+            {/* Data Value Area Shadows */}
+            {fields.map((field, index) => (
+              <AreaClosed
+                key={`${field.name}-shadow`}
+                data={data}
+                x={(d) => dateScale(getDate(d)) ?? 0}
+                y={(d) => yValueScale(getData(d, field.name)) ?? 0}
+                y0={innerHeight}
+                yScale={yValueScale}
+                curve={curveMonotoneX}
+                fill={`url(#apy-graph-gradient-${field.name}-${index})`}
+                pointerEvents="none"
+              />
+            ))}
 
             {/* Data Value Lines */}
             {fields.map((field) => (
