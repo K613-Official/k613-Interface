@@ -124,6 +124,7 @@ export const ROUTES = {
   dashboard: '/',
   markets: '/markets',
   faq: '/faq',
+  pointsCampaign: '/points-campaign',
   staking: '/staking',
   stakingK613: '/staking-k613',
   governance: '/governance',

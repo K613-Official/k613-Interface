@@ -27,4 +27,9 @@ export const navigation: Navigation[] = [
     title: msg`K613 Staking`,
     dataCy: 'menuStakingK613',
   },
+  {
+    link: ROUTES.pointsCampaign,
+    title: msg`Campaign`,
+    dataCy: 'menuPointsCampaign',
+  },
 ];
