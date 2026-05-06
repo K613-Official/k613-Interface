@@ -162,7 +162,7 @@ export const FeedbackModal = () => {
                 target="_blank"
                 variant="subtitle1"
                 color="text.secondary"
-                href="https://discord.com/invite/aave"
+                href="https://discord.gg/4mVwFWkarC"
                 underline="always"
               >
                 discord

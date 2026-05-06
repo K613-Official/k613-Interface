@@ -8,7 +8,7 @@ export const SOCIAL_LINKS = [
   {
     id: 1,
     alt: 'discord',
-    href: 'https://discord.gg/P2eBhJkJu',
+    href: 'https://discord.gg/4mVwFWkarC',
     icon: '/icons/discord.svg',
   },
   {
