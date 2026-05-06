@@ -20,6 +20,7 @@ import { Container, MobileMenuButton, Tabs, TabsWrapper } from './styles';
 const TABS = [
   { label: 'Dashboard', href: ROUTES.dashboard },
   { label: 'Markets', href: ROUTES.markets },
+  { label: 'Campaign', href: ROUTES.pointsCampaign },
   { label: 'Staking', href: ROUTES.stakingK613 },
   { label: 'FAQ', href: ROUTES.faq },
 ];
