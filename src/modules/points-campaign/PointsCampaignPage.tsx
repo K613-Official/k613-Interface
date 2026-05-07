@@ -63,6 +63,9 @@ import {
 } from './pointsCampaign.styles';
 
 const PAGE_SIZE = 10;
+const CAMPAIGN_START_UTC = Date.UTC(2026, 4, 1, 0, 0, 0);
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const WEEKS: WeekNumber[] = [1, 2];
 
 const tabs: { key: CampaignTab; label: string }[] = [
   { key: 'leaderboard', label: 'Leaderboard' },
@@ -72,20 +75,32 @@ const tabs: { key: CampaignTab; label: string }[] = [
 
 const rules = [
   {
+    title: 'What is K613S1?',
+    text: 'Season 1 rewards are tracked in K613S1. K613S1 is an accounting token used for future K613 reward conversion.',
+  },
+  {
+    title: 'How to Earn K613S1?',
+    text: 'K613S1 rewards are earned through eligible liquidity participation and ecosystem activity during Season 1.\nEligible activity may include:\n\n• Supplying assets\n• Borrowing assets\n• Sustained liquidity participation\n• Ecosystem missions\n• Community engagement\n• Galxe campaigns and contributor activity\n\nOnchain activity rewards and ecosystem/community rewards may be calculated and distributed separately during the campaign period.\nWeekly balances are finalized after each campaign period.',
+  },
+  {
+    title: 'What activities are eligible?',
+    text: 'Eligible activity includes supported supply and borrow positions, ecosystem participation, community campaigns, and approved contributor',
+  },
+  {
     title: 'How is K613S1 calculated?',
-    text: 'K613S1 is calculated once per week. The main input is your minimum eligible balance during the week, normalized to USD at the weekly update.',
+    text: 'K613S1 is calculated using the lowest eligible supply and borrow balances recorded during the selected campaign period, normalized to USD during weekly finalization.',
   },
   {
     title: 'Why minimum balance?',
-    text: 'Minimum balance rewards liquidity that stayed in the protocol during the week. A short deposit right before the update does not meaningfully increase K613S1.',
+    text: 'Using the lowest recorded eligible balance helps reward sustained liquidity participation and reduces the impact of temporary balance spikes or short-term deposits.',
   },
   {
-    title: 'What token is distributed?',
-    text: 'Season 1 uses K613S1. K613S1 is not K613 and does not represent a claimable K613 balance on this page.',
+    title: 'How does the weekly leaderboard work?',
+    text: 'Each weekly update is based on eligible liquidity activity throughout the selected campaign period.\nDaily finalized balances are aggregated into weekly rankings and K613S1 distribution results.\nThe campaign is designed to reward sustained participation and reduce the impact of short-term balance changes.',
   },
   {
-    title: 'When can users claim?',
-    text: 'Claiming is not available yet. If a claim flow is added later, it will use finalized Season 1 balances.',
+    title: 'When can users claim rewards?',
+    text: 'K613S1 claim availability and future K613 conversion details will be announced after Season 1 finalization.',
   },
 ];
 
@@ -103,14 +118,36 @@ function getCountdownLabel(week: WeekNumber) {
   return `${days}d ${hours}h ${minutes}m`;
 }
 
+function getUnlockedWeek(now = new Date()): WeekNumber {
+  const diff = now.getTime() - CAMPAIGN_START_UTC;
+
+  if (diff < WEEK_MS) {
+    return 1;
+  }
+
+  return 2;
+}
+
+function getLastUpdatedLabel(now = new Date()) {
+  const date = new Intl.DateTimeFormat('en-US', {
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'UTC',
+  }).format(now);
+
+  return `Last updated ${date} 00:00 UTC`;
+}
+
 export function PointsCampaignPage() {
   const [connected, setConnected] = useState(false);
   const [status] = useState('Active');
   const [week, setWeek] = useState<WeekNumber>(1);
+  const [maxUnlockedWeek, setMaxUnlockedWeek] = useState<WeekNumber>(() => getUnlockedWeek());
   const [activeTab, setActiveTab] = useState<CampaignTab>('leaderboard');
   const [page, setPage] = useState(1);
   const [emptyLeaderboard] = useState(false);
   const [countdownLabel, setCountdownLabel] = useState(() => getCountdownLabel(1));
+  const [lastUpdatedLabel, setLastUpdatedLabel] = useState(() => getLastUpdatedLabel());
   const [snapshotModalOpen, setSnapshotModalOpen] = useState(false);
   const [toast, setToast] = useState<{ open: boolean; message: string }>({
     open: false,
@@ -121,6 +158,7 @@ export function PointsCampaignPage() {
   const totalPages = Math.ceil(leaderboard.length / PAGE_SIZE);
 
   const selectedWeekData = weekData[week];
+  const availableWeeks = WEEKS.filter((item) => item <= maxUnlockedWeek);
 
   const currentRows = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
@@ -157,12 +195,22 @@ export function PointsCampaignPage() {
 
   useEffect(() => {
     setCountdownLabel(getCountdownLabel(week));
+    setLastUpdatedLabel(getLastUpdatedLabel());
     const intervalId = window.setInterval(() => {
       setCountdownLabel(getCountdownLabel(week));
+      setMaxUnlockedWeek(getUnlockedWeek());
+      setLastUpdatedLabel(getLastUpdatedLabel());
     }, 30_000);
 
     return () => window.clearInterval(intervalId);
   }, [week]);
+
+  useEffect(() => {
+    if (week > maxUnlockedWeek) {
+      setWeek(maxUnlockedWeek);
+      setPage(1);
+    }
+  }, [maxUnlockedWeek, week]);
 
   return (
     <>
@@ -173,15 +221,20 @@ export function PointsCampaignPage() {
               <Dot />
               <span>{status}</span>
             </Eyebrow>
-            <HeroTitle>K613S1 Campaign Season 1</HeroTitle>
+            <HeroTitle>K613 Genesis Season 1</HeroTitle>
             <HeroSubtitle>
-              Earn K613S1 through weekly liquidity snapshots and ecosystem contribution. Weekly
-              results are shown after each snapshot is finalized.
+              Earn K613S1 through sustained liquidity participation and ecosystem contribution.
+              Weekly rankings are based on eligible campaign balances.
             </HeroSubtitle>
             <HeroActions>
-              <PrimaryCta onClick={() => handleSetTab('leaderboard')}>View leaderboard</PrimaryCta>
-              <SecondaryCta onClick={() => handleSetTab('rules')}>View rules</SecondaryCta>
-              <GhostCta onClick={() => setSnapshotModalOpen(true)}>How it works</GhostCta>
+              <PrimaryCta onClick={() => handleSetTab('leaderboard')}>View Leaderboard</PrimaryCta>
+              <SecondaryCta
+                onClick={() => window.open('https://galxe.com/', '_blank', 'noopener,noreferrer')}
+              >
+                Explore Missions
+              </SecondaryCta>
+              <SecondaryCta onClick={() => handleSetTab('rules')}>View Rules</SecondaryCta>
+              <GhostCta onClick={() => setSnapshotModalOpen(true)}>How It Works</GhostCta>
             </HeroActions>
           </div>
 
@@ -207,7 +260,7 @@ export function PointsCampaignPage() {
         <WeekRow elevation={0}>
           <div>
             <Label>Week</Label>
-            <Small>Choose the weekly results you want to view.</Small>
+            <Small>Choose the campaign week you want to view.</Small>
           </div>
 
           <WeekSelectControl size="small">
@@ -217,8 +270,11 @@ export function PointsCampaignPage() {
               value={String(week)}
               onChange={handleWeekChange}
             >
-              <SelectOption value={1}>Week 1</SelectOption>
-              <SelectOption value={2}>Week 2</SelectOption>
+              {availableWeeks.map((availableWeek) => (
+                <SelectOption key={availableWeek} value={availableWeek}>
+                  {`Week ${availableWeek}`}
+                </SelectOption>
+              ))}
             </WeekSelect>
           </WeekSelectControl>
         </WeekRow>
@@ -269,19 +325,19 @@ export function PointsCampaignPage() {
                     <Small>Selected week</Small>
                   </Metric>
                   <Metric>
+                    <Label>User share</Label>
+                    <MetricValue>{`${(selectedWeekData.tokens / 10000).toFixed(2)}%`}</MetricValue>
+                    <Small>Share of finalized weekly distribution</Small>
+                  </Metric>
+                  <Metric>
                     <Label>Supply USD</Label>
                     <MetricValue>{formatNumber(selectedWeekData.supply)}</MetricValue>
-                    <Small>Based on minimum weekly balance</Small>
+                    <Small>Based on lowest eligible weekly supply balance</Small>
                   </Metric>
                   <Metric>
                     <Label>Borrow USD</Label>
                     <MetricValue>{formatNumber(selectedWeekData.borrow)}</MetricValue>
-                    <Small>Based on minimum weekly borrow</Small>
-                  </Metric>
-                  <Metric>
-                    <Label>User share</Label>
-                    <MetricValue>{`${(selectedWeekData.tokens / 10000).toFixed(2)}%`}</MetricValue>
-                    <Small>Share of selected weekly allocation</Small>
+                    <Small>Based on lowest eligible weekly borrow balancee </Small>
                   </Metric>
                 </MetricsGrid>
               ) : (
@@ -306,7 +362,7 @@ export function PointsCampaignPage() {
                   <CardTitle>Leaderboard</CardTitle>
                   <CardSub>Season 1 weekly K613S1 balances.</CardSub>
                 </div>
-                <StatusBadge label="Last updated 00:00 UTC" />
+                <StatusBadge label={lastUpdatedLabel} />
               </CardHead>
 
               {!emptyLeaderboard ? (
@@ -408,7 +464,9 @@ export function PointsCampaignPage() {
                     >
                       {rule.title}
                     </AccordionSummary>
-                    <AccordionDetails sx={{ color: '#bdbdbd', lineHeight: 1.55 }}>
+                    <AccordionDetails
+                      sx={{ color: '#bdbdbd', lineHeight: 1.55, whiteSpace: 'pre-line' }}
+                    >
                       {rule.text}
                     </AccordionDetails>
                   </Accordion>
@@ -425,10 +483,12 @@ export function PointsCampaignPage() {
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle>Weekly snapshot</DialogTitle>
+        <DialogTitle>How it works</DialogTitle>
         <DialogContent>
-          Each weekly update uses the minimum eligible supply and borrow balances for the selected
-          period. This helps reward stable liquidity instead of last-minute deposits.
+          Each weekly update is based on the lowest eligible supply and borrow balances recorded
+          during the selected campaign period. This approach rewards sustained liquidity
+          participation and reduces the impact of temporary balance spikes or short-term deposits.
+          Final weekly rankings and K613S1 allocations are calculated from these finalized balances.
         </DialogContent>
         <DialogActions>
           <PrimaryCta onClick={() => setSnapshotModalOpen(false)}>Close</PrimaryCta>
