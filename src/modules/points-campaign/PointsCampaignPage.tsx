@@ -227,14 +227,22 @@ export function PointsCampaignPage() {
               Weekly rankings are based on eligible campaign balances.
             </HeroSubtitle>
             <HeroActions>
-              <PrimaryCta onClick={() => handleSetTab('leaderboard')}>View Leaderboard</PrimaryCta>
+              <SecondaryCta onClick={() => handleSetTab('leaderboard')}>
+                View Leaderboard
+              </SecondaryCta>
               <SecondaryCta
-                onClick={() => window.open('https://galxe.com/', '_blank', 'noopener,noreferrer')}
+                onClick={() =>
+                  window.open(
+                    'https://app.galxe.com/quest/BHqW98VTiBqi2zUgGQxjTJ',
+                    '_blank',
+                    'noopener,noreferrer'
+                  )
+                }
               >
                 Explore Missions
               </SecondaryCta>
               <SecondaryCta onClick={() => handleSetTab('rules')}>View Rules</SecondaryCta>
-              <GhostCta onClick={() => setSnapshotModalOpen(true)}>How It Works</GhostCta>
+              <SecondaryCta onClick={() => setSnapshotModalOpen(true)}>How It Works</SecondaryCta>
             </HeroActions>
           </div>
 
