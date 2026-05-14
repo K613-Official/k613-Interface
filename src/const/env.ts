@@ -29,6 +29,11 @@ const rawEnv = {
   MONAD_COLLECTOR: process.env.NEXT_PUBLIC_MONAD_COLLECTOR,
   MONAD_STAKING: process.env.NEXT_PUBLIC_MONAD_STAKING,
   MONAD_REWARDS_DISTRIBUTION: process.env.NEXT_PUBLIC_MONAD_REWARDS_DISTRIBUTION,
+
+  POINTS_SNAPSHOTS_BASE_URL: process.env.NEXT_PUBLIC_POINTS_SNAPSHOTS_BASE_URL,
+  POINTS_DISTRIBUTOR_MONAD: process.env.NEXT_PUBLIC_POINTS_DISTRIBUTOR_MONAD,
+  POINTS_CAMPAIGN_START_TS: process.env.NEXT_PUBLIC_POINTS_CAMPAIGN_START_TS,
+  POINTS_CAMPAIGN_WEEKS: process.env.NEXT_PUBLIC_POINTS_CAMPAIGN_WEEKS,
 };
 
 const env = cleanEnv(rawEnv, {
@@ -59,6 +64,13 @@ const env = cleanEnv(rawEnv, {
   MONAD_COLLECTOR: str({ default: '' }),
   MONAD_STAKING: str({ default: '' }),
   MONAD_REWARDS_DISTRIBUTION: str({ default: '' }),
+
+  POINTS_SNAPSHOTS_BASE_URL: url({
+    default: 'https://raw.githubusercontent.com/K613-Official/K613-points/main/snapshots',
+  }),
+  POINTS_DISTRIBUTOR_MONAD: str({ default: '' }),
+  POINTS_CAMPAIGN_START_TS: str({ default: '1714521600' }),
+  POINTS_CAMPAIGN_WEEKS: str({ default: '4' }),
 });
 
 export const {
@@ -88,6 +100,10 @@ export const {
   MONAD_COLLECTOR,
   MONAD_STAKING,
   MONAD_REWARDS_DISTRIBUTION,
+  POINTS_SNAPSHOTS_BASE_URL,
+  POINTS_DISTRIBUTOR_MONAD,
+  POINTS_CAMPAIGN_START_TS,
+  POINTS_CAMPAIGN_WEEKS,
 } = env;
 
 export const IS_PRODUCTION = NODE_ENV === 'production';

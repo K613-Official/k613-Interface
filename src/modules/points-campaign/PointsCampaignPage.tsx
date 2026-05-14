@@ -16,9 +16,20 @@ import {
   TableRow,
 } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select';
+import { ConnectKitButton } from 'connectkit';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useAccount } from 'wagmi';
 
-import { CampaignTab, formatNumber, leaderboard, weekData, WeekNumber } from './constants';
+import { ClaimSection } from './ClaimSection';
+import { CampaignTab, formatPoints, formatShare, formatUsd, shortenAddress } from './constants';
+import { useLeaderboard } from './hooks/useLeaderboard';
+import {
+  getAvailableWeeks,
+  getCountdownLabel,
+  getLastUpdatedLabel,
+  getUnlockedWeek,
+} from './hooks/usePointsCampaignWeeks';
+import { useUserWeekStats } from './hooks/useUserWeekStats';
 import {
   Address,
   Avatar,
@@ -63,9 +74,6 @@ import {
 } from './pointsCampaign.styles';
 
 const PAGE_SIZE = 10;
-const CAMPAIGN_START_UTC = Date.UTC(2026, 4, 1, 0, 0, 0);
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-const WEEKS: WeekNumber[] = [1, 2];
 
 const tabs: { key: CampaignTab; label: string }[] = [
   { key: 'leaderboard', label: 'Leaderboard' },
@@ -104,49 +112,16 @@ const rules = [
   },
 ];
 
-function getCountdownLabel(week: WeekNumber) {
-  const now = new Date();
-  const next = new Date(now);
-  next.setUTCDate(now.getUTCDate() + (week === 1 ? 3 : 10));
-  next.setUTCHours(0, 0, 0, 0);
-
-  const diff = Math.max(0, next.getTime() - now.getTime());
-  const days = Math.floor(diff / 86_400_000);
-  const hours = Math.floor((diff % 86_400_000) / 3_600_000);
-  const minutes = Math.floor((diff % 3_600_000) / 60_000);
-
-  return `${days}d ${hours}h ${minutes}m`;
-}
-
-function getUnlockedWeek(now = new Date()): WeekNumber {
-  const diff = now.getTime() - CAMPAIGN_START_UTC;
-
-  if (diff < WEEK_MS) {
-    return 1;
-  }
-
-  return 2;
-}
-
-function getLastUpdatedLabel(now = new Date()) {
-  const date = new Intl.DateTimeFormat('en-US', {
-    month: '2-digit',
-    day: '2-digit',
-    timeZone: 'UTC',
-  }).format(now);
-
-  return `Last updated ${date} 00:00 UTC`;
-}
-
 export function PointsCampaignPage() {
-  const [connected, setConnected] = useState(false);
+  const { address } = useAccount();
+  const connected = Boolean(address);
+
   const [status] = useState('Active');
-  const [week, setWeek] = useState<WeekNumber>(1);
-  const [maxUnlockedWeek, setMaxUnlockedWeek] = useState<WeekNumber>(() => getUnlockedWeek());
+  const [week, setWeek] = useState<number>(() => getUnlockedWeek());
+  const [availableWeeks, setAvailableWeeks] = useState<number[]>(() => getAvailableWeeks());
   const [activeTab, setActiveTab] = useState<CampaignTab>('leaderboard');
   const [page, setPage] = useState(1);
-  const [emptyLeaderboard] = useState(false);
-  const [countdownLabel, setCountdownLabel] = useState(() => getCountdownLabel(1));
+  const [countdownLabel, setCountdownLabel] = useState(() => getCountdownLabel(getUnlockedWeek()));
   const [lastUpdatedLabel, setLastUpdatedLabel] = useState(() => getLastUpdatedLabel());
   const [snapshotModalOpen, setSnapshotModalOpen] = useState(false);
   const [toast, setToast] = useState<{ open: boolean; message: string }>({
@@ -155,15 +130,18 @@ export function PointsCampaignPage() {
   });
 
   const tabsShellRef = useRef<HTMLElement | null>(null);
-  const totalPages = Math.ceil(leaderboard.length / PAGE_SIZE);
 
-  const selectedWeekData = weekData[week];
-  const availableWeeks = WEEKS.filter((item) => item <= maxUnlockedWeek);
+  const leaderboardQuery = useLeaderboard(week);
+  const rows = leaderboardQuery.data?.rows ?? [];
+  const leaderboardEmpty = !leaderboardQuery.isLoading && rows.length === 0;
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+
+  const userStats = useUserWeekStats(week, address);
 
   const currentRows = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
-    return leaderboard.slice(start, start + PAGE_SIZE);
-  }, [page]);
+    return rows.slice(start, start + PAGE_SIZE);
+  }, [rows, page]);
 
   const showToast = (message: string) => {
     setToast({ open: true, message });
@@ -174,16 +152,8 @@ export function PointsCampaignPage() {
     tabsShellRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const handleToggleWallet = () => {
-    setConnected((prev) => {
-      const next = !prev;
-      showToast(next ? 'Wallet connected' : 'Wallet disconnected');
-      return next;
-    });
-  };
-
   const handleWeekChange = (event: SelectChangeEvent<unknown>) => {
-    const nextWeek = Number(event.target.value) as WeekNumber;
+    const nextWeek = Number(event.target.value);
     setWeek(nextWeek);
     setPage(1);
     showToast(`Switched to Week ${nextWeek}`);
@@ -198,7 +168,7 @@ export function PointsCampaignPage() {
     setLastUpdatedLabel(getLastUpdatedLabel());
     const intervalId = window.setInterval(() => {
       setCountdownLabel(getCountdownLabel(week));
-      setMaxUnlockedWeek(getUnlockedWeek());
+      setAvailableWeeks(getAvailableWeeks());
       setLastUpdatedLabel(getLastUpdatedLabel());
     }, 30_000);
 
@@ -206,11 +176,12 @@ export function PointsCampaignPage() {
   }, [week]);
 
   useEffect(() => {
-    if (week > maxUnlockedWeek) {
-      setWeek(maxUnlockedWeek);
+    const maxUnlocked = getUnlockedWeek();
+    if (week > maxUnlocked) {
+      setWeek(maxUnlocked);
       setPage(1);
     }
-  }, [maxUnlockedWeek, week]);
+  }, [availableWeeks, week]);
 
   return (
     <>
@@ -302,65 +273,96 @@ export function PointsCampaignPage() {
 
         <section ref={tabsShellRef}>
           {activeTab === 'overview' && (
-            <Card elevation={0}>
-              <CardHead>
-                <div>
-                  <CardTitle>{`Your Week ${week} overview`}</CardTitle>
-                  <CardSub>
-                    {connected
-                      ? `Your Week ${week} K613S1 summary.`
-                      : 'Connect wallet to view your K613S1 balance for the selected week.'}
-                  </CardSub>
-                </div>
-                {!connected && <StatusBadge color="warning" label="Wallet not connected" />}
-              </CardHead>
-
-              {connected ? (
-                <MetricsGrid>
-                  <Metric>
-                    <Label>Total earned</Label>
-                    <MetricValue>{formatNumber(selectedWeekData.tokens)} K613S1</MetricValue>
-                    <Small>Total across finalized weeks</Small>
-                  </Metric>
-                  <Metric>
-                    <Label>Selected week earned</Label>
-                    <MetricValue>{formatNumber(selectedWeekData.tokens)} K613S1</MetricValue>
-                    <Small>{`Week ${week}`}</Small>
-                  </Metric>
-                  <Metric>
-                    <Label>Rank</Label>
-                    <MetricValue>#{selectedWeekData.rank}</MetricValue>
-                    <Small>Selected week</Small>
-                  </Metric>
-                  <Metric>
-                    <Label>User share</Label>
-                    <MetricValue>{`${(selectedWeekData.tokens / 10000).toFixed(2)}%`}</MetricValue>
-                    <Small>Share of finalized weekly distribution</Small>
-                  </Metric>
-                  <Metric>
-                    <Label>Supply USD</Label>
-                    <MetricValue>{formatNumber(selectedWeekData.supply)}</MetricValue>
-                    <Small>Based on lowest eligible weekly supply balance</Small>
-                  </Metric>
-                  <Metric>
-                    <Label>Borrow USD</Label>
-                    <MetricValue>{formatNumber(selectedWeekData.borrow)}</MetricValue>
-                    <Small>Based on lowest eligible weekly borrow balancee </Small>
-                  </Metric>
-                </MetricsGrid>
-              ) : (
-                <EmptyState>
+            <>
+              <Card elevation={0}>
+                <CardHead>
                   <div>
-                    <EmptyTitle>Connect wallet</EmptyTitle>
-                    <EmptyDescription>
-                      Leaderboard is public. Connect wallet to see your K613S1 overview for the
-                      selected week.
-                    </EmptyDescription>
-                    <PrimaryCta onClick={handleToggleWallet}>Connect wallet</PrimaryCta>
+                    <CardTitle>{`Your Week ${week} overview`}</CardTitle>
+                    <CardSub>
+                      {connected
+                        ? `Your Week ${week} K613S1 summary.`
+                        : 'Connect wallet to view your K613S1 balance for the selected week.'}
+                    </CardSub>
                   </div>
-                </EmptyState>
-              )}
-            </Card>
+                  {!connected && <StatusBadge color="warning" label="Wallet not connected" />}
+                </CardHead>
+
+                {connected ? (
+                  userStats.isLoading ? (
+                    <EmptyState>
+                      <div>
+                        <EmptyTitle>Loading…</EmptyTitle>
+                        <EmptyDescription>Fetching weekly snapshot.</EmptyDescription>
+                      </div>
+                    </EmptyState>
+                  ) : userStats.data ? (
+                    <MetricsGrid>
+                      <Metric>
+                        <Label>Total earned</Label>
+                        <MetricValue>
+                          {formatPoints(userStats.data.cumulativePoints)} K613S1
+                        </MetricValue>
+                        <Small>Total across finalized weeks</Small>
+                      </Metric>
+                      <Metric>
+                        <Label>Selected week earned</Label>
+                        <MetricValue>
+                          {formatPoints(userStats.data.weeklyPoints)} K613S1
+                        </MetricValue>
+                        <Small>{`Week ${week}`}</Small>
+                      </Metric>
+                      <Metric>
+                        <Label>Rank</Label>
+                        <MetricValue>#{userStats.data.rank}</MetricValue>
+                        <Small>Selected week</Small>
+                      </Metric>
+                      <Metric>
+                        <Label>User share</Label>
+                        <MetricValue>{formatShare(userStats.data.share)}</MetricValue>
+                        <Small>Share of finalized weekly distribution</Small>
+                      </Metric>
+                      <Metric>
+                        <Label>Supply USD</Label>
+                        <MetricValue>{formatUsd(userStats.data.minSupplyUsd)}</MetricValue>
+                        <Small>Based on lowest eligible weekly supply balance</Small>
+                      </Metric>
+                      <Metric>
+                        <Label>Borrow USD</Label>
+                        <MetricValue>{formatUsd(userStats.data.minBorrowUsd)}</MetricValue>
+                        <Small>Based on lowest eligible weekly borrow balance</Small>
+                      </Metric>
+                    </MetricsGrid>
+                  ) : (
+                    <EmptyState>
+                      <div>
+                        <EmptyTitle>No activity this week</EmptyTitle>
+                        <EmptyDescription>
+                          Your address is not in the Week {week} snapshot. Participate to appear on
+                          the leaderboard.
+                        </EmptyDescription>
+                        <PrimaryCta onClick={() => handleSetTab('rules')}>How it works</PrimaryCta>
+                      </div>
+                    </EmptyState>
+                  )
+                ) : (
+                  <EmptyState>
+                    <div>
+                      <EmptyTitle>Connect wallet</EmptyTitle>
+                      <EmptyDescription>
+                        Leaderboard is public. Connect wallet to see your K613S1 overview for the
+                        selected week.
+                      </EmptyDescription>
+                      <ConnectKitButton.Custom>
+                        {({ show }) => (
+                          <PrimaryCta onClick={() => show && show()}>Connect wallet</PrimaryCta>
+                        )}
+                      </ConnectKitButton.Custom>
+                    </div>
+                  </EmptyState>
+                )}
+              </Card>
+              <ClaimSection week={week} />
+            </>
           )}
 
           {activeTab === 'leaderboard' && (
@@ -373,7 +375,20 @@ export function PointsCampaignPage() {
                 <StatusBadge label={lastUpdatedLabel} />
               </CardHead>
 
-              {!emptyLeaderboard ? (
+              {leaderboardQuery.isError && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  Failed to load leaderboard.{' '}
+                  <button
+                    type="button"
+                    onClick={() => leaderboardQuery.refetch()}
+                    style={{ textDecoration: 'underline', cursor: 'pointer' }}
+                  >
+                    Retry
+                  </button>
+                </Alert>
+              )}
+
+              {!leaderboardEmpty && !leaderboardQuery.isError ? (
                 <>
                   <TableWrap>
                     <TableContainer>
@@ -389,31 +404,36 @@ export function PointsCampaignPage() {
                           </TableRow>
                         </TableHead>
                         <TableBody>
-                          {currentRows.map((row) => (
-                            <TableRow key={row.rank}>
-                              <LeaderboardTableCell>
-                                <Rank>{row.rank}</Rank>
-                              </LeaderboardTableCell>
-                              <LeaderboardTableCell>
-                                <Address>
-                                  <Avatar />
-                                  <span>{row.address}</span>
-                                </Address>
-                              </LeaderboardTableCell>
-                              <LeaderboardTableCell>
-                                {formatNumber(row.supply)}
-                              </LeaderboardTableCell>
-                              <LeaderboardTableCell>
-                                {formatNumber(row.borrow)}
-                              </LeaderboardTableCell>
-                              <LeaderboardTableCell>{`${(row.total / 10000000).toFixed(
-                                2
-                              )}%`}</LeaderboardTableCell>
-                              <LeaderboardTableCell>
-                                {formatNumber(Math.round(row.total * 0.08))}
-                              </LeaderboardTableCell>
-                            </TableRow>
-                          ))}
+                          {currentRows.map((row) => {
+                            const total = leaderboardQuery.data?.totalPoints ?? 0n;
+                            const share =
+                              total > 0n
+                                ? Number((row.weeklyPoints * 10_000n) / total) / 10_000
+                                : 0;
+                            return (
+                              <TableRow key={`${row.rank}-${row.address}`}>
+                                <LeaderboardTableCell>
+                                  <Rank>{row.rank}</Rank>
+                                </LeaderboardTableCell>
+                                <LeaderboardTableCell>
+                                  <Address>
+                                    <Avatar />
+                                    <span>{shortenAddress(row.address)}</span>
+                                  </Address>
+                                </LeaderboardTableCell>
+                                <LeaderboardTableCell>
+                                  {formatUsd(row.minSupplyUsd)}
+                                </LeaderboardTableCell>
+                                <LeaderboardTableCell>
+                                  {formatUsd(row.minBorrowUsd)}
+                                </LeaderboardTableCell>
+                                <LeaderboardTableCell>{formatShare(share)}</LeaderboardTableCell>
+                                <LeaderboardTableCell>
+                                  {formatPoints(row.weeklyPoints)}
+                                </LeaderboardTableCell>
+                              </TableRow>
+                            );
+                          })}
                         </TableBody>
                       </Table>
                     </TableContainer>
@@ -425,7 +445,7 @@ export function PointsCampaignPage() {
                     <GhostCta onClick={() => handleChangePage(1)}>Next</GhostCta>
                   </Pagination>
                 </>
-              ) : (
+              ) : leaderboardQuery.isError ? null : (
                 <EmptyState>
                   <div>
                     <EmptyTitle>No data yet</EmptyTitle>
