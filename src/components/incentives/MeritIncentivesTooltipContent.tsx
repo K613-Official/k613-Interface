@@ -57,7 +57,7 @@ export const MeritIncentivesTooltipContent = ({
           variant="caption"
           color="text.secondary"
         >
-          Aave Chan Initiative interface
+          K613 Chan Initiative interface
         </Link>
         {'.'}
       </Typography>
