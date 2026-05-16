@@ -9,8 +9,15 @@ export function formatNumber(value: number): string {
 const USD_DECIMALS = 18n;
 const POINTS_DECIMALS = 18n;
 
+// Build 10^n as a BigInt WITHOUT the `**` operator: Next/SWC transpiles
+// exponentiation to `Math.pow`, which throws on BigInt args in the browser
+// bundle ("Cannot convert a BigInt value to a number").
+function pow10(decimals: bigint): bigint {
+  return BigInt('1' + '0'.repeat(Number(decimals)));
+}
+
 function formatBaseUnits(value: bigint, decimals: bigint, fractionDigits = 2): string {
-  const divisor = 10n ** decimals;
+  const divisor = pow10(decimals);
   const integer = value / divisor;
   const fraction = value % divisor;
   const integerStr = numberFormatter.format(Number(integer));
