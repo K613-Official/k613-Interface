@@ -18,9 +18,15 @@ import {
 
 const TOKEN_DECIMALS = 18n;
 
+// `**` is transpiled to Math.pow by Next/SWC and throws on BigInt in the
+// browser bundle — build 10^n via string instead.
+function pow10(decimals: bigint): bigint {
+  return BigInt('1' + '0'.repeat(Number(decimals)));
+}
+
 function formatTokens(value: bigint): string {
   if (value === 0n) return '0';
-  const divisor = 10n ** TOKEN_DECIMALS;
+  const divisor = pow10(TOKEN_DECIMALS);
   const integer = value / divisor;
   const fraction = value % divisor;
   const integerStr = integer.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
