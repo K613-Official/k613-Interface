@@ -69,14 +69,9 @@ export const GhoIncentivesCard = ({
                 <FormattedNumber variant="subtitle2" value={stkAaveAmount} visibleDecimals={2} />{' '}
               </>
             ) : null}
-            AAVE in Safety Module.
+            K613 in Safety Module.
           </Trans>{' '}
-          <Link
-            onClick={onMoreDetailsClick}
-            href={ghoRoute}
-            underline="always"
-            variant="subtitle2"
-          >
+          <Link onClick={onMoreDetailsClick} href={ghoRoute} underline="always" variant="subtitle2">
             <Trans>Learn more</Trans>
           </Link>
         </Typography>
