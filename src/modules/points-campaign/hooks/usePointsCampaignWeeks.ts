@@ -34,11 +34,38 @@ export function getCountdownLabel(week: number, now = Date.now()): string {
   return `${days}d ${hours}h ${minutes}m`;
 }
 
-export function getLastUpdatedLabel(now = new Date()): string {
-  const date = new Intl.DateTimeFormat('en-US', {
+export type CampaignStatus = 'Upcoming' | 'Active' | 'Ended';
+
+export function getCampaignStatus(now = Date.now()): CampaignStatus {
+  if (!Number.isFinite(CAMPAIGN_START_MS)) return 'Active';
+  const endMs = CAMPAIGN_START_MS + TOTAL_WEEKS * WEEK_MS;
+  if (now < CAMPAIGN_START_MS) return 'Upcoming';
+  if (now >= endMs) return 'Ended';
+  return 'Active';
+}
+
+export function getCampaignDatesLabel(): string {
+  if (!Number.isFinite(CAMPAIGN_START_MS)) return '';
+  const endMs = CAMPAIGN_START_MS + TOTAL_WEEKS * WEEK_MS;
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+  return `${fmt.format(CAMPAIGN_START_MS)} - ${fmt.format(endMs)}`;
+}
+
+export function getLastUpdatedLabel(finalizedAt?: string): string {
+  if (!finalizedAt) return 'Not finalized yet';
+  const ms = Date.parse(finalizedAt);
+  if (Number.isNaN(ms)) return 'Not finalized yet';
+  const formatted = new Intl.DateTimeFormat('en-US', {
     month: '2-digit',
     day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
     timeZone: 'UTC',
-  }).format(now);
-  return `Last updated ${date} 00:00 UTC`;
+  }).format(ms);
+  return `Last updated ${formatted} UTC`;
 }

@@ -1,10 +1,9 @@
 import { API_ETH_MOCK_ADDRESS } from '@aave/contract-helpers';
 import { valueToBigNumber } from '@aave/math-utils';
-import BigNumber from 'bignumber.js';
 import { useMemo } from 'react';
 import { ModalType } from 'src/components/Modals/types';
 import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
-import { useNetBorrowed, useNetSupplied } from 'src/hooks/useNetSupplied';
+import { Position, useNetBorrowed, useNetSupplied } from 'src/hooks/useNetSupplied';
 import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
 import { useRootStore } from 'src/store/root';
 import { useModalStore } from 'src/store/useModalStore';
@@ -14,11 +13,10 @@ import { GENERAL } from 'src/utils/mixPanelEvents';
 
 import { InfoCardType, InfoCardViewData, InfoPosition } from './data';
 
-const formatAccrued = (current: string, principal: BigNumber | undefined) => {
-  if (!principal) return undefined;
-  const diff = new BigNumber(current).minus(principal);
-  if (!diff.gt(0)) return undefined;
-  return `+${diff.toFixed(diff.gte(1) ? 2 : 4)}`;
+const formatAccrued = (position: Position | undefined) => {
+  const earned = position?.earned;
+  if (!earned || !earned.gt(0)) return undefined;
+  return `+${earned.toFixed(earned.gte(1) ? 2 : 4)}`;
 };
 
 const formatCurrency = (value: string | number | undefined) => {
@@ -82,10 +80,7 @@ export function useInfoCardData(type: InfoCardType): {
             primaryLabel: 'Balance' as const,
             primaryValue: formatToken(position.underlyingBalance),
             secondaryValue: formatCurrency(position.underlyingBalanceUSD),
-            accrued: formatAccrued(
-              position.underlyingBalance,
-              netSupplied?.[position.underlyingAsset.toLowerCase()]
-            ),
+            accrued: formatAccrued(netSupplied?.[position.underlyingAsset.toLowerCase()]),
             apy: formatPercent(position.reserve.supplyAPY),
             collateralEnabled: Boolean(position.usageAsCollateralEnabledOnUser),
             canToggleCollateral,
@@ -131,10 +126,7 @@ export function useInfoCardData(type: InfoCardType): {
             primaryLabel: 'Debt' as const,
             primaryValue: formatToken(position.variableBorrows),
             secondaryValue: formatCurrency(position.variableBorrowsUSD),
-            accrued: formatAccrued(
-              position.variableBorrows,
-              netBorrowed?.[position.underlyingAsset.toLowerCase()]
-            ),
+            accrued: formatAccrued(netBorrowed?.[position.underlyingAsset.toLowerCase()]),
             apy: formatPercent(position.reserve.variableBorrowAPY),
             disableAction: !position.reserve.isActive || position.reserve.isPaused,
             onAction: () =>

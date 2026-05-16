@@ -521,6 +521,10 @@ msgstr "Something went wrong fetching bridge message, please try again later."
 msgid "Greek"
 msgstr "Greek"
 
+#: src/ui-config/menu-items/index.tsx
+msgid "Campaign"
+msgstr "Campaign"
+
 #: src/components/infoTooltips/PausedTooltip.tsx
 msgid "This asset has been paused due to a community decision. Supply, withdraw, borrows and repays are impacted."
 msgstr "This asset has been paused due to a community decision. Supply, withdraw, borrows and repays are impacted."
@@ -654,6 +658,11 @@ msgstr "Operation not supported"
 #: src/modules/dashboard/lists/SuppliedPositionsList/SuppliedPositionsList.tsx
 msgid "Balance"
 msgstr "Balance"
+
+#. placeholder {0}: minStkAaveBalanceReached ? ( <> <FormattedNumber variant="subtitle2" value={stkAaveAmount} visibleDecimals={2} />{' '} </> ) : null
+#: src/components/incentives/GhoIncentivesCard.tsx
+msgid "Estimated compounding interest, including discount for Staking {0}K613 in Safety Module."
+msgstr "Estimated compounding interest, including discount for Staking {0}K613 in Safety Module."
 
 #: src/components/transactions/StakingMigrate/StakingMigrateModalContent.tsx
 msgid "Migrate to stkABPT v2"
@@ -898,11 +907,6 @@ msgstr "Migrated"
 #: src/components/transactions/Emode/EmodeModalContent.tsx
 msgid "Disable E-Mode"
 msgstr "Disable E-Mode"
-
-#. placeholder {0}: minStkAaveBalanceReached ? ( <> <FormattedNumber variant="subtitle2" value={stkAaveAmount} visibleDecimals={2} />{' '} </> ) : null
-#: src/components/incentives/GhoIncentivesCard.tsx
-msgid "Estimated compounding interest, including discount for Staking {0}AAVE in Safety Module."
-msgstr "Estimated compounding interest, including discount for Staking {0}AAVE in Safety Module."
 
 #: src/components/transactions/Emode/EmodeActions.tsx
 #: src/modules/dashboard/DashboardEModeButton.tsx
@@ -1371,16 +1375,6 @@ msgstr "The caller of this function must be a pool"
 #: src/components/TopInfoPanel/PageTitle.tsx
 msgid "Migrate to V3"
 msgstr "Migrate to V3"
-
-#: src/components/incentives/EthenaIncentivesTooltipContent.tsx
-msgid ""
-"Aave Labs does not\n"
-"          guarantee the program and accepts no liability.\n"
-""
-msgstr ""
-"Aave Labs does not\n"
-"          guarantee the program and accepts no liability.\n"
-""
 
 #: src/components/transactions/Stake/StakeModalContent.tsx
 msgid "Staked"
@@ -1871,6 +1865,16 @@ msgstr "Dark mode"
 #: src/components/transactions/Emode/EmodeActions.tsx
 msgid "Enabling E-Mode"
 msgstr "Enabling E-Mode"
+
+#: src/components/incentives/EthenaIncentivesTooltipContent.tsx
+msgid ""
+"K613 Labs does not\n"
+"          guarantee the program and accepts no liability.\n"
+""
+msgstr ""
+"K613 Labs does not\n"
+"          guarantee the program and accepts no liability.\n"
+""
 
 #: src/components/infoTooltips/SpkAirdropTooltip.tsx
 msgid ""

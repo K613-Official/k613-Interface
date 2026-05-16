@@ -2,7 +2,6 @@ import { ProtocolAction } from '@aave/contract-helpers';
 import { ReserveIncentiveResponse } from '@aave/math-utils/dist/esm/formatters/incentive/calculate-reserve-incentives';
 import { Trans } from '@lingui/macro';
 import { Box, Button, Typography, useMediaQuery, useTheme } from '@mui/material';
-import BigNumber from 'bignumber.js';
 import { IncentivesCard } from 'src/components/incentives/IncentivesCard';
 import { ModalType } from 'src/components/Modals/types';
 import { Row } from 'src/components/primitives/Row';
@@ -109,9 +108,10 @@ const BorrowedPositionsListItemDesktop = ({
 }: BorrowedPositionsListItemProps) => {
   const currentMarket = useRootStore((state) => state.currentMarket);
   const { data: netBorrowed } = useNetBorrowed();
-  const principal = netBorrowed?.[reserve.underlyingAsset.toLowerCase()];
   const accruedDebt =
-    principal && Number(totalBorrows) > 0 ? new BigNumber(totalBorrows).minus(principal) : null;
+    Number(totalBorrows) > 0
+      ? netBorrowed?.[reserve.underlyingAsset.toLowerCase()]?.earned ?? null
+      : null;
 
   return (
     <ListItemWrapper
@@ -193,9 +193,10 @@ const BorrowedPositionsListItemMobile = ({
 }: BorrowedPositionsListItemProps) => {
   const currentMarket = useRootStore((state) => state.currentMarket);
   const { data: netBorrowed } = useNetBorrowed();
-  const principal = netBorrowed?.[reserve.underlyingAsset.toLowerCase()];
   const accruedDebt =
-    principal && Number(totalBorrows) > 0 ? new BigNumber(totalBorrows).minus(principal) : null;
+    Number(totalBorrows) > 0
+      ? netBorrowed?.[reserve.underlyingAsset.toLowerCase()]?.earned ?? null
+      : null;
 
   const { symbol, iconSymbol, name } = reserve;
 
