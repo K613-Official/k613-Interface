@@ -1,7 +1,6 @@
 import { ProtocolAction } from '@aave/contract-helpers';
 import { Trans } from '@lingui/macro';
 import { Box, Button, Typography } from '@mui/material';
-import BigNumber from 'bignumber.js';
 import { ModalType } from 'src/components/Modals/types';
 import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { useAssetCaps } from 'src/hooks/useAssetCaps';
@@ -30,10 +29,9 @@ export const SuppliedPositionsListMobileItem = ({
 }: DashboardReserve) => {
   const { user } = useAppDataContext();
   const { data: netSupplied } = useNetSupplied();
-  const principal = netSupplied?.[underlyingAsset.toLowerCase()];
   const earned =
-    principal && Number(underlyingBalance) > 0
-      ? new BigNumber(underlyingBalance).minus(principal)
+    Number(underlyingBalance) > 0
+      ? netSupplied?.[underlyingAsset.toLowerCase()]?.earned ?? null
       : null;
   const [currentMarketData, currentMarket, trackEvent] = useRootStore(
     useShallow((state) => [state.currentMarketData, state.currentMarket, state.trackEvent])

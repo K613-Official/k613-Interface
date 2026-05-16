@@ -25,6 +25,8 @@ import { CampaignTab, formatPoints, formatShare, formatUsd, shortenAddress } fro
 import { useLeaderboard } from './hooks/useLeaderboard';
 import {
   getAvailableWeeks,
+  getCampaignDatesLabel,
+  getCampaignStatus,
   getCountdownLabel,
   getLastUpdatedLabel,
   getUnlockedWeek,
@@ -116,13 +118,12 @@ export function PointsCampaignPage() {
   const { address } = useAccount();
   const connected = Boolean(address);
 
-  const [status] = useState('Active');
+  const [status, setStatus] = useState(() => getCampaignStatus());
   const [week, setWeek] = useState<number>(() => getUnlockedWeek());
   const [availableWeeks, setAvailableWeeks] = useState<number[]>(() => getAvailableWeeks());
   const [activeTab, setActiveTab] = useState<CampaignTab>('leaderboard');
   const [page, setPage] = useState(1);
   const [countdownLabel, setCountdownLabel] = useState(() => getCountdownLabel(getUnlockedWeek()));
-  const [lastUpdatedLabel, setLastUpdatedLabel] = useState(() => getLastUpdatedLabel());
   const [snapshotModalOpen, setSnapshotModalOpen] = useState(false);
   const [toast, setToast] = useState<{ open: boolean; message: string }>({
     open: false,
@@ -135,6 +136,7 @@ export function PointsCampaignPage() {
   const rows = leaderboardQuery.data?.rows ?? [];
   const leaderboardEmpty = !leaderboardQuery.isLoading && rows.length === 0;
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const lastUpdatedLabel = getLastUpdatedLabel(leaderboardQuery.data?.finalizedAt);
 
   const userStats = useUserWeekStats(week, address);
 
@@ -165,11 +167,11 @@ export function PointsCampaignPage() {
 
   useEffect(() => {
     setCountdownLabel(getCountdownLabel(week));
-    setLastUpdatedLabel(getLastUpdatedLabel());
+    setStatus(getCampaignStatus());
     const intervalId = window.setInterval(() => {
       setCountdownLabel(getCountdownLabel(week));
       setAvailableWeeks(getAvailableWeeks());
-      setLastUpdatedLabel(getLastUpdatedLabel());
+      setStatus(getCampaignStatus());
     }, 30_000);
 
     return () => window.clearInterval(intervalId);
@@ -225,7 +227,7 @@ export function PointsCampaignPage() {
             </StatCard>
             <StatCard elevation={0}>
               <Label>Season 1 dates</Label>
-              <Value sx={{ fontSize: 22 }}>May 1 - May 31</Value>
+              <Value sx={{ fontSize: 22 }}>{getCampaignDatesLabel()}</Value>
               <Small>Weekly results are finalized after each period</Small>
             </StatCard>
             <StatCard elevation={0}>
