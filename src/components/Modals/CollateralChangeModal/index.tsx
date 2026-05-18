@@ -5,13 +5,16 @@ import { Alert, Button, IconButton, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
 import { TokenIcon } from 'src/components/primitives/TokenIcon';
+import { ChangeNetworkWarning } from 'src/components/transactions/Warnings/ChangeNetworkWarning';
 import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
+import { useIsWrongNetwork } from 'src/hooks/useIsWrongNetwork';
 import { useModalContext } from 'src/hooks/useModal';
 import { useZeroLTVBlockingWithdraw } from 'src/hooks/useZeroLTVBlockingWithdraw';
 import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
 import { useRootStore } from 'src/store/root';
 import { getErrorTextFromError, TxAction } from 'src/ui-config/errorMapping';
 import { queryKeysFactory } from 'src/ui-config/queries';
+import { getNetworkConfig } from 'src/utils/marketsAndNetworksConfig';
 import { useShallow } from 'zustand/shallow';
 
 import { SuccessView } from '../SuccessView';
@@ -66,7 +69,8 @@ export default function CollateralChangeModal({
   const [setUsageAsCollateral, estimateGasLimit, addTransaction] = useRootStore(
     useShallow((s) => [s.setUsageAsCollateral, s.estimateGasLimit, s.addTransaction])
   );
-  const { sendTx } = useWeb3Context();
+  const { sendTx, readOnlyModeAddress } = useWeb3Context();
+  const { isWrongNetwork, requiredChainId } = useIsWrongNetwork();
   const queryClient = useQueryClient();
   const {
     mainTxState,
@@ -209,7 +213,7 @@ export default function CollateralChangeModal({
     }
   };
 
-  const disabled = mainTxState.loading || blockingError !== undefined;
+  const disabled = mainTxState.loading || blockingError !== undefined || isWrongNetwork;
 
   if (mainTxState.success) {
     return (
@@ -327,6 +331,13 @@ export default function CollateralChangeModal({
             </Transition>
           </OverviewRow>
         </OverviewSection>
+
+        {isWrongNetwork && !readOnlyModeAddress && (
+          <ChangeNetworkWarning
+            networkName={getNetworkConfig(requiredChainId).name}
+            chainId={requiredChainId}
+          />
+        )}
 
         {blockingErrorMessage && <Alert severity="error">{blockingErrorMessage}</Alert>}
         {txError && <Alert severity="error">{txError.error || 'Transaction failed'}</Alert>}
