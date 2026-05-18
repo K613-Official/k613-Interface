@@ -18,20 +18,25 @@ function pow10(decimals: bigint): bigint {
 
 function formatBaseUnits(value: bigint, decimals: bigint, fractionDigits = 2): string {
   const divisor = pow10(decimals);
-  const integer = value / divisor;
-  const fraction = value % divisor;
+  if (fractionDigits <= 0) {
+    const rounded = (value + divisor / 2n) / divisor;
+    return numberFormatter.format(Number(rounded));
+  }
+  const scale = pow10(BigInt(fractionDigits));
+  const scaled = (value * scale + divisor / 2n) / divisor;
+  const integer = scaled / scale;
+  const fraction = scaled % scale;
   const integerStr = numberFormatter.format(Number(integer));
-  if (fractionDigits <= 0 || fraction === 0n) return integerStr;
-  const fractionStr = fraction.toString().padStart(Number(decimals), '0').slice(0, fractionDigits);
+  const fractionStr = fraction.toString().padStart(fractionDigits, '0');
   return `${integerStr}.${fractionStr}`;
 }
 
 export function formatUsd(value: bigint): string {
-  return formatBaseUnits(value, USD_DECIMALS, 0);
+  return formatBaseUnits(value, USD_DECIMALS, 2);
 }
 
 export function formatPoints(value: bigint): string {
-  return formatBaseUnits(value, POINTS_DECIMALS, 0);
+  return formatBaseUnits(value, POINTS_DECIMALS, 2);
 }
 
 export function formatShare(share: number): string {

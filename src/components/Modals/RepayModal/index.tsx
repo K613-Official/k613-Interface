@@ -15,14 +15,17 @@ import { useQueryClient } from '@tanstack/react-query';
 import { parseUnits } from 'ethers/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 import { TokenIcon } from 'src/components/primitives/TokenIcon';
+import { ChangeNetworkWarning } from 'src/components/transactions/Warnings/ChangeNetworkWarning';
 import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { useWalletBalances } from 'src/hooks/app-data-provider/useWalletBalances';
 import { usePoolApprovedAmount } from 'src/hooks/useApprovedAmount';
+import { useIsWrongNetwork } from 'src/hooks/useIsWrongNetwork';
 import { useModalContext } from 'src/hooks/useModal';
 import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
 import { useRootStore } from 'src/store/root';
 import { getErrorTextFromError, TxAction } from 'src/ui-config/errorMapping';
 import { queryKeysFactory } from 'src/ui-config/queries';
+import { getNetworkConfig } from 'src/utils/marketsAndNetworksConfig';
 import { roundToTokenDecimals } from 'src/utils/utils';
 import { useShallow } from 'zustand/shallow';
 
@@ -56,7 +59,8 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
         s.currentMarketData,
       ])
     );
-  const { sendTx, currentAccount } = useWeb3Context();
+  const { sendTx, currentAccount, readOnlyModeAddress } = useWeb3Context();
+  const { isWrongNetwork, requiredChainId } = useIsWrongNetwork();
   const { walletBalances } = useWalletBalances(currentMarketData);
   const queryClient = useQueryClient();
   const {
@@ -95,6 +99,39 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
   const poolAddress = isNative ? API_ETH_MOCK_ADDRESS : reserve?.underlyingAsset || '';
 
   const { data: approvedAmount } = usePoolApprovedAmount(currentMarketData, poolAddress);
+
+  const requiresApproval =
+    !isNative &&
+    Number(amount) > 0 &&
+    checkRequiresApproval({
+      approvedAmount: approvedAmount?.amount || '0',
+      amount,
+      signedAmount: '0',
+    });
+
+  const futureHealthFactor = useMemo(() => {
+    if (!reserve || !user) return null;
+    if (!amount || Number(amount) === 0) return null;
+    const amountInMarketRef = valueToBigNumber(amount)
+      .multipliedBy(reserve.formattedPriceInMarketReferenceCurrency)
+      .multipliedBy(marketReferencePriceInUsd)
+      .shiftedBy(-USD_DECIMALS);
+    return calculateHealthFactorFromBalancesBigUnits({
+      collateralBalanceMarketReferenceCurrency: user.totalCollateralUSD,
+      borrowBalanceMarketReferenceCurrency: valueToBigNumber(user.totalBorrowsUSD).minus(
+        amountInMarketRef
+      ),
+      currentLiquidationThreshold: user.currentLiquidationThreshold,
+    }).toString();
+  }, [amount, user, reserve, marketReferencePriceInUsd]);
+
+  useEffect(() => {
+    let gas = Number(gasLimitRecommendations[ProtocolAction.repay].recommended);
+    if (requiresApproval && !approvalTxState.success) {
+      gas += Number(APPROVAL_GAS_LIMIT);
+    }
+    setGasLimit(gas.toString());
+  }, [requiresApproval, approvalTxState.success, setGasLimit]);
 
   const handleClose = () => {
     setAmount('');
@@ -147,39 +184,6 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
   };
 
   const amountInUsd = valueToBigNumber(amount || '0').multipliedBy(reserve.priceInUSD);
-
-  const amountInMarketRef = valueToBigNumber(amount || '0')
-    .multipliedBy(reserve.formattedPriceInMarketReferenceCurrency)
-    .multipliedBy(marketReferencePriceInUsd)
-    .shiftedBy(-USD_DECIMALS);
-
-  const futureHealthFactor = useMemo(() => {
-    if (!amount || Number(amount) === 0) return null;
-    return calculateHealthFactorFromBalancesBigUnits({
-      collateralBalanceMarketReferenceCurrency: user.totalCollateralUSD,
-      borrowBalanceMarketReferenceCurrency: valueToBigNumber(user.totalBorrowsUSD).minus(
-        amountInMarketRef
-      ),
-      currentLiquidationThreshold: user.currentLiquidationThreshold,
-    }).toString();
-  }, [amount, user, amountInMarketRef]);
-
-  const requiresApproval =
-    !isNative &&
-    Number(amount) > 0 &&
-    checkRequiresApproval({
-      approvedAmount: approvedAmount?.amount || '0',
-      amount,
-      signedAmount: '0',
-    });
-
-  useEffect(() => {
-    let gas = Number(gasLimitRecommendations[ProtocolAction.repay].recommended);
-    if (requiresApproval && !approvalTxState.success) {
-      gas += Number(APPROVAL_GAS_LIMIT);
-    }
-    setGasLimit(gas.toString());
-  }, [requiresApproval, approvalTxState.success, setGasLimit]);
 
   const handleApprove = async () => {
     try {
@@ -243,7 +247,8 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
     exceedsBalance ||
     exceedsDebt ||
     mainTxState.loading ||
-    approvalTxState.loading;
+    approvalTxState.loading ||
+    isWrongNetwork;
 
   const actionLabel = requiresApproval && !approvalTxState.success ? 'Approve' : `Repay ${symbol}`;
   const onAction = requiresApproval && !approvalTxState.success ? handleApprove : handleRepay;
@@ -357,6 +362,13 @@ export default function RepayModal({ open, onClose, underlyingAsset }: Props) {
             )}
           </OverviewRow>
         </OverviewSection>
+
+        {isWrongNetwork && !readOnlyModeAddress && (
+          <ChangeNetworkWarning
+            networkName={getNetworkConfig(requiredChainId).name}
+            chainId={requiredChainId}
+          />
+        )}
 
         {txError && (
           <Alert severity="error" sx={{ mt: 1 }}>
