@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
 
 import { useLeaderboard } from './useLeaderboard';
-import { getUnlockedWeek } from './usePointsCampaignWeeks';
+import { getUnlockedWeek, usePointsCampaignConfig } from './usePointsCampaignWeeks';
 
 export function useCumulativeUserStats(address: string | undefined) {
-  const latestWeek = getUnlockedWeek();
+  const config = usePointsCampaignConfig();
+  const latestWeek = config ? getUnlockedWeek(config) : 1;
   const query = useLeaderboard(latestWeek);
 
   const cumulativePoints = useMemo<bigint>(() => {

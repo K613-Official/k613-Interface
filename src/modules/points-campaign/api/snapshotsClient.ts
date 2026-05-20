@@ -1,5 +1,3 @@
-import { POINTS_SNAPSHOTS_BASE_URL } from 'src/const/env';
-
 import type { LeaderboardSnapshot, UserProof } from '../types';
 
 class HttpError extends Error {
@@ -70,16 +68,25 @@ async function fetchJson(url: string): Promise<unknown | null> {
   return res.json();
 }
 
-export async function fetchLeaderboard(week: number): Promise<LeaderboardSnapshot | null> {
-  const url = `${POINTS_SNAPSHOTS_BASE_URL}/week-${week}/leaderboard.json`;
+export async function fetchLeaderboard(
+  baseUrl: string,
+  week: number
+): Promise<LeaderboardSnapshot | null> {
+  if (!baseUrl) return null;
+  const url = `${baseUrl}/week-${week}/leaderboard.json`;
   const json = await fetchJson(url);
   if (json === null) return null;
   return parseLeaderboard(json);
 }
 
-export async function fetchUserProof(week: number, address: string): Promise<UserProof | null> {
+export async function fetchUserProof(
+  baseUrl: string,
+  week: number,
+  address: string
+): Promise<UserProof | null> {
+  if (!baseUrl) return null;
   const normalized = address.toLowerCase().replace(/^0x/, '');
-  const url = `${POINTS_SNAPSHOTS_BASE_URL}/week-${week}/proofs/${normalized}.json`;
+  const url = `${baseUrl}/week-${week}/proofs/${normalized}.json`;
   const json = await fetchJson(url);
   if (json === null) return null;
   return parseProof(json);
