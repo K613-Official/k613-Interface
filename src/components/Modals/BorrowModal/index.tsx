@@ -17,13 +17,16 @@ import { useQueryClient } from '@tanstack/react-query';
 import { parseUnits } from 'ethers/lib/utils';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { TokenIcon } from 'src/components/primitives/TokenIcon';
+import { ChangeNetworkWarning } from 'src/components/transactions/Warnings/ChangeNetworkWarning';
 import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
+import { useIsWrongNetwork } from 'src/hooks/useIsWrongNetwork';
 import { useModalContext } from 'src/hooks/useModal';
 import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
 import { useRootStore } from 'src/store/root';
 import { getErrorTextFromError, TxAction } from 'src/ui-config/errorMapping';
 import { queryKeysFactory } from 'src/ui-config/queries';
 import { getMaxAmountAvailableToBorrow } from 'src/utils/getMaxAmountAvailableToBorrow';
+import { getNetworkConfig } from 'src/utils/marketsAndNetworksConfig';
 import { roundToTokenDecimals } from 'src/utils/utils';
 import { useShallow } from 'zustand/shallow';
 
@@ -64,7 +67,8 @@ export default function BorrowModal({ open, onClose, underlyingAsset }: Props) {
       state.addTransaction,
     ])
   );
-  const { sendTx } = useWeb3Context();
+  const { sendTx, readOnlyModeAddress } = useWeb3Context();
+  const { isWrongNetwork, requiredChainId } = useIsWrongNetwork();
   const queryClient = useQueryClient();
   const {
     mainTxState,
@@ -249,7 +253,8 @@ export default function BorrowModal({ open, onClose, underlyingAsset }: Props) {
   const amountNum = Number(amount || '0');
   const exceedsLiquidity = amountNum > Number(reserve.formattedAvailableLiquidity);
   const blocked = !reserve.borrowingEnabled || exceedsLiquidity;
-  const disabled = blocked || amountNum <= 0 || mainTxState.loading || approvalTxState.loading;
+  const disabled =
+    blocked || amountNum <= 0 || mainTxState.loading || approvalTxState.loading || isWrongNetwork;
 
   const actionLabel = requiresApproval && !approvalTxState.success ? 'Approve' : `Borrow ${symbol}`;
   const onAction = requiresApproval && !approvalTxState.success ? handleApprove : handleBorrow;
@@ -374,6 +379,13 @@ export default function BorrowModal({ open, onClose, underlyingAsset }: Props) {
             </Typography>
           </OverviewRow>
         </OverviewSection>
+
+        {isWrongNetwork && !readOnlyModeAddress && (
+          <ChangeNetworkWarning
+            networkName={getNetworkConfig(requiredChainId).name}
+            chainId={requiredChainId}
+          />
+        )}
 
         {txError && (
           <Alert severity="error" sx={{ mt: 1 }}>

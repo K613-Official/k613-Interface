@@ -23,6 +23,7 @@ const STABLECOIN_SYMBOLS = new Set([
   'USDA',
   'DOLA',
   'MIM',
+  'USDT0',
 ]);
 
 /** Ethereum-style liquid staking receipt tokens (check before generic ETH / WETH). */
@@ -41,6 +42,7 @@ const LST_SYMBOLS = new Set([
   'ETHX',
   'SMON',
   'SHMON',
+  'GMON',
 ]);
 
 const BTC_SYMBOLS = new Set([
@@ -58,7 +60,7 @@ const BTC_SYMBOLS = new Set([
 const ETH_SYMBOLS = new Set(['ETH', 'WETH']);
 
 /** Native / wrapped Monad ecosystem (not LST). */
-const MON_SYMBOLS = new Set(['MON', 'WMON', 'GMON']);
+const MON_SYMBOLS = new Set(['MON', 'WMON']);
 
 export type ReserveCategory = 'stable' | 'eth' | 'btc' | 'mon' | 'lst';
 

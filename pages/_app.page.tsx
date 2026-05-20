@@ -8,8 +8,8 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { ConnectKitProvider } from 'connectkit';
 import { NextPage } from 'next';
 import { AppProps } from 'next/app';
-import Head from 'next/head';
 import dynamic from 'next/dynamic';
+import Head from 'next/head';
 import { ReactNode, useEffect, useState } from 'react';
 import { AddressBlocked } from 'src/components/AddressBlocked';
 import { Meta } from 'src/components/Meta';
@@ -17,13 +17,6 @@ import ModalProvider from 'src/components/Modals/ModalProvider';
 import { GasStationProvider } from 'src/components/transactions/GasStation/GasStationProvider';
 import { AppDataProvider } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { ModalContextProvider } from 'src/hooks/useModal';
-
-const EmodeModal = dynamic(() =>
-  import('src/components/transactions/Emode/EmodeModal').then((m) => m.EmodeModal)
-);
-const FaucetModal = dynamic(() =>
-  import('src/components/transactions/Faucet/FaucetModal').then((m) => m.FaucetModal)
-);
 import { Web3ContextProvider } from 'src/libs/web3-data-provider/Web3Provider';
 import { useRootStore } from 'src/store/root';
 import { SharedDependenciesProvider } from 'src/ui-config/SharedDependenciesProvider';
@@ -34,6 +27,13 @@ import { useShallow } from 'zustand/shallow';
 import createEmotionCache from '../src/createEmotionCache';
 import { AppGlobalStyles } from '../src/layouts/AppGlobalStyles';
 import { LanguageProvider } from '../src/libs/LanguageProvider';
+
+const EmodeModal = dynamic(() =>
+  import('src/components/transactions/Emode/EmodeModal').then((m) => m.EmodeModal)
+);
+const FaucetModal = dynamic(() =>
+  import('src/components/transactions/Faucet/FaucetModal').then((m) => m.FaucetModal)
+);
 
 // Client-side cache, shared for the whole session of the user in the browser.
 const clientSideEmotionCache = createEmotionCache();

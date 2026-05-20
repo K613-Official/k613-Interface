@@ -5,16 +5,27 @@ import {
   valueToBigNumber,
 } from '@aave/math-utils';
 import { Cancel, Close } from '@mui/icons-material';
-import { Alert, Button, IconButton, Stack, Typography } from '@mui/material';
+import {
+  Alert,
+  Button,
+  IconButton,
+  Stack,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+} from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { TokenIcon } from 'src/components/primitives/TokenIcon';
+import { ChangeNetworkWarning } from 'src/components/transactions/Warnings/ChangeNetworkWarning';
 import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
+import { useIsWrongNetwork } from 'src/hooks/useIsWrongNetwork';
 import { useModalContext } from 'src/hooks/useModal';
 import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
 import { useRootStore } from 'src/store/root';
 import { getErrorTextFromError, TxAction } from 'src/ui-config/errorMapping';
 import { queryKeysFactory } from 'src/ui-config/queries';
+import { getNetworkConfig } from 'src/utils/marketsAndNetworksConfig';
 import { roundToTokenDecimals } from 'src/utils/utils';
 import { useShallow } from 'zustand/shallow';
 
@@ -40,7 +51,8 @@ export default function WithdrawModal({ open, onClose, underlyingAsset }: Props)
   const [withdraw, estimateGasLimit, addTransaction] = useRootStore(
     useShallow((s) => [s.withdraw, s.estimateGasLimit, s.addTransaction])
   );
-  const { sendTx } = useWeb3Context();
+  const { sendTx, readOnlyModeAddress } = useWeb3Context();
+  const { isWrongNetwork, requiredChainId } = useIsWrongNetwork();
   const queryClient = useQueryClient();
   const {
     mainTxState,
@@ -51,6 +63,7 @@ export default function WithdrawModal({ open, onClose, underlyingAsset }: Props)
   } = useModalContext();
 
   const [amount, setAmount] = useState('');
+  const [receiveNative, setReceiveNative] = useState(true);
 
   const reserve = useMemo(() => {
     const key = underlyingAsset.toLowerCase();
@@ -70,8 +83,9 @@ export default function WithdrawModal({ open, onClose, underlyingAsset }: Props)
     [user, underlyingAsset]
   );
 
-  const isNative = underlyingAsset.toLowerCase() === API_ETH_MOCK_ADDRESS.toLowerCase();
-  const poolAddress = isNative ? API_ETH_MOCK_ADDRESS : reserve?.underlyingAsset || '';
+  const canUnwrap = !!reserve?.isWrappedBaseAsset;
+  const poolAddress =
+    canUnwrap && receiveNative ? API_ETH_MOCK_ADDRESS : reserve?.underlyingAsset || '';
 
   const futureHealthFactor = useMemo(() => {
     if (!user || !reserve) return null;
@@ -115,7 +129,9 @@ export default function WithdrawModal({ open, onClose, underlyingAsset }: Props)
     );
   }
 
-  const symbol = isNative ? reserve.symbol.replace(/^W/, '') : reserve.symbol;
+  const nativeSymbol = reserve.symbol.replace(/^W/, '');
+  const symbol = canUnwrap && receiveNative ? nativeSymbol : reserve.symbol;
+  const iconSymbol = canUnwrap && receiveNative ? nativeSymbol : reserve.iconSymbol;
   const supplied = userReserve.underlyingBalance;
 
   const handleAmountChange = (value: string) => {
@@ -161,7 +177,8 @@ export default function WithdrawModal({ open, onClose, underlyingAsset }: Props)
   const exceedsSupply = amountNum > Number(supplied);
   const wouldLiquidate =
     futureHealthFactor && Number(futureHealthFactor) > 0 && Number(futureHealthFactor) < 1;
-  const disabled = amountNum <= 0 || exceedsSupply || !!wouldLiquidate || mainTxState.loading;
+  const disabled =
+    amountNum <= 0 || exceedsSupply || !!wouldLiquidate || mainTxState.loading || isWrongNetwork;
 
   if (mainTxState.success) {
     return (
@@ -171,7 +188,7 @@ export default function WithdrawModal({ open, onClose, underlyingAsset }: Props)
             action="Withdraw"
             amount={amount}
             symbol={symbol}
-            iconSymbol={reserve.iconSymbol}
+            iconSymbol={iconSymbol}
             txHash={mainTxState.txHash}
             onClose={handleClose}
           />
@@ -189,6 +206,27 @@ export default function WithdrawModal({ open, onClose, underlyingAsset }: Props)
             <Close fontSize="small" />
           </IconButton>
         </Header>
+
+        {canUnwrap && (
+          <Stack spacing={0.5}>
+            <Typography variant="caption" sx={{ opacity: 0.5 }}>
+              Receive as
+            </Typography>
+            <ToggleButtonGroup
+              exclusive
+              fullWidth
+              size="small"
+              value={receiveNative ? 'native' : 'wrapped'}
+              onChange={(_, v) => {
+                if (v) setReceiveNative(v === 'native');
+              }}
+              disabled={mainTxState.loading}
+            >
+              <ToggleButton value="native">{nativeSymbol}</ToggleButton>
+              <ToggleButton value="wrapped">{reserve.symbol}</ToggleButton>
+            </ToggleButtonGroup>
+          </Stack>
+        )}
 
         <Typography variant="caption" sx={{ opacity: 0.5 }}>
           Amount
@@ -220,7 +258,7 @@ export default function WithdrawModal({ open, onClose, underlyingAsset }: Props)
             </AmountDisplay>
             <TokenInfo>
               <Stack direction="row" spacing={0.5} alignItems="center">
-                <TokenIcon symbol={reserve.iconSymbol} sx={{ fontSize: 16 }} />
+                <TokenIcon symbol={iconSymbol} sx={{ fontSize: 16 }} />
                 <Typography variant="caption">{symbol}</Typography>
               </Stack>
               <BalanceRow>
@@ -275,6 +313,13 @@ export default function WithdrawModal({ open, onClose, underlyingAsset }: Props)
             )}
           </OverviewRow>
         </OverviewSection>
+
+        {isWrongNetwork && !readOnlyModeAddress && (
+          <ChangeNetworkWarning
+            networkName={getNetworkConfig(requiredChainId).name}
+            chainId={requiredChainId}
+          />
+        )}
 
         {txError && (
           <Alert severity="error" sx={{ mt: 1 }}>

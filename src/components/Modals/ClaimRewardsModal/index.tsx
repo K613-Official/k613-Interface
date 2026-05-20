@@ -2,9 +2,12 @@ import { Button, CircularProgress, Typography } from '@mui/material';
 import { BigNumber, constants } from 'ethers';
 import { formatUnits, Interface } from 'ethers/lib/utils';
 import { useMemo, useState } from 'react';
+import { ChangeNetworkWarning } from 'src/components/transactions/Warnings/ChangeNetworkWarning';
 import { useOnChainClaimable } from 'src/hooks/pool/useOnChainClaimable';
+import { useIsWrongNetwork } from 'src/hooks/useIsWrongNetwork';
 import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
 import { useRootStore } from 'src/store/root';
+import { getNetworkConfig } from 'src/utils/marketsAndNetworksConfig';
 
 import { BaseModalProps, ClaimRewardsModalProps } from '../types';
 import { Actions, Content, Dialog, Header } from './styles';
@@ -18,7 +21,8 @@ const RC_IFACE = new Interface([
 export default function ClaimRewardsModal({ open, onClose }: Props) {
   const currentMarketData = useRootStore((s) => s.currentMarketData);
   const account = useRootStore((s) => s.account);
-  const { sendTx } = useWeb3Context();
+  const { sendTx, readOnlyModeAddress } = useWeb3Context();
+  const { isWrongNetwork, requiredChainId } = useIsWrongNetwork();
   const { data: onChain } = useOnChainClaimable(currentMarketData);
 
   const [busy, setBusy] = useState(false);
@@ -69,13 +73,15 @@ export default function ClaimRewardsModal({ open, onClose }: Props) {
       </Header>
 
       <Content>
+        {isWrongNetwork && !readOnlyModeAddress && (
+          <ChangeNetworkWarning
+            networkName={getNetworkConfig(requiredChainId).name}
+            chainId={requiredChainId}
+          />
+        )}
         {hasClaimable ? (
           totalByReward.map((r) => (
-            <Typography
-              key={r.symbol}
-              variant="body2"
-              sx={{ color: 'rgba(0,0,0,0.87)', mb: 0.5 }}
-            >
+            <Typography key={r.symbol} variant="body2" sx={{ color: 'rgba(0,0,0,0.87)', mb: 0.5 }}>
               {r.human.toFixed(4)} {r.symbol}
             </Typography>
           ))
@@ -104,7 +110,7 @@ export default function ClaimRewardsModal({ open, onClose }: Props) {
           variant="text"
           color="inherit"
           onClick={handleClaim}
-          disabled={!hasClaimable || busy || !account}
+          disabled={!hasClaimable || busy || !account || isWrongNetwork}
           startIcon={busy ? <CircularProgress size={14} /> : undefined}
         >
           {busy ? 'Claiming…' : 'Claim'}

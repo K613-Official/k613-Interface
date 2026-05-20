@@ -2,7 +2,7 @@ import { API_ETH_MOCK_ADDRESS, ERC20Service, transactionType } from '@aave/contr
 import { SignatureLike } from '@ethersproject/bytes';
 import { JsonRpcProvider, TransactionResponse } from '@ethersproject/providers';
 import { BigNumber, PopulatedTransaction, utils } from 'ethers';
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { ReactElement, useEffect, useRef, useState } from 'react';
 import { useRootStore } from 'src/store/root';
 import { wagmiConfig } from 'src/ui-config/wagmiConfig';
 import { hexToAscii } from 'src/utils/utils';
@@ -48,6 +48,8 @@ export const Web3ContextProvider: React.FC<{ children: ReactElement }> = ({ chil
   const [readOnlyModeAddress, setReadOnlyModeAddress] = useState<string | undefined>();
   const [switchNetworkError, setSwitchNetworkError] = useState<Error>();
   const setAccount = useRootStore((store) => store.setAccount);
+  const targetChainId = useRootStore((store) => store.currentChainId);
+  const autoSwitchAttemptedRef = useRef<string | null>(null);
 
   const account = address;
   const readOnlyMode = utils.isAddress(readOnlyModeAddress || '');
@@ -176,6 +178,22 @@ export const Web3ContextProvider: React.FC<{ children: ReactElement }> = ({ chil
   useEffect(() => {
     setAccount(account?.toLowerCase());
   }, [account, setAccount]);
+
+  useEffect(() => {
+    if (!account || !chainId || !targetChainId || chainId === targetChainId) {
+      return;
+    }
+    const attemptKey = `${account}:${chainId}->${targetChainId}`;
+    if (autoSwitchAttemptedRef.current === attemptKey) {
+      return;
+    }
+    autoSwitchAttemptedRef.current = attemptKey;
+    switchChainAsync({ chainId: targetChainId }).catch((err) => {
+      if (err?.code === UserRejectedRequestError.code) {
+        setSwitchNetworkError(err);
+      }
+    });
+  }, [account, chainId, targetChainId, switchChainAsync]);
 
   useEffect(() => {
     if (readOnlyModeAddress) {
