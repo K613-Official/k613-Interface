@@ -30,6 +30,7 @@ import {
   getCountdownLabel,
   getLastUpdatedLabel,
   getUnlockedWeek,
+  usePointsCampaignConfig,
 } from './hooks/usePointsCampaignWeeks';
 import { useUserWeekStats } from './hooks/useUserWeekStats';
 import {
@@ -117,13 +118,18 @@ const rules = [
 export function PointsCampaignPage() {
   const { address } = useAccount();
   const connected = Boolean(address);
+  const campaign = usePointsCampaignConfig();
 
-  const [status, setStatus] = useState(() => getCampaignStatus());
-  const [week, setWeek] = useState<number>(() => getUnlockedWeek());
-  const [availableWeeks, setAvailableWeeks] = useState<number[]>(() => getAvailableWeeks());
+  const [status, setStatus] = useState(() => (campaign ? getCampaignStatus(campaign) : 'Active'));
+  const [week, setWeek] = useState<number>(() => (campaign ? getUnlockedWeek(campaign) : 1));
+  const [availableWeeks, setAvailableWeeks] = useState<number[]>(() =>
+    campaign ? getAvailableWeeks(campaign) : [1]
+  );
   const [activeTab, setActiveTab] = useState<CampaignTab>('leaderboard');
   const [page, setPage] = useState(1);
-  const [countdownLabel, setCountdownLabel] = useState(() => getCountdownLabel(getUnlockedWeek()));
+  const [countdownLabel, setCountdownLabel] = useState(() =>
+    campaign ? getCountdownLabel(campaign, getUnlockedWeek(campaign)) : ''
+  );
   const [snapshotModalOpen, setSnapshotModalOpen] = useState(false);
   const [toast, setToast] = useState<{ open: boolean; message: string }>({
     open: false,
@@ -166,24 +172,26 @@ export function PointsCampaignPage() {
   };
 
   useEffect(() => {
-    setCountdownLabel(getCountdownLabel(week));
-    setStatus(getCampaignStatus());
+    if (!campaign) return;
+    setCountdownLabel(getCountdownLabel(campaign, week));
+    setStatus(getCampaignStatus(campaign));
     const intervalId = window.setInterval(() => {
-      setCountdownLabel(getCountdownLabel(week));
-      setAvailableWeeks(getAvailableWeeks());
-      setStatus(getCampaignStatus());
+      setCountdownLabel(getCountdownLabel(campaign, week));
+      setAvailableWeeks(getAvailableWeeks(campaign));
+      setStatus(getCampaignStatus(campaign));
     }, 30_000);
 
     return () => window.clearInterval(intervalId);
-  }, [week]);
+  }, [campaign, week]);
 
   useEffect(() => {
-    const maxUnlocked = getUnlockedWeek();
+    if (!campaign) return;
+    const maxUnlocked = getUnlockedWeek(campaign);
     if (week > maxUnlocked) {
       setWeek(maxUnlocked);
       setPage(1);
     }
-  }, [availableWeeks, week]);
+  }, [campaign, availableWeeks, week]);
 
   return (
     <>
@@ -227,7 +235,7 @@ export function PointsCampaignPage() {
             </StatCard>
             <StatCard elevation={0}>
               <Label>Season 1 dates</Label>
-              <Value sx={{ fontSize: 22 }}>{getCampaignDatesLabel()}</Value>
+              <Value sx={{ fontSize: 22 }}>{campaign ? getCampaignDatesLabel(campaign) : ''}</Value>
               <Small>Weekly results are finalized after each period</Small>
             </StatCard>
             <StatCard elevation={0}>
