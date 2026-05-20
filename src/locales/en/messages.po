@@ -206,10 +206,6 @@ msgstr "Signing"
 msgid "Copy error message"
 msgstr "Copy error message"
 
-#: src/components/transactions/Warnings/ChangeNetworkWarning.tsx
-msgid "Switch Network"
-msgstr "Switch Network"
-
 #: src/modules/dashboard/lists/BorrowAssetsList/GhoBorrowAssetsListItem.tsx
 #: src/modules/dashboard/lists/BorrowAssetsList/GhoBorrowAssetsListItem.tsx
 msgid "APY, borrow rate"
@@ -1176,10 +1172,6 @@ msgstr "Pending..."
 #: src/components/transactions/StakeCooldown/StakeCooldownModalContent.tsx
 msgid "Nothing staked"
 msgstr "Nothing staked"
-
-#: src/components/transactions/Warnings/ChangeNetworkWarning.tsx
-msgid "Please switch to {networkName}."
-msgstr "Please switch to {networkName}."
 
 #: src/components/transactions/GovDelegation/DelegationTypeSelector.tsx
 msgid "Both"
