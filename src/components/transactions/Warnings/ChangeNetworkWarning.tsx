@@ -1,6 +1,6 @@
 import { ChainId } from '@aave/contract-helpers';
 import { Trans } from '@lingui/macro';
-import { AlertProps, Button, Typography } from '@mui/material';
+import { AlertProps, Box, Button, Typography } from '@mui/material';
 import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
 import { TrackEventProps } from 'src/store/analyticsSlice';
 import { useRootStore } from 'src/store/root';
@@ -39,19 +39,19 @@ export const ChangeNetworkWarning = ({
           </Trans>
         </Typography>
       ) : (
-        <Typography variant="body2">
-          <Trans>Please switch to {networkName}.</Trans>{' '}
+        <Box display="flex" alignItems="center" gap={1}>
+          <Typography component="span" variant="body2">
+            Please switch to {networkName}
+          </Typography>
           <Button
-            variant="text"
+            variant="contained"
             sx={{ ml: '2px', verticalAlign: 'top' }}
             onClick={handleSwitchNetwork}
             disableRipple
           >
-            <Typography variant="body2">
-              <Trans>Switch Network</Trans>
-            </Typography>
+            <Typography variant="body2">Switch Network</Typography>
           </Button>
-        </Typography>
+        </Box>
       )}
     </Warning>
   );
