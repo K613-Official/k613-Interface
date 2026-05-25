@@ -1,11 +1,4 @@
 import {
-  POINTS_CAMPAIGN_START_TS_MONAD,
-  POINTS_CAMPAIGN_WEEKS_MONAD,
-  POINTS_DISTRIBUTOR_MONAD,
-  POINTS_K613S1_MONAD,
-  POINTS_SNAPSHOTS_BASE_URL_MONAD,
-} from 'src/const/env';
-import {
   POINTS_DISTRIBUTOR_ARBITRUM_SEPOLIA,
   POINTS_K613S1_ARBITRUM_SEPOLIA,
 } from 'src/const/testnet';
@@ -21,8 +14,7 @@ export type PointsCampaignConfig = {
   CAMPAIGN_WEEKS: number;
 };
 
-// Arbitrum Sepolia — fully hardcoded test environment.
-// Adresses + season start + weeks + snapshots repo all baked in.
+// Arbitrum Sepolia — testnet, fully hardcoded.
 export const POINTS_CAMPAIGN_ARBITRUM_SEPOLIA: PointsCampaignConfig = {
   K613S1: POINTS_K613S1_ARBITRUM_SEPOLIA,
   DISTRIBUTOR: POINTS_DISTRIBUTOR_ARBITRUM_SEPOLIA,
@@ -32,13 +24,14 @@ export const POINTS_CAMPAIGN_ARBITRUM_SEPOLIA: PointsCampaignConfig = {
   CAMPAIGN_WEEKS: 4,
 };
 
-// Monad — fully env-driven (set after mainnet deploy).
+// Monad — mainnet, fully hardcoded.
 export const POINTS_CAMPAIGN_MONAD: PointsCampaignConfig = {
-  K613S1: POINTS_K613S1_MONAD,
-  DISTRIBUTOR: POINTS_DISTRIBUTOR_MONAD,
-  SNAPSHOTS_BASE_URL: POINTS_SNAPSHOTS_BASE_URL_MONAD,
-  CAMPAIGN_START_TS: Number(POINTS_CAMPAIGN_START_TS_MONAD) || 0,
-  CAMPAIGN_WEEKS: Math.max(1, Number(POINTS_CAMPAIGN_WEEKS_MONAD) || 1),
+  K613S1: '0x4f9ba5CaE0e3F651821283EC4e303fE8D1dA542a',
+  DISTRIBUTOR: '0x80Efb6394E142F778cdD7F59b6Ee484B5a6299EB',
+  SNAPSHOTS_BASE_URL:
+    'https://raw.githubusercontent.com/K613-Official/K613-points/main/snapshots-mainnet',
+  CAMPAIGN_START_TS: 1779321600,
+  CAMPAIGN_WEEKS: 4,
 };
 
 export function pointsCampaignByChainId(chainId: number | undefined): PointsCampaignConfig | null {
