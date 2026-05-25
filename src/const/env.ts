@@ -29,6 +29,8 @@ const rawEnv = {
   MONAD_COLLECTOR: process.env.NEXT_PUBLIC_MONAD_COLLECTOR,
   MONAD_STAKING: process.env.NEXT_PUBLIC_MONAD_STAKING,
   MONAD_REWARDS_DISTRIBUTION: process.env.NEXT_PUBLIC_MONAD_REWARDS_DISTRIBUTION,
+
+  YANDEX_METRIKA_ID: process.env.NEXT_PUBLIC_YANDEX_METRIKA_ID,
 };
 
 const env = cleanEnv(rawEnv, {
@@ -59,6 +61,8 @@ const env = cleanEnv(rawEnv, {
   MONAD_COLLECTOR: str({ default: '' }),
   MONAD_STAKING: str({ default: '' }),
   MONAD_REWARDS_DISTRIBUTION: str({ default: '' }),
+
+  YANDEX_METRIKA_ID: str({ default: '' }),
 });
 
 export const {
@@ -88,6 +92,7 @@ export const {
   MONAD_COLLECTOR,
   MONAD_STAKING,
   MONAD_REWARDS_DISTRIBUTION,
+  YANDEX_METRIKA_ID,
 } = env;
 
 export const IS_PRODUCTION = NODE_ENV === 'production';
