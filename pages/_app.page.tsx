@@ -12,6 +12,7 @@ import dynamic from 'next/dynamic';
 import Head from 'next/head';
 import { ReactNode, useEffect, useState } from 'react';
 import { AddressBlocked } from 'src/components/AddressBlocked';
+import { YandexMetrika } from 'src/components/Analytics/YandexMetrika';
 import { Meta } from 'src/components/Meta';
 import ModalProvider from 'src/components/Modals/ModalProvider';
 import { GasStationProvider } from 'src/components/transactions/GasStation/GasStationProvider';
@@ -87,6 +88,7 @@ export default function MyApp(props: MyAppProps) {
           'Track your portfolio, yield, and lending activity in real time. Supply ETH and other assets, use them as collateral, and manage loans within the K613 protocol.'
         }
       />
+      <YandexMetrika />
       <NoSsr>
         <LanguageProvider>
           <WagmiProvider config={wagmiConfig}>
