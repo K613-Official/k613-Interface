@@ -213,11 +213,7 @@ export function PointsCampaignPage() {
               </SecondaryCta>
               <SecondaryCta
                 onClick={() =>
-                  window.open(
-                    'https://app.galxe.com/quest/BHqW98VTiBqi2zUgGQxjTJ',
-                    '_blank',
-                    'noopener,noreferrer'
-                  )
+                  window.open('https://app.galxe.com/quest/K613', '_blank', 'noopener,noreferrer')
                 }
               >
                 Explore Missions
