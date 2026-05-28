@@ -27,7 +27,7 @@ export const POINTS_CAMPAIGN_ARBITRUM_SEPOLIA: PointsCampaignConfig = {
 // Monad — mainnet, fully hardcoded.
 export const POINTS_CAMPAIGN_MONAD: PointsCampaignConfig = {
   K613S1: '0x4f9ba5CaE0e3F651821283EC4e303fE8D1dA542a',
-  DISTRIBUTOR: '0x80Efb6394E142F778cdD7F59b6Ee484B5a6299EB',
+  DISTRIBUTOR: '0x94F71Da72c6CE71c570CF7F8e076F3097E411063',
   SNAPSHOTS_BASE_URL:
     'https://raw.githubusercontent.com/K613-Official/K613-points/main/snapshots-mainnet',
   CAMPAIGN_START_TS: 1779321600,
