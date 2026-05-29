@@ -56,6 +56,8 @@ import {
   Metric,
   MetricsGrid,
   MetricValue,
+  PageGroup,
+  PageInput,
   PageRoot,
   Pagination,
   PrimaryCta,
@@ -127,6 +129,7 @@ export function PointsCampaignPage() {
   );
   const [activeTab, setActiveTab] = useState<CampaignTab>('leaderboard');
   const [page, setPage] = useState(1);
+  const [pageInput, setPageInput] = useState('1');
   const [countdownLabel, setCountdownLabel] = useState(() =>
     campaign ? getCountdownLabel(campaign, getUnlockedWeek(campaign)) : ''
   );
@@ -170,6 +173,23 @@ export function PointsCampaignPage() {
   const handleChangePage = (delta: number) => {
     setPage((prev) => Math.min(totalPages, Math.max(1, prev + delta)));
   };
+
+  const handleGoToLast = () => {
+    setPage(totalPages);
+  };
+
+  const handlePageInputSubmit = () => {
+    const parsed = Number(pageInput);
+    if (Number.isFinite(parsed) && parsed >= 1 && parsed <= totalPages) {
+      setPage(Math.floor(parsed));
+    } else {
+      setPageInput(String(page));
+    }
+  };
+
+  useEffect(() => {
+    setPageInput(String(page));
+  }, [page]);
 
   useEffect(() => {
     if (!campaign) return;
@@ -446,9 +466,38 @@ export function PointsCampaignPage() {
                   </TableWrap>
 
                   <Pagination>
-                    <GhostCta onClick={() => handleChangePage(-1)}>Previous</GhostCta>
-                    <Small>{`Page ${page} of ${totalPages}`}</Small>
-                    <GhostCta onClick={() => handleChangePage(1)}>Next</GhostCta>
+                    <GhostCta onClick={() => handleChangePage(-1)} disabled={page === 1}>
+                      Previous
+                    </GhostCta>
+                    <PageGroup>
+                      <Small>Page</Small>
+                      <PageInput
+                        type="number"
+                        min={1}
+                        max={totalPages}
+                        value={pageInput}
+                        onChange={(event) => setPageInput(event.target.value)}
+                        onFocus={(event) => event.target.select()}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            (event.target as HTMLInputElement).blur();
+                          }
+                        }}
+                        onBlur={handlePageInputSubmit}
+                      />
+                      <Small>{`of ${totalPages}`}</Small>
+                    </PageGroup>
+                    <PageGroup>
+                      <GhostCta
+                        onClick={() => handleChangePage(1)}
+                        disabled={page === totalPages}
+                      >
+                        Next
+                      </GhostCta>
+                      <GhostCta onClick={handleGoToLast} disabled={page === totalPages}>
+                        Last
+                      </GhostCta>
+                    </PageGroup>
                   </Pagination>
                 </>
               ) : leaderboardQuery.isError ? null : (
