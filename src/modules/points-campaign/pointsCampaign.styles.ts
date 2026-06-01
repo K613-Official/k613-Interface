@@ -418,6 +418,27 @@ export const Rank = styled(Box)({
   background: 'rgba(255, 255, 255, 0.08)',
 });
 
+export const PointsBreakdown = styled(Box)({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 2,
+});
+
+export const PointsBreakdownRow = styled(Box)({
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'baseline',
+  gap: 8,
+  fontSize: 12,
+  color: '#9e9e9e',
+});
+
+export const PointsBreakdownLabel = styled('span')({
+  textTransform: 'uppercase',
+  letterSpacing: '0.4px',
+  fontSize: 10,
+});
+
 export const Address = styled(Box)({
   display: 'flex',
   alignItems: 'center',

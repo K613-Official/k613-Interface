@@ -60,6 +60,9 @@ import {
   PageInput,
   PageRoot,
   Pagination,
+  PointsBreakdown,
+  PointsBreakdownLabel,
+  PointsBreakdownRow,
   PrimaryCta,
   Rank,
   RulesStack,
@@ -436,6 +439,10 @@ export function PointsCampaignPage() {
                               total > 0n
                                 ? Number((row.weeklyPoints * 10_000n) / total) / 10_000
                                 : 0;
+                            const isGalxeOnly =
+                              row.minSupplyUsd === 0n && row.minBorrowUsd === 0n;
+                            const galxePoints = isGalxeOnly ? row.weeklyPoints : 0n;
+                            const onchainPoints = isGalxeOnly ? 0n : row.weeklyPoints;
                             return (
                               <TableRow key={`${row.rank}-${row.address}`}>
                                 <LeaderboardTableCell>
@@ -455,7 +462,17 @@ export function PointsCampaignPage() {
                                 </LeaderboardTableCell>
                                 <LeaderboardTableCell>{formatShare(share)}</LeaderboardTableCell>
                                 <LeaderboardTableCell>
-                                  {formatPoints(row.weeklyPoints)}
+                                  <PointsBreakdown>
+                                    <div>{formatPoints(row.weeklyPoints)}</div>
+                                    <PointsBreakdownRow>
+                                      <PointsBreakdownLabel>onchain</PointsBreakdownLabel>
+                                      <span>{formatPoints(onchainPoints)}</span>
+                                    </PointsBreakdownRow>
+                                    <PointsBreakdownRow>
+                                      <PointsBreakdownLabel>galxe</PointsBreakdownLabel>
+                                      <span>{formatPoints(galxePoints)}</span>
+                                    </PointsBreakdownRow>
+                                  </PointsBreakdown>
                                 </LeaderboardTableCell>
                               </TableRow>
                             );
