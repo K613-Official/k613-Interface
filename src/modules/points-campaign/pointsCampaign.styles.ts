@@ -418,6 +418,27 @@ export const Rank = styled(Box)({
   background: 'rgba(255, 255, 255, 0.08)',
 });
 
+export const PointsBreakdown = styled(Box)({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 2,
+});
+
+export const PointsBreakdownRow = styled(Box)({
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'baseline',
+  gap: 8,
+  fontSize: 12,
+  color: '#9e9e9e',
+});
+
+export const PointsBreakdownLabel = styled('span')({
+  textTransform: 'uppercase',
+  letterSpacing: '0.4px',
+  fontSize: 10,
+});
+
 export const Address = styled(Box)({
   display: 'flex',
   alignItems: 'center',
@@ -432,13 +453,48 @@ export const Avatar = styled(Box)(({ theme }) => ({
   border: `1px solid ${theme.palette.primary.main}4D`,
 }));
 
-export const Pagination = styled(Box)({
+export const Pagination = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
   gap: 12,
   marginTop: 16,
+  [theme.breakpoints.down('sm')]: {
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+}));
+
+export const PageGroup = styled(Box)({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
 });
+
+export const PageInput = styled('input')(() => ({
+  width: 64,
+  height: 38,
+  padding: '0 8px',
+  border: '1px solid rgba(255, 255, 255, 0.3)',
+  borderRadius: 1,
+  background: 'transparent',
+  color: '#fff',
+  fontSize: 14,
+  fontFamily: 'inherit',
+  textAlign: 'center',
+  outline: 'none',
+  MozAppearance: 'textfield',
+  '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
+    WebkitAppearance: 'none',
+    margin: 0,
+  },
+  '&:hover': {
+    borderColor: 'rgba(255, 255, 255, 0.45)',
+  },
+  '&:focus': {
+    borderColor: 'rgba(255, 255, 255, 0.6)',
+  },
+}));
 
 export const RulesStack = styled(Box)({
   display: 'grid',

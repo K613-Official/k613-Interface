@@ -56,8 +56,13 @@ import {
   Metric,
   MetricsGrid,
   MetricValue,
+  PageGroup,
+  PageInput,
   PageRoot,
   Pagination,
+  PointsBreakdown,
+  PointsBreakdownLabel,
+  PointsBreakdownRow,
   PrimaryCta,
   Rank,
   RulesStack,
@@ -127,6 +132,7 @@ export function PointsCampaignPage() {
   );
   const [activeTab, setActiveTab] = useState<CampaignTab>('leaderboard');
   const [page, setPage] = useState(1);
+  const [pageInput, setPageInput] = useState('1');
   const [countdownLabel, setCountdownLabel] = useState(() =>
     campaign ? getCountdownLabel(campaign, getUnlockedWeek(campaign)) : ''
   );
@@ -170,6 +176,23 @@ export function PointsCampaignPage() {
   const handleChangePage = (delta: number) => {
     setPage((prev) => Math.min(totalPages, Math.max(1, prev + delta)));
   };
+
+  const handleGoToLast = () => {
+    setPage(totalPages);
+  };
+
+  const handlePageInputSubmit = () => {
+    const parsed = Number(pageInput);
+    if (Number.isFinite(parsed) && parsed >= 1 && parsed <= totalPages) {
+      setPage(Math.floor(parsed));
+    } else {
+      setPageInput(String(page));
+    }
+  };
+
+  useEffect(() => {
+    setPageInput(String(page));
+  }, [page]);
 
   useEffect(() => {
     if (!campaign) return;
@@ -416,6 +439,10 @@ export function PointsCampaignPage() {
                               total > 0n
                                 ? Number((row.weeklyPoints * 10_000n) / total) / 10_000
                                 : 0;
+                            const isGalxeOnly =
+                              row.minSupplyUsd === 0n && row.minBorrowUsd === 0n;
+                            const galxePoints = isGalxeOnly ? row.weeklyPoints : 0n;
+                            const onchainPoints = isGalxeOnly ? 0n : row.weeklyPoints;
                             return (
                               <TableRow key={`${row.rank}-${row.address}`}>
                                 <LeaderboardTableCell>
@@ -435,7 +462,17 @@ export function PointsCampaignPage() {
                                 </LeaderboardTableCell>
                                 <LeaderboardTableCell>{formatShare(share)}</LeaderboardTableCell>
                                 <LeaderboardTableCell>
-                                  {formatPoints(row.weeklyPoints)}
+                                  <PointsBreakdown>
+                                    <div>{formatPoints(row.weeklyPoints)}</div>
+                                    <PointsBreakdownRow>
+                                      <PointsBreakdownLabel>onchain</PointsBreakdownLabel>
+                                      <span>{formatPoints(onchainPoints)}</span>
+                                    </PointsBreakdownRow>
+                                    <PointsBreakdownRow>
+                                      <PointsBreakdownLabel>galxe</PointsBreakdownLabel>
+                                      <span>{formatPoints(galxePoints)}</span>
+                                    </PointsBreakdownRow>
+                                  </PointsBreakdown>
                                 </LeaderboardTableCell>
                               </TableRow>
                             );
@@ -446,9 +483,38 @@ export function PointsCampaignPage() {
                   </TableWrap>
 
                   <Pagination>
-                    <GhostCta onClick={() => handleChangePage(-1)}>Previous</GhostCta>
-                    <Small>{`Page ${page} of ${totalPages}`}</Small>
-                    <GhostCta onClick={() => handleChangePage(1)}>Next</GhostCta>
+                    <GhostCta onClick={() => handleChangePage(-1)} disabled={page === 1}>
+                      Previous
+                    </GhostCta>
+                    <PageGroup>
+                      <Small>Page</Small>
+                      <PageInput
+                        type="number"
+                        min={1}
+                        max={totalPages}
+                        value={pageInput}
+                        onChange={(event) => setPageInput(event.target.value)}
+                        onFocus={(event) => event.target.select()}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            (event.target as HTMLInputElement).blur();
+                          }
+                        }}
+                        onBlur={handlePageInputSubmit}
+                      />
+                      <Small>{`of ${totalPages}`}</Small>
+                    </PageGroup>
+                    <PageGroup>
+                      <GhostCta
+                        onClick={() => handleChangePage(1)}
+                        disabled={page === totalPages}
+                      >
+                        Next
+                      </GhostCta>
+                      <GhostCta onClick={handleGoToLast} disabled={page === totalPages}>
+                        Last
+                      </GhostCta>
+                    </PageGroup>
                   </Pagination>
                 </>
               ) : leaderboardQuery.isError ? null : (
