@@ -39,10 +39,18 @@ function formatTokens(value: bigint): string {
   return fractionStr ? `${integerStr}.${fractionStr}` : integerStr;
 }
 
-export function ClaimSection({ week }: { week: number }) {
+export function ClaimSection() {
   const { address } = useAccount();
-  const { isClaimAvailable, claim, claimable, cumulativeAmount, alreadyClaimed, isPending, error } =
-    useUserClaim(week);
+  const {
+    isClaimAvailable,
+    claim,
+    claimable,
+    cumulativeAmount,
+    alreadyClaimed,
+    claimWeek,
+    isPending,
+    error,
+  } = useUserClaim();
   const [localError, setLocalError] = useState<string | null>(null);
 
   if (!isClaimAvailable) return null;
@@ -82,7 +90,9 @@ export function ClaimSection({ week }: { week: number }) {
         <Metric>
           <Label>Claimable now</Label>
           <MetricValue>{formatTokens(claimable)} K613S1</MetricValue>
-          <Small>{`Based on Week ${week} snapshot`}</Small>
+          <Small>
+            {claimWeek != null ? `Based on Week ${claimWeek} snapshot` : 'No active snapshot'}
+          </Small>
         </Metric>
       </MetricsGrid>
       <PrimaryCta onClick={handleClaim} disabled={disabled} sx={{ mt: 2 }}>
