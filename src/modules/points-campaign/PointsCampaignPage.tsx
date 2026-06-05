@@ -390,7 +390,7 @@ export function PointsCampaignPage() {
                   </EmptyState>
                 )}
               </Card>
-              <ClaimSection week={week} />
+              <ClaimSection />
             </>
           )}
 
@@ -439,8 +439,7 @@ export function PointsCampaignPage() {
                               total > 0n
                                 ? Number((row.weeklyPoints * 10_000n) / total) / 10_000
                                 : 0;
-                            const isGalxeOnly =
-                              row.minSupplyUsd === 0n && row.minBorrowUsd === 0n;
+                            const isGalxeOnly = row.minSupplyUsd === 0n && row.minBorrowUsd === 0n;
                             const galxePoints = isGalxeOnly ? row.weeklyPoints : 0n;
                             const onchainPoints = isGalxeOnly ? 0n : row.weeklyPoints;
                             return (
@@ -505,10 +504,7 @@ export function PointsCampaignPage() {
                       <Small>{`of ${totalPages}`}</Small>
                     </PageGroup>
                     <PageGroup>
-                      <GhostCta
-                        onClick={() => handleChangePage(1)}
-                        disabled={page === totalPages}
-                      >
+                      <GhostCta onClick={() => handleChangePage(1)} disabled={page === totalPages}>
                         Next
                       </GhostCta>
                       <GhostCta onClick={handleGoToLast} disabled={page === totalPages}>
