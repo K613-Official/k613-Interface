@@ -94,6 +94,16 @@ export function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveDa
     address: reserve.priceOracle,
   });
 
+  const underlyingExplorerUrl = currentNetworkConfig.explorerLinkBuilder({
+    address: reserve.underlyingAsset,
+  });
+  const aTokenExplorerUrl = reserve.aTokenAddress
+    ? currentNetworkConfig.explorerLinkBuilder({ address: reserve.aTokenAddress })
+    : '';
+  const variableDebtExplorerUrl = reserve.variableDebtTokenAddress
+    ? currentNetworkConfig.explorerLinkBuilder({ address: reserve.variableDebtTokenAddress })
+    : '';
+
   const collectorAddress = currentMarketData.addresses.COLLECTOR;
   const collectorUrl = collectorAddress
     ? currentNetworkConfig.explorerLinkBuilder({ address: collectorAddress })
@@ -130,6 +140,15 @@ export function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveDa
                 {reserve.symbol}
               </Typography>
             </Box>
+            <SmallIconButton
+              href={underlyingExplorerUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              size="small"
+              title={`View ${reserve.symbol} contract`}
+            >
+              <OpenInNew fontSize="small" />
+            </SmallIconButton>
           </AssetIdentity>
         </AssetTitleRow>
 
@@ -219,7 +238,20 @@ export function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveDa
 
         <ConfigCard>
           <CardBlockTitle>
-            <Typography variant="body1">Supply Info</Typography>
+            <Box display="flex" alignItems="center" gap={1}>
+              <Typography variant="body1">Supply Info</Typography>
+              {aTokenExplorerUrl ? (
+                <SmallIconButton
+                  href={aTokenExplorerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="small"
+                  title={`View a${reserve.symbol} contract`}
+                >
+                  <OpenInNew fontSize="small" />
+                </SmallIconButton>
+              ) : null}
+            </Box>
           </CardBlockTitle>
           <Box
             display="flex"
@@ -375,7 +407,20 @@ export function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveDa
 
         <ConfigCard>
           <CardBlockTitle>
-            <Typography variant="body1">Borrow info</Typography>
+            <Box display="flex" alignItems="center" gap={1}>
+              <Typography variant="body1">Borrow info</Typography>
+              {variableDebtExplorerUrl ? (
+                <SmallIconButton
+                  href={variableDebtExplorerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="small"
+                  title={`View variableDebt${reserve.symbol} contract`}
+                >
+                  <OpenInNew fontSize="small" />
+                </SmallIconButton>
+              ) : null}
+            </Box>
           </CardBlockTitle>
           <Box
             display="flex"
