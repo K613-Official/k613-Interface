@@ -32,4 +32,9 @@ export const navigation: Navigation[] = [
     title: msg`Campaign`,
     dataCy: 'menuPointsCampaign',
   },
+  {
+    link: ROUTES.tokenSale,
+    title: msg`Token Sale`,
+    dataCy: 'menuTokenSale',
+  },
 ];

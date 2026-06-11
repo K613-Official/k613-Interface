@@ -22,6 +22,7 @@ const TABS = [
   { label: 'Markets', href: ROUTES.markets },
   { label: 'Campaign', href: ROUTES.pointsCampaign },
   { label: 'Staking', href: ROUTES.stakingK613 },
+  { label: 'Token Sale', href: ROUTES.tokenSale },
   { label: 'FAQ', href: ROUTES.faq },
 ];
 

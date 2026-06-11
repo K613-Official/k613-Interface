@@ -127,6 +127,7 @@ export const ROUTES = {
   pointsCampaign: '/points-campaign',
   staking: '/staking',
   stakingK613: '/staking-k613',
+  tokenSale: '/token-sale',
   governance: '/governance',
   faucet: '/faucet',
   migrationTool: '/v3-migration',
