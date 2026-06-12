@@ -84,7 +84,7 @@ export function getPoolShare(deposit6: bigint, total6: bigint): number {
 
 /** Total Deposits / Hard Cap, as a number (e.g. 2.45). */
 export function getOversubscription(total6: bigint): number {
-  return Number((total6 * 100n) / HARD_CAP_USDC) / 100;
+  return Number((total6 * 1_000_000n) / HARD_CAP_USDC) / 1_000_000;
 }
 
 /** Fraction of each deposited dollar converted into K613 (1 until the cap is exceeded). */
