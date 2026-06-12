@@ -1137,6 +1137,10 @@ msgstr "Your {name} wallet is empty. Purchase or transfer assets or use <0>{0}</
 msgid "APY, variable"
 msgstr "APY, variable"
 
+#: src/ui-config/menu-items/index.tsx
+msgid "Token Sale"
+msgstr "Token Sale"
+
 #: src/components/transactions/DebtSwitch/DebtSwitchModalContent.tsx
 msgid "Maximum amount received"
 msgstr "Maximum amount received"

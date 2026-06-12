@@ -9,6 +9,32 @@ export const SALE_ABI = (saleArtifact as unknown as { abi: unknown[] }).abi;
 
 const POLLING_INTERVAL = 30_000;
 
+// Mirror of the K613PublicSale.saleInfo() return tuple.
+type SaleInfo = {
+  stage: number;
+  saleStart: bigint;
+  saleEnd: bigint;
+  saleAllocation: bigint;
+  hardCap: bigint;
+  totalDeposits: bigint;
+  participants: bigint;
+  finalized: boolean;
+  funded: boolean;
+  totalTokensSold: bigint;
+  claimDeadline: bigint;
+};
+
+// Mirror of the K613PublicSale.userInfo(address) return tuple.
+type UserInfo = {
+  deposited: bigint;
+  allocation: bigint;
+  refund: bigint;
+  tokensClaimed: boolean;
+  refundClaimed: boolean;
+  claimableTokens: bigint;
+  claimableRefund: bigint;
+};
+
 export type SaleData = {
   isSaleConfigured: boolean;
   schedule: SaleSchedule;
@@ -27,83 +53,19 @@ export function useSaleData(): SaleData {
   const saleEnabled = Boolean(saleAddress);
   const userEnabled = Boolean(saleAddress && address);
 
-  const saleQuery = { enabled: saleEnabled, refetchInterval: POLLING_INTERVAL };
-  const userQuery = { enabled: userEnabled, refetchInterval: POLLING_INTERVAL };
-
-  const totalDepositedRead = useReadContract({
+  // Aggregate views — one call each instead of polling every field separately.
+  const saleInfoRead = useReadContract({
     address: saleAddress,
     abi: SALE_ABI,
-    functionName: 'totalDeposited',
-    query: saleQuery,
+    functionName: 'saleInfo',
+    query: { enabled: saleEnabled, refetchInterval: POLLING_INTERVAL },
   });
-  const participantCountRead = useReadContract({
+  const userInfoRead = useReadContract({
     address: saleAddress,
     abi: SALE_ABI,
-    functionName: 'participantCount',
-    query: saleQuery,
-  });
-  const saleStartRead = useReadContract({
-    address: saleAddress,
-    abi: SALE_ABI,
-    functionName: 'saleStart',
-    query: { enabled: saleEnabled },
-  });
-  const saleEndRead = useReadContract({
-    address: saleAddress,
-    abi: SALE_ABI,
-    functionName: 'saleEnd',
-    query: { enabled: saleEnabled },
-  });
-  const claimStartRead = useReadContract({
-    address: saleAddress,
-    abi: SALE_ABI,
-    functionName: 'claimStart',
-    query: { enabled: saleEnabled },
-  });
-  const finalizedRead = useReadContract({
-    address: saleAddress,
-    abi: SALE_ABI,
-    functionName: 'finalized',
-    query: saleQuery,
-  });
-
-  const depositRead = useReadContract({
-    address: saleAddress,
-    abi: SALE_ABI,
-    functionName: 'deposits',
+    functionName: 'userInfo',
     args: address ? [address] : undefined,
-    query: userQuery,
-  });
-  const tokensClaimedRead = useReadContract({
-    address: saleAddress,
-    abi: SALE_ABI,
-    functionName: 'tokensClaimed',
-    args: address ? [address] : undefined,
-    query: userQuery,
-  });
-  const refundClaimedRead = useReadContract({
-    address: saleAddress,
-    abi: SALE_ABI,
-    functionName: 'refundClaimed',
-    args: address ? [address] : undefined,
-    query: userQuery,
-  });
-
-  const finalized = Boolean(finalizedRead.data);
-
-  const finalAllocationRead = useReadContract({
-    address: saleAddress,
-    abi: SALE_ABI,
-    functionName: 'allocationOf',
-    args: address ? [address] : undefined,
-    query: { enabled: userEnabled && finalized },
-  });
-  const finalRefundRead = useReadContract({
-    address: saleAddress,
-    abi: SALE_ABI,
-    functionName: 'refundOf',
-    args: address ? [address] : undefined,
-    query: { enabled: userEnabled && finalized },
+    query: { enabled: userEnabled, refetchInterval: POLLING_INTERVAL },
   });
 
   const usdcBalanceRead = useReadContract({
@@ -121,44 +83,43 @@ export function useSaleData(): SaleData {
     query: { enabled: Boolean(usdcAddress && address && saleAddress) },
   });
 
+  const saleInfo = saleInfoRead.data as SaleInfo | undefined;
+  const userInfo = userInfoRead.data as UserInfo | undefined;
+  const finalized = Boolean(saleInfo?.finalized);
+
   // On-chain schedule wins once the contract is deployed; the config schedule
   // keeps the page functional before deployment.
-  const onChainStart = Number((saleStartRead.data as bigint | undefined) ?? 0n);
-  const onChainEnd = Number((saleEndRead.data as bigint | undefined) ?? 0n);
-  const onChainClaim = Number((claimStartRead.data as bigint | undefined) ?? 0n);
+  const onChainStart = Number(saleInfo?.saleStart ?? 0n);
+  const onChainEnd = Number(saleInfo?.saleEnd ?? 0n);
 
   const schedule: SaleSchedule = {
     saleStartMs: (onChainStart || config?.CONTRIBUTION_START_TS || 0) * 1000,
     saleEndMs: (onChainEnd || config?.CONTRIBUTION_END_TS || 0) * 1000,
-    claimStartMs: (onChainClaim || config?.CLAIM_START_TS || 0) * 1000,
+    // K613PublicSale has no separate claim start: claiming opens the moment the
+    // sale is finalized. 0 makes getCurrentStage() flip to "claim" on finalize.
+    claimStartMs: 0,
     finalized,
   };
 
   const stats: SaleStats = {
-    totalDeposited: (totalDepositedRead.data as bigint | undefined) ?? 0n,
-    participantCount: Number((participantCountRead.data as bigint | undefined) ?? 0n),
+    totalDeposited: saleInfo?.totalDeposits ?? 0n,
+    participantCount: Number(saleInfo?.participants ?? 0n),
   };
 
   const user: UserSaleState = {
-    deposit: (depositRead.data as bigint | undefined) ?? 0n,
+    deposit: userInfo?.deposited ?? 0n,
     usdcBalance: (usdcBalanceRead.data as bigint | undefined) ?? 0n,
     usdcAllowance: (usdcAllowanceRead.data as bigint | undefined) ?? 0n,
-    tokensClaimed: Boolean(tokensClaimedRead.data),
-    refundClaimed: Boolean(refundClaimedRead.data),
-    finalAllocation: finalized ? (finalAllocationRead.data as bigint | undefined) ?? null : null,
-    finalRefund: finalized ? (finalRefundRead.data as bigint | undefined) ?? null : null,
+    tokensClaimed: Boolean(userInfo?.tokensClaimed),
+    refundClaimed: Boolean(userInfo?.refundClaimed),
+    finalAllocation: finalized ? userInfo?.allocation ?? null : null,
+    finalRefund: finalized ? userInfo?.refund ?? null : null,
   };
 
   const refetchAll = () =>
     Promise.all([
-      totalDepositedRead.refetch(),
-      participantCountRead.refetch(),
-      finalizedRead.refetch(),
-      depositRead.refetch(),
-      tokensClaimedRead.refetch(),
-      refundClaimedRead.refetch(),
-      finalAllocationRead.refetch(),
-      finalRefundRead.refetch(),
+      saleInfoRead.refetch(),
+      userInfoRead.refetch(),
       usdcBalanceRead.refetch(),
       usdcAllowanceRead.refetch(),
     ]);
@@ -168,7 +129,7 @@ export function useSaleData(): SaleData {
     schedule,
     stats,
     user,
-    isLoading: saleEnabled && (totalDepositedRead.isLoading || finalizedRead.isLoading),
+    isLoading: saleEnabled && saleInfoRead.isLoading,
     refetchAll,
   };
 }
