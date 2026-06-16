@@ -49,27 +49,19 @@ import { SaleStageKey } from './types';
 const steps = [
   {
     title: 'Connect Wallet',
-    text: 'Connect a wallet on Monad to see your personal participation panel.',
+    text: 'Connect a wallet on Monad to access the sale and view your participation dashboard.',
   },
   {
     title: 'Approve USDC',
-    text: 'Allow the sale contract to transfer the USDC amount you want to deposit.',
+    text: 'Approve the sale contract to spend the amount of USDC you wish to deposit.',
   },
   {
     title: 'Deposit',
-    text: 'Deposit any amount of USDC while the contribution window is open. Multiple deposits accumulate.',
-  },
-  {
-    title: 'Wait for Sale End',
-    text: 'Funds stay locked in the sale contract. Allocations and refunds are finalized after the contribution window closes.',
+    text: 'Deposit any amount of USDC during the contribution period. Multiple deposits are supported and automatically combined.',
   },
   {
     title: 'Claim K613',
-    text: 'Once claim opens, receive your full allocation — 100% unlocked, no vesting.',
-  },
-  {
-    title: 'Claim Refund',
-    text: 'If the sale was oversubscribed, claim the unused part of your deposit back to the same wallet.',
+    text: 'Once claiming opens, claim your full allocation — 100% unlocked, with no vesting.',
   },
 ];
 
@@ -146,10 +138,22 @@ export function TokenSalePage() {
             </Eyebrow>
             <HeroTitle>K613 Public Token Sale</HeroTitle>
             <HeroSubtitle>
-              K613 is the protocol token of the K613 lending market on Monad. The public sale offers
-              10,000,000 K613 at a fixed price of $0.01 per token with a $100,000 hard cap. No
-              deposit limits, no KYC. If the sale is oversubscribed, allocations are distributed
-              pro-rata and unused funds are refunded. Tokens are 100% unlocked at claim.
+              K613 is the utility and governance token of the K613 lending protocol built on Monad.
+              The public sale offers 10,000,000 K613 tokens at a fixed price of $0.01 per token,
+              with a total raise target of $100,000.
+              <br />
+              <br />
+              There are no deposit limits and no KYC requirements. Participants can contribute using
+              USDC throughout the subscription period.
+              <br />
+              <br />
+              If the sale is oversubscribed, token allocations will be distributed on a pro-rata
+              basis. Any unused funds will be automatically refunded and made available for claim
+              alongside purchased tokens.
+              <br />
+              <br />
+              100% of purchased K613 tokens will be unlocked at TGE and available to claim
+              immediately once claiming opens.
             </HeroSubtitle>
             <HeroActions>
               {renderHeroCta()}
@@ -161,17 +165,21 @@ export function TokenSalePage() {
             <StatCard elevation={0}>
               <Label>Token Price</Label>
               <Value>${TOKEN_PRICE_USD}</Value>
-              <Small>Fixed price per 1 K613</Small>
+              <Small>Fixed price per K613 token.</Small>
             </StatCard>
             <StatCard elevation={0}>
               <Label>Sale Allocation</Label>
               <Value>10,000,000 K613</Value>
-              <Small>Total tokens distributed in this sale</Small>
+              <Small>Total tokens available in this sale.</Small>
             </StatCard>
             <StatCard elevation={0}>
               <Label>Hard Cap</Label>
               <Value>{formatUsdc(HARD_CAP_USDC, 0)}</Value>
-              <Small>Deposits above the cap are refunded pro-rata</Small>
+              <Small>
+                Maximum raise target for this sale.
+                <br />
+                Oversubscription is handled pro-rata with automatic refunds.
+              </Small>
             </StatCard>
           </HeroSide>
         </Hero>
@@ -196,32 +204,22 @@ export function TokenSalePage() {
             <Metric>
               <Label>Token Price</Label>
               <MetricValue>$0.01</MetricValue>
-              <Small>Fixed for the whole sale</Small>
-            </Metric>
-            <Metric>
-              <Label>Sale Allocation</Label>
-              <MetricValue>10,000,000 K613</MetricValue>
-              <Small>100% unlocked at claim</Small>
+              <Small>Fixed price for the entire sale.</Small>
             </Metric>
             <Metric>
               <Label>Hard Cap</Label>
               <MetricValue>{formatUsdc(HARD_CAP_USDC, 0)}</MetricValue>
-              <Small>Maximum raise amount</Small>
-            </Metric>
-            <Metric>
-              <Label>Network</Label>
-              <MetricValue>Monad</MetricValue>
-              <Small>Deposits are accepted in USDC</Small>
+              <Small>Maximum raise target for this sale.</Small>
             </Metric>
             <Metric>
               <Label>Allocation Model</Label>
               <MetricValue>Pro-rata</MetricValue>
-              <Small>Oversubscription is refunded automatically</Small>
+              <Small>Excess deposits are refunded automatically.</Small>
             </Metric>
             <Metric>
               <Label>Limits</Label>
               <MetricValue>None</MetricValue>
-              <Small>No individual deposit limits, no KYC</Small>
+              <Small>No individual deposit limits or KYC requirements.</Small>
             </Metric>
           </MetricsGrid>
         </Card>

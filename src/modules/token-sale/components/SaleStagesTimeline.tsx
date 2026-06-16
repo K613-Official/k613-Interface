@@ -28,15 +28,15 @@ import { SaleSchedule, SaleStageKey } from '../types';
 function getStageMeta(stage: SaleStageKey, schedule: SaleSchedule): string {
   switch (stage) {
     case 'upcoming':
-      return `Until:\n${formatDateTimeUtc(schedule.saleStartMs)}`;
+      return `Starts:\n${formatDateTimeUtc(schedule.saleStartMs)}`;
     case 'contribution':
-      return `End:\n${formatDateTimeUtc(schedule.saleEndMs)}`;
+      return `Ends:\n${formatDateTimeUtc(schedule.saleEndMs)}`;
     case 'closed':
-      return `From:\n${formatDateTimeUtc(schedule.saleEndMs)}`;
+      return `Starts:\n${formatDateTimeUtc(schedule.saleEndMs)}`;
     case 'finalized':
-      return schedule.finalized ? 'Completed' : 'After sale close';
+      return schedule.finalized ? 'Completed' : 'After:\nSale Close';
     case 'claim':
-      return `From:\n${formatDateTimeUtc(schedule.claimStartMs)}`;
+      return `Starts:\n${formatDateTimeUtc(schedule.claimStartMs)}`;
   }
 }
 

@@ -70,7 +70,7 @@ export function SaleStatsPanel({ stats }: SaleStatsPanelProps) {
         <Metric>
           <Label>Oversubscription</Label>
           <MetricValue>{formatMultiple(oversubscription)}</MetricValue>
-          <Small>Total deposits relative to the hard cap</Small>
+          <Small>Current oversubscription multiple</Small>
         </Metric>
         <Metric>
           <Label>Participants</Label>
