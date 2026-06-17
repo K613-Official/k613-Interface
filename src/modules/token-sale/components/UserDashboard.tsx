@@ -33,6 +33,7 @@ import { SaleAction, SaleStageKey, SaleStats, UserSaleState } from '../types';
 type UserDashboardProps = {
   connected: boolean;
   stage: SaleStageKey | null;
+  claimsClosed: boolean;
   stats: SaleStats;
   user: UserSaleState;
   pendingAction: SaleAction | null;
@@ -44,19 +45,22 @@ type UserDashboardProps = {
 function getClaimStatusLabel(
   stage: SaleStageKey | null,
   user: UserSaleState,
-  hasRefund: boolean
+  hasRefund: boolean,
+  claimsClosed: boolean
 ): string {
   if (user.deposit === 0n) return 'Not participating';
   if (stage === 'upcoming' || stage === 'contribution') return 'Sale in progress';
   if (stage === 'closed') return 'Awaiting finalization';
   if (stage === 'finalized') return 'Claim opens soon';
   if (user.tokensClaimed && (!hasRefund || user.refundClaimed)) return 'Claimed';
+  if (claimsClosed) return 'Claim window closed';
   return 'Claim open';
 }
 
 export function UserDashboard({
   connected,
   stage,
+  claimsClosed,
   stats,
   user,
   pendingAction,
@@ -68,14 +72,20 @@ export function UserDashboard({
 
   // Pre-finalization values are estimates from current totals; once the sale
   // is finalized the contract-reported values take over.
-  const allocation = user.finalAllocation ?? getAllocation(user.deposit, stats.totalDeposited);
-  const refund = user.finalRefund ?? getRefund(user.deposit, stats.totalDeposited);
+  const allocation =
+    user.finalAllocation ??
+    getAllocation(user.deposit, stats.totalDeposited, stats.hardCap, stats.saleAllocation);
+  const refund =
+    user.finalRefund ??
+    getRefund(user.deposit, stats.totalDeposited, stats.hardCap, stats.saleAllocation);
   const poolShare = getPoolShare(user.deposit, stats.totalDeposited);
   const isFinal = user.finalAllocation != null;
 
   const claimOpen = stage === 'claim';
-  const claimableTokens = claimOpen && !user.tokensClaimed ? allocation : 0n;
-  const claimableRefund = claimOpen && !user.refundClaimed ? refund : 0n;
+  // Claimable amounts come straight from the contract (userInfo): they already
+  // account for finalization, the claim window, and what's been claimed.
+  const claimableTokens = user.claimableTokens;
+  const claimableRefund = user.claimableRefund;
   const hasRefund = refund > 0n;
   const fullyClaimed = user.tokensClaimed && (!hasRefund || user.refundClaimed);
 
@@ -100,7 +110,7 @@ export function UserDashboard({
           </CardSub>
         </div>
         {connected ? (
-          <StatusBadge label={getClaimStatusLabel(stage, user, hasRefund)} />
+          <StatusBadge label={getClaimStatusLabel(stage, user, hasRefund, claimsClosed)} />
         ) : (
           <StatusBadge color="warning" label="Wallet not connected" />
         )}
@@ -158,12 +168,24 @@ export function UserDashboard({
             <Metric>
               <Label>Claimable K613</Label>
               <MetricValue>{`${formatK613(claimableTokens)} K613`}</MetricValue>
-              <Small>{user.tokensClaimed ? 'Already claimed' : 'Available once claim opens'}</Small>
+              <Small>
+                {user.tokensClaimed
+                  ? 'Already claimed'
+                  : claimsClosed
+                  ? 'Claim window closed'
+                  : 'Available once claim opens'}
+              </Small>
             </Metric>
             <Metric>
               <Label>Claimable Refund</Label>
               <MetricValue>{formatUsdc(claimableRefund)}</MetricValue>
-              <Small>{user.refundClaimed ? 'Already claimed' : 'Available once claim opens'}</Small>
+              <Small>
+                {user.refundClaimed
+                  ? 'Already claimed'
+                  : claimsClosed
+                  ? 'Claim window closed'
+                  : 'Available once claim opens'}
+              </Small>
             </Metric>
           </MetricsGrid>
 
@@ -171,7 +193,7 @@ export function UserDashboard({
             {stage === 'contribution' && (
               <PrimaryCta onClick={onOpenDeposit}>Deposit USDC</PrimaryCta>
             )}
-            {claimOpen && (
+            {claimOpen && !claimsClosed && (
               <>
                 <PrimaryCta
                   onClick={() => handleClaim(onClaimTokens)}
@@ -198,6 +220,13 @@ export function UserDashboard({
               </>
             )}
           </Box>
+
+          {claimOpen && claimsClosed && !fullyClaimed && (
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              The claim window has closed. Unclaimed allocations and refunds can no longer be
+              claimed.
+            </Alert>
+          )}
 
           {fullyClaimed && (
             <Alert severity="success" sx={{ mt: 2 }}>

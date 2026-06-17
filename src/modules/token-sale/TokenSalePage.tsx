@@ -10,11 +10,12 @@ import { SaleStagesTimeline } from './components/SaleStagesTimeline';
 import { SaleStatsPanel } from './components/SaleStatsPanel';
 import { UserDashboard } from './components/UserDashboard';
 import {
+  formatK613,
+  formatTokenPriceUsd,
   formatUsdc,
   getCurrentStage,
-  HARD_CAP_USDC,
+  isClaimWindowClosed,
   STAGE_LABELS,
-  TOKEN_PRICE_USD,
 } from './constants';
 import { useSaleActions } from './hooks/useSaleActions';
 import { useSaleData } from './hooks/useSaleData';
@@ -99,6 +100,13 @@ export function TokenSalePage() {
   }, []);
 
   const stage: SaleStageKey | null = nowMs == null ? null : getCurrentStage(schedule, nowMs);
+  const claimsClosed = nowMs != null && isClaimWindowClosed(schedule, nowMs);
+
+  // Sale parameters are read on-chain (saleInfo) with a config fallback; the
+  // price is derived from the hard cap and allocation, never hardcoded.
+  const tokenPrice = formatTokenPriceUsd(stats.hardCap, stats.saleAllocation);
+  const hardCapText = formatUsdc(stats.hardCap, 0);
+  const allocationText = `${formatK613(stats.saleAllocation, 0)} K613`;
 
   const handleDeposited = () => {
     setToast({ open: true, message: 'Deposit successful' });
@@ -147,8 +155,8 @@ export function TokenSalePage() {
             <HeroTitle>K613 Public Token Sale</HeroTitle>
             <HeroSubtitle>
               K613 is the utility and governance token of the K613 lending protocol built on Monad.
-              The public sale offers 10,000,000 K613 tokens at a fixed price of $0.01 per token,
-              with a total raise target of $100,000.
+              The public sale offers {allocationText} tokens at a fixed price of {tokenPrice} per
+              token, with a total raise target of {hardCapText}.
               <br />
               <br />
               There are no deposit limits and no KYC requirements. Participants can contribute using
@@ -172,17 +180,17 @@ export function TokenSalePage() {
           <HeroSide>
             <StatCard elevation={0}>
               <Label>Token Price</Label>
-              <Value>${TOKEN_PRICE_USD}</Value>
+              <Value>{tokenPrice}</Value>
               <Small>Fixed price per K613 token.</Small>
             </StatCard>
             <StatCard elevation={0}>
               <Label>Sale Allocation</Label>
-              <Value>10,000,000 K613</Value>
+              <Value>{allocationText}</Value>
               <Small>Total tokens available in this sale.</Small>
             </StatCard>
             <StatCard elevation={0}>
               <Label>Hard Cap</Label>
-              <Value>{formatUsdc(HARD_CAP_USDC, 0)}</Value>
+              <Value>{hardCapText}</Value>
               <Small>
                 Maximum raise target for this sale.
                 <br />
@@ -211,17 +219,17 @@ export function TokenSalePage() {
           <MetricsGrid>
             <Metric>
               <Label>Token Price</Label>
-              <MetricValue>$0.01</MetricValue>
+              <MetricValue>{tokenPrice}</MetricValue>
               <Small>Fixed price for the entire sale.</Small>
             </Metric>
             <Metric>
               <Label>Sale Allocation</Label>
-              <MetricValue>10,000,000 K613</MetricValue>
+              <MetricValue>{allocationText}</MetricValue>
               <Small>100% unlocked at claim</Small>
             </Metric>
             <Metric>
               <Label>Hard Cap</Label>
-              <MetricValue>{formatUsdc(HARD_CAP_USDC, 0)}</MetricValue>
+              <MetricValue>{hardCapText}</MetricValue>
               <Small>Maximum raise target for this sale.</Small>
             </Metric>
             <Metric>
@@ -248,6 +256,7 @@ export function TokenSalePage() {
           <UserDashboard
             connected={connected}
             stage={stage}
+            claimsClosed={claimsClosed}
             stats={stats}
             user={user}
             pendingAction={pendingAction}
@@ -277,11 +286,11 @@ export function TokenSalePage() {
             ))}
           </StepsGrid>
           <FormulaBlock>
-            {`User Allocation = User Deposit / Total Deposits × 10,000,000 K613
-User Used Funds = User Allocation × $0.01
+            {`User Allocation = User Deposit / Total Deposits × ${allocationText}
+User Used Funds = User Allocation × ${tokenPrice}
 Refund          = User Deposit − User Used Funds
 
-If Total Deposits ≤ $100,000 the full deposit converts into K613 and the refund is zero.`}
+If Total Deposits ≤ ${hardCapText} the full deposit converts into K613 and the refund is zero.`}
           </FormulaBlock>
         </Card>
 
@@ -298,6 +307,8 @@ If Total Deposits ≤ $100,000 the full deposit converts into K613 and the refun
         usdcBalance={user.usdcBalance}
         usdcAllowance={user.usdcAllowance}
         totalDeposited={stats.totalDeposited}
+        hardCap={stats.hardCap}
+        saleAllocation={stats.saleAllocation}
         pendingAction={pendingAction}
         onApprove={approve}
         onDeposit={deposit}

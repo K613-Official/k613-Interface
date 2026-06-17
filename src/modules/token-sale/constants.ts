@@ -15,9 +15,9 @@ const K613_ONE = pow10(K613_DECIMALS);
 // 10^(18 - 6) — converts USDC base units to K613 base units.
 const USDC_TO_K613_SCALE = pow10(K613_DECIMALS - USDC_DECIMALS);
 
-export const TOKEN_PRICE_USD = 0.01;
-// At $0.01 per K613, 1 USDC buys 100 K613.
-export const TOKENS_PER_USDC = 100n;
+// Fallback sale parameters, used only until the contract's saleInfo() is read.
+// Once on-chain, hardCap and saleAllocation come from the contract and the
+// price is derived from them — never hardcoded.
 export const HARD_CAP_USDC = 100_000n * USDC_ONE;
 export const SALE_ALLOCATION_K613 = 10_000_000n * K613_ONE;
 
@@ -52,27 +52,61 @@ export const ERC20_ABI = [
 ] as const;
 
 // ---------------------------------------------------------------------------
-// Pro-rata math. Mirrors the sale contract:
-//   User Allocation = User Deposit / max(Total Deposits, Hard Cap) * 10,000,000 K613
-//   User Used Funds = User Allocation * $0.01
+// Pro-rata math. Mirrors the sale contract; hardCap6 and saleAllocation18 come
+// from saleInfo() so the page always reflects the deployed parameters:
+//   Token Price     = Hard Cap / Sale Allocation
+//   User Allocation = User Deposit / max(Total Deposits, Hard Cap) * Sale Allocation
+//   User Used Funds = User Allocation * Token Price
 //   Refund          = User Deposit - User Used Funds
 // ---------------------------------------------------------------------------
 
+/** Token price in USD, derived from the on-chain hard cap and sale allocation. */
+export function getTokenPriceUsd(hardCap6: bigint, saleAllocation18: bigint): number {
+  if (saleAllocation18 <= 0n) return 0;
+  // price = (hardCap6 / 10^6) / (saleAllocation18 / 10^18) = hardCap6 * 10^12 / saleAllocation18.
+  // Scale by 10^6 for fractional precision before converting to a JS number.
+  const PRICE_PRECISION = 1_000_000n;
+  const scaled = (hardCap6 * USDC_TO_K613_SCALE * PRICE_PRECISION) / saleAllocation18;
+  return Number(scaled) / Number(PRICE_PRECISION);
+}
+
 /** K613 allocation (18 decimals) for a USDC deposit (6 decimals). */
-export function getAllocation(deposit6: bigint, total6: bigint): bigint {
-  if (deposit6 <= 0n) return 0n;
-  if (total6 <= HARD_CAP_USDC) return deposit6 * TOKENS_PER_USDC * USDC_TO_K613_SCALE;
-  return (deposit6 * SALE_ALLOCATION_K613) / total6;
+export function getAllocation(
+  deposit6: bigint,
+  total6: bigint,
+  hardCap6: bigint,
+  saleAllocation18: bigint
+): bigint {
+  if (deposit6 <= 0n || hardCap6 <= 0n || saleAllocation18 <= 0n) return 0n;
+  // Below the cap every dollar converts at the fixed price; above it, pro-rata
+  // over total deposits. Both reduce to deposit * allocation / max(cap, total).
+  const denominator = total6 > hardCap6 ? total6 : hardCap6;
+  return (deposit6 * saleAllocation18) / denominator;
 }
 
 /** USDC (6 decimals) actually spent for a K613 allocation (18 decimals). */
-export function getUsedFunds(allocation18: bigint): bigint {
-  return allocation18 / (TOKENS_PER_USDC * USDC_TO_K613_SCALE);
+export function getUsedFunds(
+  allocation18: bigint,
+  hardCap6: bigint,
+  saleAllocation18: bigint
+): bigint {
+  if (saleAllocation18 <= 0n) return 0n;
+  // used = allocation * price = allocation18 * hardCap6 / saleAllocation18.
+  return (allocation18 * hardCap6) / saleAllocation18;
 }
 
 /** USDC (6 decimals) returned to the user after the sale is finalized. */
-export function getRefund(deposit6: bigint, total6: bigint): bigint {
-  const used6 = getUsedFunds(getAllocation(deposit6, total6));
+export function getRefund(
+  deposit6: bigint,
+  total6: bigint,
+  hardCap6: bigint,
+  saleAllocation18: bigint
+): bigint {
+  const used6 = getUsedFunds(
+    getAllocation(deposit6, total6, hardCap6, saleAllocation18),
+    hardCap6,
+    saleAllocation18
+  );
   return deposit6 > used6 ? deposit6 - used6 : 0n;
 }
 
@@ -83,14 +117,15 @@ export function getPoolShare(deposit6: bigint, total6: bigint): number {
 }
 
 /** Total Deposits / Hard Cap, as a number (e.g. 2.45). */
-export function getOversubscription(total6: bigint): number {
-  return Number((total6 * 1_000_000n) / HARD_CAP_USDC) / 1_000_000;
+export function getOversubscription(total6: bigint, hardCap6: bigint): number {
+  if (hardCap6 <= 0n) return 0;
+  return Number((total6 * 1_000_000n) / hardCap6) / 1_000_000;
 }
 
 /** Fraction of each deposited dollar converted into K613 (1 until the cap is exceeded). */
-export function getAllocationRatio(total6: bigint): number {
-  if (total6 <= HARD_CAP_USDC) return 1;
-  return Number((HARD_CAP_USDC * 10_000n) / total6) / 10_000;
+export function getAllocationRatio(total6: bigint, hardCap6: bigint): number {
+  if (hardCap6 <= 0n || total6 <= hardCap6) return 1;
+  return Number((hardCap6 * 10_000n) / total6) / 10_000;
 }
 
 // ---------------------------------------------------------------------------
@@ -128,6 +163,14 @@ export function formatK613(value18: bigint, fractionDigits = 2): string {
 
 export function formatShare(share: number): string {
   return `${(share * 100).toFixed(2)}%`;
+}
+
+/** "$0.01"-style price string derived from the on-chain hard cap and allocation. */
+export function formatTokenPriceUsd(hardCap6: bigint, saleAllocation18: bigint): string {
+  const price = getTokenPriceUsd(hardCap6, saleAllocation18);
+  // Show up to 6 significant fractional digits, trimming trailing zeros.
+  const text = price.toFixed(6).replace(/\.?0+$/, '');
+  return `$${text}`;
 }
 
 export function formatMultiple(value: number): string {
@@ -182,6 +225,16 @@ export function getCurrentStage(schedule: SaleSchedule, nowMs: number): SaleStag
   if (!schedule.finalized) return 'closed';
   if (schedule.claimStartMs === 0 || nowMs >= schedule.claimStartMs) return 'claim';
   return 'finalized';
+}
+
+/**
+ * Whether the on-chain claim window has closed. The contract's `stage` is
+ * derived from time and finalization; the one lifecycle bit not captured by
+ * getCurrentStage is the claim deadline (`block.timestamp + CLAIM_WINDOW`),
+ * after which claims revert. Mirrors that here from the on-chain claimDeadline.
+ */
+export function isClaimWindowClosed(schedule: SaleSchedule, nowMs: number): boolean {
+  return schedule.finalized && schedule.claimDeadlineMs > 0 && nowMs >= schedule.claimDeadlineMs;
 }
 
 export type StageStatus = 'completed' | 'active' | 'pending';

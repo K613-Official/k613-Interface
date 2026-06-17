@@ -36,7 +36,9 @@ function getStageMeta(stage: SaleStageKey, schedule: SaleSchedule): string {
     case 'finalized':
       return schedule.finalized ? 'Completed' : 'After:\nSale Close';
     case 'claim':
-      return `Starts:\n${formatDateTimeUtc(schedule.claimStartMs)}`;
+      return schedule.claimDeadlineMs > 0
+        ? `Claims close:\n${formatDateTimeUtc(schedule.claimDeadlineMs)}`
+        : 'Open after finalization';
   }
 }
 
@@ -48,6 +50,9 @@ function getStageCountdownTarget(stage: SaleStageKey, schedule: SaleSchedule): n
       return schedule.saleEndMs;
     case 'finalized':
       return schedule.claimStartMs || null;
+    case 'claim':
+      // Count down to the claim window closing.
+      return schedule.claimDeadlineMs || null;
     default:
       return null;
   }

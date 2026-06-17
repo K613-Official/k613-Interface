@@ -1,10 +1,10 @@
 import {
+  formatK613,
   formatMultiple,
   formatShare,
   formatUsdc,
   getAllocationRatio,
   getOversubscription,
-  HARD_CAP_USDC,
 } from '../constants';
 import {
   Card,
@@ -29,10 +29,10 @@ type SaleStatsPanelProps = {
 };
 
 export function SaleStatsPanel({ stats }: SaleStatsPanelProps) {
-  const { totalDeposited, participantCount } = stats;
+  const { totalDeposited, participantCount, hardCap, totalTokensSold } = stats;
 
-  const oversubscription = getOversubscription(totalDeposited);
-  const allocationRatio = getAllocationRatio(totalDeposited);
+  const oversubscription = getOversubscription(totalDeposited, hardCap);
+  const allocationRatio = getAllocationRatio(totalDeposited, hardCap);
   const progressPercent = Math.min(100, oversubscription * 100);
   const averageDeposit = participantCount > 0 ? totalDeposited / BigInt(participantCount) : 0n;
 
@@ -50,7 +50,7 @@ export function SaleStatsPanel({ stats }: SaleStatsPanelProps) {
       </ProgressTrack>
       <ProgressLegend>
         <Small>{`${(oversubscription * 100).toFixed(0)}% of ${formatUsdc(
-          HARD_CAP_USDC,
+          hardCap,
           0
         )} target`}</Small>
         <Small>{`${formatUsdc(totalDeposited)} committed`}</Small>
@@ -64,7 +64,7 @@ export function SaleStatsPanel({ stats }: SaleStatsPanelProps) {
         </Metric>
         <Metric>
           <Label>Raise Target</Label>
-          <MetricValue>{formatUsdc(HARD_CAP_USDC, 0)}</MetricValue>
+          <MetricValue>{formatUsdc(hardCap, 0)}</MetricValue>
           <Small>Hard cap — excess is refunded pro-rata</Small>
         </Metric>
         <Metric>
@@ -87,6 +87,13 @@ export function SaleStatsPanel({ stats }: SaleStatsPanelProps) {
           <MetricValue>{formatShare(allocationRatio)}</MetricValue>
           <Small>Share of each deposit converted into K613</Small>
         </Metric>
+        {totalTokensSold > 0n && (
+          <Metric>
+            <Label>Tokens Sold</Label>
+            <MetricValue>{`${formatK613(totalTokensSold, 0)} K613`}</MetricValue>
+            <Small>Finalized on-chain after the sale closed</Small>
+          </Metric>
+        )}
       </MetricsGrid>
     </Card>
   );

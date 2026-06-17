@@ -33,6 +33,8 @@ type DepositDialogProps = {
   usdcBalance: bigint;
   usdcAllowance: bigint;
   totalDeposited: bigint;
+  hardCap: bigint;
+  saleAllocation: bigint;
   pendingAction: SaleAction | null;
   onApprove: (amount: bigint) => Promise<unknown>;
   onDeposit: (amount: bigint) => Promise<unknown>;
@@ -45,6 +47,8 @@ export function DepositDialog({
   usdcBalance,
   usdcAllowance,
   totalDeposited,
+  hardCap,
+  saleAllocation,
   pendingAction,
   onApprove,
   onDeposit,
@@ -57,9 +61,9 @@ export function DepositDialog({
 
   // Estimates assume the entered amount joins the pool on top of current totals.
   const estimatedTotal = totalDeposited + amount;
-  const estimatedAllocation = getAllocation(amount, estimatedTotal);
-  const estimatedUsedFunds = getUsedFunds(estimatedAllocation);
-  const estimatedRefund = getRefund(amount, estimatedTotal);
+  const estimatedAllocation = getAllocation(amount, estimatedTotal, hardCap, saleAllocation);
+  const estimatedUsedFunds = getUsedFunds(estimatedAllocation, hardCap, saleAllocation);
+  const estimatedRefund = getRefund(amount, estimatedTotal, hardCap, saleAllocation);
 
   const needsApproval = amount > 0n && usdcAllowance < amount;
   const exceedsBalance = amount > usdcBalance;
