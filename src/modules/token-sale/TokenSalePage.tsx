@@ -60,8 +60,16 @@ const steps = [
     text: 'Deposit any amount of USDC during the contribution period. Multiple deposits are supported and automatically combined.',
   },
   {
+    title: 'Wait for Sale End',
+    text: 'Funds stay locked in the sale contract. Allocations and refunds are finalized after the contribution window closes.',
+  },
+  {
     title: 'Claim K613',
     text: 'Once claiming opens, claim your full allocation — 100% unlocked, with no vesting.',
+  },
+  {
+    title: 'Claim Refund',
+    text: 'If the sale was oversubscribed, claim the unused part of your deposit back to the same wallet.',
   },
 ];
 
@@ -207,9 +215,19 @@ export function TokenSalePage() {
               <Small>Fixed price for the entire sale.</Small>
             </Metric>
             <Metric>
+              <Label>Sale Allocation</Label>
+              <MetricValue>10,000,000 K613</MetricValue>
+              <Small>100% unlocked at claim</Small>
+            </Metric>
+            <Metric>
               <Label>Hard Cap</Label>
               <MetricValue>{formatUsdc(HARD_CAP_USDC, 0)}</MetricValue>
               <Small>Maximum raise target for this sale.</Small>
+            </Metric>
+            <Metric>
+              <Label>Network</Label>
+              <MetricValue>Monad</MetricValue>
+              <Small>Deposits are accepted in USDC</Small>
             </Metric>
             <Metric>
               <Label>Allocation Model</Label>
