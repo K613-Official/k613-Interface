@@ -10,22 +10,24 @@ inputs:
   CYPRESS_TENDERLY_PROJECT:
     description: tenderly porject name
     required: true
-  YARN_TEST_COMMAND:
-    description: yarn command to run test
+  TEST_COMMAND:
+    description: command to run test
     required: true
 runs:
   using: 'composite'
   steps:
+    - uses: pnpm/action-setup@v4
+
     - uses: actions/setup-node@2fddd8803e2f5c9604345a0b591c3020ee971a93 # v3.4.1
       with:
         node-version-file: '.nvmrc'
-        cache: 'yarn'
+        cache: 'pnpm'
 
     - name: install
       shell: sh
       run: |
-        yarn --frozen-lockfile --prefer-offline
-        yarn add serve
+        pnpm install --frozen-lockfile
+        pnpm add serve
 
     - name: download build
       if: github.event_name != 'workflow_run'
@@ -50,9 +52,9 @@ runs:
         headless: true
         install: false
         record: false
-        start: yarn serve:static
+        start: pnpm serve:static
         wait-on: 'http://localhost:3000'
-        command: ${{ inputs.YARN_TEST_COMMAND }}
+        command: ${{ inputs.TEST_COMMAND }}
       env:
         CYPRESS_URL: 'http://localhost:3000'
         CYPRESS_TENDERLY_ACCOUNT: ${{ inputs.CYPRESS_TENDERLY_ACCOUNT }}
