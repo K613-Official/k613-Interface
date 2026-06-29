@@ -270,7 +270,11 @@ export class UiIncentivesService {
     if (!tokenAddress || tokenAddress === constants.AddressZero) return EMPTY_A_INC;
     const rcAddress = await this.resolveTokenRc(provider, tokenAddress);
     if (!rcAddress || rcAddress === constants.AddressZero) {
-      return { tokenAddress, incentiveControllerAddress: constants.AddressZero, rewardsTokenInformation: [] };
+      return {
+        tokenAddress,
+        incentiveControllerAddress: constants.AddressZero,
+        rewardsTokenInformation: [],
+      };
     }
     const rc = new Contract(rcAddress, RC_ABI, provider);
     const rewards = await this.resolveRewardsByAsset(rc, tokenAddress);
@@ -311,7 +315,11 @@ export class UiIncentivesService {
     if (!tokenAddress || tokenAddress === constants.AddressZero) return EMPTY_U_INC;
     const rcAddress = await this.resolveTokenRc(provider, tokenAddress);
     if (!rcAddress || rcAddress === constants.AddressZero) {
-      return { tokenAddress, incentiveControllerAddress: constants.AddressZero, userRewardsInformation: [] };
+      return {
+        tokenAddress,
+        incentiveControllerAddress: constants.AddressZero,
+        userRewardsInformation: [],
+      };
     }
     const rc = new Contract(rcAddress, RC_ABI, provider);
     const rewards = await this.resolveRewardsByAsset(rc, tokenAddress);

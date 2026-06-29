@@ -1,5 +1,5 @@
-import { create } from 'zustand';
 import { ModalPropsMap, ModalType } from 'src/components/Modals/types';
+import { create } from 'zustand';
 
 type ActiveModal = {
   [K in ModalType]: { type: K; props: ModalPropsMap[K] };

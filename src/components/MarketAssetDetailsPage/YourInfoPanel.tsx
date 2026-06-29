@@ -3,6 +3,7 @@ import { USD_DECIMALS, valueToBigNumber } from '@aave/math-utils';
 import { Box, Button, Skeleton, Stack, Typography } from '@mui/material';
 import { BigNumber } from 'bignumber.js';
 import { useState } from 'react';
+import { ModalType } from 'src/components/Modals/types';
 import { FormattedNumber } from 'src/components/primitives/FormattedNumber';
 import { ConnectWalletButton } from 'src/components/WalletConnection/ConnectWalletButton';
 import {
@@ -14,7 +15,6 @@ import { useReserveActionState } from 'src/hooks/useReserveActionState';
 import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
 import { useRootStore } from 'src/store/root';
 import { useModalStore } from 'src/store/useModalStore';
-import { ModalType } from 'src/components/Modals/types';
 import {
   getMaxAmountAvailableToBorrow,
   getMaxGhoMintAmount,

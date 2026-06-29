@@ -60,11 +60,7 @@ const GhoBorrowApyRange: React.FC<GhoBorrowApyRangeProps> = ({
             data-cy={'apy-gho-from'}
             {...rest}
           />
-          <Typography
-            variant={hyphenVariant ?? 'body1'}
-            color="text.secondary"
-            sx={{ mx: 0.5 }}
-          >
+          <Typography variant={hyphenVariant ?? 'body1'} color="text.secondary" sx={{ mx: 0.5 }}>
             -
           </Typography>
           <FormattedNumber

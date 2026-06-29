@@ -11,6 +11,9 @@ public/
 .next/
 out/
 src/locales/
+next-env.d.ts
+pnpm-lock.yaml
+tsconfig.tsbuildinfo
 
 # IDE
 .vscode

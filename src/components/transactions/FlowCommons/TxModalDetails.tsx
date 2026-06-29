@@ -216,9 +216,7 @@ export const CollateralState = ({ collateralType }: CollateralStateProps) => {
             </Typography>
           ),
           [CollateralType.ISOLATED_ENABLED]: (
-            <IsolatedEnabledBadge
-              typographyProps={{ variant: 'body2', color: 'warning.main' }}
-            />
+            <IsolatedEnabledBadge typographyProps={{ variant: 'body2', color: 'warning.main' }} />
           ),
           [CollateralType.DISABLED]: (
             <Typography variant="body2" color="error.main">
@@ -296,12 +294,7 @@ export const DetailsHFLine = ({
 }: DetailsHFLineProps) => {
   if (healthFactor === '-1' && futureHealthFactor === '-1') return null;
   return (
-    <Row
-      caption={<Trans>Health factor</Trans>}
-      captionVariant="body2"
-      mb={4}
-      align="flex-start"
-    >
+    <Row caption={<Trans>Health factor</Trans>} captionVariant="body2" mb={4} align="flex-start">
       <Box sx={{ textAlign: 'right' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
           {loading ? (

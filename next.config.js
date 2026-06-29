@@ -15,9 +15,7 @@ module.exports = withBundleAnalyzer({
   pageExtensions,
   staticPageGenerationTimeout: 1000,
   webpack(config) {
-    const fileLoaderRule = config.module.rules.find((rule) =>
-      rule.test?.test?.('.svg')
-    );
+    const fileLoaderRule = config.module.rules.find((rule) => rule.test?.test?.('.svg'));
     if (fileLoaderRule) {
       config.module.rules.push(
         {

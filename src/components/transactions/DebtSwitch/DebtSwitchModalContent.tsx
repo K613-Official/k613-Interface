@@ -215,11 +215,7 @@ export const DebtSwitchModalContent = ({
                 <ArrowNarrowRightIcon />
               </SvgIcon>
               <TokenIcon symbol={switchTarget.reserve.iconSymbol} sx={{ mx: 1 }} />
-              <FormattedNumber
-                value={maxAmountToReceiveWithSlippage}
-                compact
-                variant="subtitle1"
-              />
+              <FormattedNumber value={maxAmountToReceiveWithSlippage} compact variant="subtitle1" />
               {switchTarget.reserve.symbol}
             </Stack>
           </Stack>
@@ -433,12 +429,7 @@ const SwitchTargetSelectOption = ({ asset }: { asset: SwitchTargetAsset }) => {
       />
       <ListItemText sx={{ mr: 6 }}>{asset.symbol}</ListItemText>
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'end' }}>
-        <FormattedNumber
-          value={asset.variableApy}
-          percent
-          variant="body2"
-          color="text.secondary"
-        />
+        <FormattedNumber value={asset.variableApy} percent variant="body2" color="text.secondary" />
         <Typography variant="caption" color="text.secondary">
           <Trans>Variable rate</Trans>
         </Typography>

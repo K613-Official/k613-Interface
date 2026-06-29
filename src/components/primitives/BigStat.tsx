@@ -34,7 +34,11 @@ export function BigStat({
         <Typography
           component="span"
           color="text.secondary"
-          sx={{ fontSize: { xs: fontSizeXs, md: fontSizeMd }, fontWeight: fontWeight, lineHeight: 1 }}
+          sx={{
+            fontSize: { xs: fontSizeXs, md: fontSizeMd },
+            fontWeight: fontWeight,
+            lineHeight: 1,
+          }}
         >
           $
         </Typography>
@@ -47,7 +51,11 @@ export function BigStat({
         symbol={symbol}
         percent={percent}
         visibleDecimals={visibleDecimals}
-        sx={{ fontSize: { xs: fontSizeXs, md: fontSizeMd }, fontWeight: fontWeight, lineHeight: 1.1 }}
+        sx={{
+          fontSize: { xs: fontSizeXs, md: fontSizeMd },
+          fontWeight: fontWeight,
+          lineHeight: 1.1,
+        }}
       />
     </Box>
   );

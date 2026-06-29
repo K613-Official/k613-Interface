@@ -35,12 +35,7 @@ const Content = ({
       </Box>
 
       {!withTooltip && !!subValue && !disabled && (
-        <FormattedNumber
-          value={subValue}
-          symbol="USD"
-          variant="caption"
-          color="text.secondary"
-        />
+        <FormattedNumber value={subValue} symbol="USD" variant="caption" color="text.secondary" />
       )}
     </>
   );
