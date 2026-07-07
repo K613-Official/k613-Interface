@@ -80,6 +80,7 @@ export const LiquidationRiskParametresInfoModal = ({
       PaperProps={{
         sx: {
           backgroundColor: 'rgba(255, 255, 255, 0.08)',
+          WebkitBackdropFilter: 'blur(200px)',
           backdropFilter: 'blur(200px)',
           backgroundImage: 'none',
           borderRadius: 1,

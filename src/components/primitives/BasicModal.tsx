@@ -54,7 +54,8 @@ export const BasicModal = ({
           overflowY: 'auto',
           width: '100%',
           maxWidth: { xs: '359px', xsm: `${contentMaxWidth}px` },
-          maxHeight: 'calc(100vh - 20px)',
+          // 100dvh tracks mobile Safari's dynamic toolbar so the modal never clips
+          maxHeight: 'calc(100dvh - 20px)',
           p: 6,
         }}
       >

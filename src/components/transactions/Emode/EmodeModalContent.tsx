@@ -407,9 +407,9 @@ export const EmodeModalContent = ({ user }: { user: ExtendedFormattedUser }) => 
                   </TableRow>
                 </TableHead>
                 <TableBody sx={{ width: '100%' }}>
-                  {selectedEmode.assets.map((asset, index) => (
+                  {selectedEmode.assets.map((asset) => (
                     <TableRow
-                      key={index}
+                      key={asset.underlyingAsset}
                       sx={{
                         pt: 8,
                         [`& .${tableCellClasses.root}`]: {

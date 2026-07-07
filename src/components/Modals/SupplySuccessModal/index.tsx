@@ -18,7 +18,7 @@ export default function SupplySuccessModal({ open, onClose, amount, token }: Pro
     <Dialog open={open} onClose={onClose}>
       <ModalCard>
         <CheckCircle>
-          <Check sx={{ color: '#80FF00', fontSize: 40 }} />
+          <Check sx={(theme) => ({ color: theme.palette.accent.main, fontSize: 40 })} />
         </CheckCircle>
 
         <TitleSection>
@@ -47,11 +47,11 @@ export default function SupplySuccessModal({ open, onClose, amount, token }: Pro
             variant="contained"
             size="large"
             fullWidth
-            sx={{
+            sx={(theme) => ({
               backgroundColor: 'rgba(255, 255, 255, 0.08)',
-              color: '#fff',
+              color: theme.palette.text.primary,
               '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.16)' },
-            }}
+            })}
           >
             view details
           </Button>

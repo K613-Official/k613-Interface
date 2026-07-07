@@ -13,6 +13,7 @@ export const Dialog = styled(DialogBase)({
 export const ModalCard = styled(Box)({
   backgroundColor: 'rgba(255, 255, 255, 0.08)',
   border: '1px solid rgba(255, 255, 255, 0.3)',
+  WebkitBackdropFilter: 'blur(200px)',
   backdropFilter: 'blur(200px)',
   borderRadius: 4,
   padding: '16px 24px 24px',

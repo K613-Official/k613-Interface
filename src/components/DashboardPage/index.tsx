@@ -78,7 +78,7 @@ export default function DashboardPage() {
               <TitleRow>
                 <Typography variant="h4">K613 Dashboard</Typography>
               </TitleRow>
-              <Typography variant="body2" color="#BDBDBD">
+              <Typography variant="body2" color="text.secondary">
                 Track your portfolio, rewards, and lending activity in one place
               </Typography>
             </TitleContainer>

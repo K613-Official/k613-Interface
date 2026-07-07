@@ -167,7 +167,7 @@ export const MarketSwitcher = () => {
                   <Box
                     sx={{
                       bgcolor: '#B6F000',
-                      color: '#000',
+                      color: 'common.black',
                       borderRadius: '4px',
                       px: '6px',
                       py: '1px',

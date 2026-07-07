@@ -130,11 +130,16 @@ const GhoBorrowAssetsListItemDesktop = ({
         <Link
           href={ROUTES.reserveOverview(underlyingAsset, currentMarket)}
           noWrap
-          sx={{ display: 'inline-flex', alignItems: 'center' }}
+          sx={{ display: 'inline-flex', alignItems: 'center', minWidth: 0 }}
         >
           <TokenIcon symbol={iconSymbol} fontSize="large" />
           <Tooltip title={`${name} (${symbol})`} arrow placement="top">
-            <Typography variant="subtitle1" sx={{ ml: 3 }} noWrap data-cy={`assetName`}>
+            <Typography
+              variant="subtitle1"
+              sx={{ ml: 3, minWidth: 0 }}
+              noWrap
+              data-cy={`assetName`}
+            >
               {symbol}
             </Typography>
           </Tooltip>

@@ -99,8 +99,8 @@ export default function Header() {
                   anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
                   transformOrigin={{ vertical: 'top', horizontal: 'left' }}
                 >
-                  {TABS.map((tab, index) => (
-                    <MenuItem key={index} onClick={() => onClick(tab.href)}>
+                  {TABS.map((tab) => (
+                    <MenuItem key={tab.href} onClick={() => onClick(tab.href)}>
                       {tab.label}
                     </MenuItem>
                   ))}
