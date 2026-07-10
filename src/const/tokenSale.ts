@@ -28,10 +28,11 @@ export const TOKEN_SALE_ARBITRUM_SEPOLIA: TokenSaleConfig = {
 // Monad — mainnet, fully hardcoded.
 export const TOKEN_SALE_MONAD: TokenSaleConfig = {
   SALE_CONTRACT: '',
-  USDC: '',
-  CONTRIBUTION_START_TS: 1781956800, // 2026-06-20 12:00 UTC
-  CONTRIBUTION_END_TS: 1782561600, // 2026-06-27 12:00 UTC
-  CLAIM_START_TS: 1782734400, // 2026-06-29 12:00 UTC
+  USDC: '0x754704Bc059F8C67012fEd69BC8A327a5aafb603',
+  CONTRIBUTION_START_TS: 1783900800, // 2026-07-13 00:00 UTC
+  CONTRIBUTION_END_TS: 1784505600, // 2026-07-20 00:00 UTC
+  // Claims open after finalize(); no fixed timestamp. Mirrors sale end as a fallback.
+  CLAIM_START_TS: 1784505600, // 2026-07-20 00:00 UTC
 };
 
 export function tokenSaleByChainId(chainId: number | undefined): TokenSaleConfig | null {
