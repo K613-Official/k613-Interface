@@ -91,12 +91,7 @@ export const HFContent = ({ healthFactor }: HFContentProps) => {
         }}
       >
         <FormattedNumber value={1} visibleDecimals={2} color="error.main" variant="subtitle2" />
-        <Typography
-          sx={{ display: 'flex' }}
-          variant="caption"
-          lineHeight="12px"
-          color="error.main"
-        >
+        <Typography sx={{ display: 'flex' }} variant="caption" lineHeight="12px" color="error.main">
           <Trans>Liquidation value</Trans>
         </Typography>
       </Box>

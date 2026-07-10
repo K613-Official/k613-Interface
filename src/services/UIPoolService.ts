@@ -14,7 +14,7 @@ export type UserReservesDataHumanized = {
 };
 
 export class UiPoolService {
-  constructor(private readonly getProvider: (chainId: number) => Provider) { }
+  constructor(private readonly getProvider: (chainId: number) => Provider) {}
 
   private async getUiPoolDataService(marketData: MarketDataType) {
     const provider = this.getProvider(marketData.chainId);
@@ -34,7 +34,6 @@ export class UiPoolService {
   }
 
   private useLegacyUiPoolDataProvider(_marketData: MarketDataType) {
-
     return true;
   }
 

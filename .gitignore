@@ -39,8 +39,9 @@ yarn-error.log*
 
 .out
 
-# ignore package lock due the mandatory usage of yarn
+# ignore other package locks due the mandatory usage of pnpm
 package-lock.json
+yarn.lock
 
 .eslintcache
 

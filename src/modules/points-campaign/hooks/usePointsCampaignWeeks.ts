@@ -68,7 +68,9 @@ export function getCampaignDatesLabel(config: PointsCampaignConfig): string {
 
 export function getLastUpdatedLabel(finalizedAt?: string): string {
   if (!finalizedAt) return 'Not finalized yet';
-  const ms = Date.parse(finalizedAt);
+  // Safari's Date.parse rejects space-separated datetimes ("2024-01-02 15:04");
+  // normalise to the ISO "T" separator so parsing is consistent across browsers.
+  const ms = Date.parse(finalizedAt.trim().replace(' ', 'T'));
   if (Number.isNaN(ms)) return 'Not finalized yet';
   const formatted = new Intl.DateTimeFormat('en-US', {
     month: '2-digit',

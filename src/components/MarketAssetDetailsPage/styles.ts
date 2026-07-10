@@ -454,6 +454,7 @@ export const StatsAndInfoRow = styled(Box)(({ theme }) => ({
 }));
 
 export const YourInfoContainer = styled(Box)(({ theme }) => ({
+  WebkitBackdropFilter: 'blur(100px)',
   backdropFilter: 'blur(100px)',
   backgroundColor: theme.palette.action.hover,
   border: `1px solid ${theme.palette.divider}`,

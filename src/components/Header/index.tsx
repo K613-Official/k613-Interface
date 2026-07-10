@@ -22,6 +22,7 @@ const TABS = [
   { label: 'Markets', href: ROUTES.markets },
   { label: 'Campaign', href: ROUTES.pointsCampaign },
   { label: 'Staking', href: ROUTES.stakingK613 },
+  { label: 'Token Sale', href: ROUTES.tokenSale },
   { label: 'FAQ', href: ROUTES.faq },
 ];
 
@@ -98,8 +99,8 @@ export default function Header() {
                   anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
                   transformOrigin={{ vertical: 'top', horizontal: 'left' }}
                 >
-                  {TABS.map((tab, index) => (
-                    <MenuItem key={index} onClick={() => onClick(tab.href)}>
+                  {TABS.map((tab) => (
+                    <MenuItem key={tab.href} onClick={() => onClick(tab.href)}>
                       {tab.label}
                     </MenuItem>
                   ))}

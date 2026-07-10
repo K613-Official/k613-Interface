@@ -4,6 +4,7 @@ import { Box, Button, Stack, SvgIcon, useMediaQuery, useTheme } from '@mui/mater
 import { ContentWithTooltip } from 'src/components/ContentWithTooltip';
 import { GhoIncentivesCard } from 'src/components/incentives/GhoIncentivesCard';
 import { FixedAPYTooltipText } from 'src/components/infoTooltips/FixedAPYTooltip';
+import { ModalType } from 'src/components/Modals/types';
 import { ROUTES } from 'src/components/primitives/Link';
 import { Row } from 'src/components/primitives/Row';
 import { useGhoPoolReserve } from 'src/hooks/pool/useGhoPoolReserve';
@@ -11,7 +12,6 @@ import { useUserGhoPoolReserve } from 'src/hooks/pool/useUserGhoPoolReserve';
 import { useModalContext } from 'src/hooks/useModal';
 import { useRootStore } from 'src/store/root';
 import { useModalStore } from 'src/store/useModalStore';
-import { ModalType } from 'src/components/Modals/types';
 import { CustomMarket } from 'src/ui-config/marketsConfig';
 import { getMaxGhoMintAmount } from 'src/utils/getMaxAmountAvailableToBorrow';
 import { ghoUserQualifiesForDiscount, weightedAverageAPY } from 'src/utils/ghoUtilities';
@@ -85,8 +85,7 @@ export const GhoBorrowedPositionsListItem = ({ reserve }: ComputedUserReserveDat
     disableRepay: !isActive || isPaused,
     onRepayClick: () =>
       openModal(ModalType.Repay, { underlyingAsset: reserve.underlyingAsset, isFrozen }),
-    onBorrowClick: () =>
-      openModal(ModalType.Borrow, { underlyingAsset: reserve.underlyingAsset }),
+    onBorrowClick: () => openModal(ModalType.Borrow, { underlyingAsset: reserve.underlyingAsset }),
     onSwitchClick: () => openDebtSwitch(reserve.underlyingAsset),
   };
 

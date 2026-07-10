@@ -6,12 +6,12 @@ import { AvailableTooltip } from 'src/components/infoTooltips/AvailableTooltip';
 import { FixedAPYTooltip } from 'src/components/infoTooltips/FixedAPYTooltip';
 import { ListColumn } from 'src/components/lists/ListColumn';
 import { ListItem } from 'src/components/lists/ListItem';
+import { ModalType } from 'src/components/Modals/types';
 import { Row } from 'src/components/primitives/Row';
 import { TokenIcon } from 'src/components/primitives/TokenIcon';
 import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { useRootStore } from 'src/store/root';
 import { useModalStore } from 'src/store/useModalStore';
-import { ModalType } from 'src/components/Modals/types';
 import { CustomMarket } from 'src/ui-config/marketsConfig';
 import { DASHBOARD_LIST_COLUMN_WIDTHS } from 'src/utils/dashboardSortUtils';
 import { getMaxGhoMintAmount } from 'src/utils/getMaxAmountAvailableToBorrow';
@@ -130,11 +130,16 @@ const GhoBorrowAssetsListItemDesktop = ({
         <Link
           href={ROUTES.reserveOverview(underlyingAsset, currentMarket)}
           noWrap
-          sx={{ display: 'inline-flex', alignItems: 'center' }}
+          sx={{ display: 'inline-flex', alignItems: 'center', minWidth: 0 }}
         >
           <TokenIcon symbol={iconSymbol} fontSize="large" />
           <Tooltip title={`${name} (${symbol})`} arrow placement="top">
-            <Typography variant="subtitle1" sx={{ ml: 3 }} noWrap data-cy={`assetName`}>
+            <Typography
+              variant="subtitle1"
+              sx={{ ml: 3, minWidth: 0 }}
+              noWrap
+              data-cy={`assetName`}
+            >
               {symbol}
             </Typography>
           </Tooltip>

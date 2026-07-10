@@ -37,7 +37,7 @@ export const NavItems = ({ setOpen }: NavItemsProps) => {
     >
       {navigation
         .filter((item) => !item.isVisible || item.isVisible(currentMarketData))
-        .map((item, index) => (
+        .map((item) => (
           <ListItem
             sx={{
               width: { xs: '100%', md: 'unset' },
@@ -45,7 +45,7 @@ export const NavItems = ({ setOpen }: NavItemsProps) => {
             }}
             data-cy={item.dataCy}
             disablePadding
-            key={index}
+            key={item.dataCy}
           >
             {md ? (
               <Typography

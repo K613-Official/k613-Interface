@@ -60,7 +60,7 @@ export const TxActionsWrapper = ({
   const { readOnlyModeAddress } = useWeb3Context();
   const hasApprovalError =
     requiresApproval && txError?.txAction === TxAction.APPROVAL && txError?.actionBlocked;
-  const isAmountMissing = requiresAmount && requiresAmount && Number(amount) === 0;
+  const isAmountMissing = requiresAmount && Number(amount) === 0;
 
   function getMainParams() {
     if (blocked) return { disabled: true, content: actionText };

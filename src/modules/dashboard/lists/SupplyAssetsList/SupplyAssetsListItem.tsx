@@ -17,6 +17,7 @@ import { useState } from 'react';
 import { ContentWithTooltip } from 'src/components/ContentWithTooltip';
 import { IncentivesCard } from 'src/components/incentives/IncentivesCard';
 import { WrappedTokenTooltipContent } from 'src/components/infoTooltips/WrappedTokenToolTipContent';
+import { ModalType } from 'src/components/Modals/types';
 import { FormattedNumber } from 'src/components/primitives/FormattedNumber';
 import { NoData } from 'src/components/primitives/NoData';
 import { Row } from 'src/components/primitives/Row';
@@ -27,7 +28,6 @@ import { useModalContext } from 'src/hooks/useModal';
 import { useWrappedTokens } from 'src/hooks/useWrappedTokens';
 import { useRootStore } from 'src/store/root';
 import { useModalStore } from 'src/store/useModalStore';
-import { ModalType } from 'src/components/Modals/types';
 import { DashboardReserve } from 'src/utils/dashboardSortUtils';
 import { isFeatureEnabled } from 'src/utils/marketsAndNetworksConfig';
 import { DASHBOARD } from 'src/utils/mixPanelEvents';
@@ -418,12 +418,7 @@ export const SupplyAssetsListItemMobile = ({
         />
       )}
 
-      <Row
-        caption={<Trans>Supply APY</Trans>}
-        align="flex-start"
-        captionVariant="body2"
-        mb={2}
-      >
+      <Row caption={<Trans>Supply APY</Trans>} align="flex-start" captionVariant="body2" mb={2}>
         <IncentivesCard
           value={Number(supplyAPY)}
           incentives={aIncentivesData}

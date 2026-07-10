@@ -13,17 +13,13 @@ import Box from '@mui/material/Box';
 import { useEffect, useState } from 'react';
 import { AvatarSize } from 'src/components/Avatar';
 import { ContentWithTooltip } from 'src/components/ContentWithTooltip';
+import { MarketSwitcher } from 'src/components/MarketSwitcher';
 import { UserDisplay } from 'src/components/UserDisplay';
 import { ConnectWalletButton } from 'src/components/WalletConnection/ConnectWalletButton';
 import { useModalContext } from 'src/hooks/useModal';
 import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
 import { useRootStore } from 'src/store/root';
-import { MarketSwitcher } from 'src/components/MarketSwitcher';
-import {
-  availableMarkets,
-  ENABLE_TESTNET,
-  FORK_ENABLED,
-} from 'src/utils/marketsAndNetworksConfig';
+import { availableMarkets, ENABLE_TESTNET, FORK_ENABLED } from 'src/utils/marketsAndNetworksConfig';
 import { useShallow } from 'zustand/shallow';
 
 import { Link } from '../components/primitives/Link';

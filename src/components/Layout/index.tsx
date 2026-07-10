@@ -9,7 +9,7 @@ const Layout: FC<PropsWithChildren> = (props) => {
   const { children } = props;
 
   return (
-    <Box display="flex" flexDirection="column" minHeight="100vh">
+    <Box display="flex" flexDirection="column" minHeight="100dvh">
       <Header />
       {children}
       <Footer />

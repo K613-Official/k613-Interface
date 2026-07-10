@@ -14,7 +14,7 @@ export const reserveRateTimeRangeOptions = [
   ESupportedTimeRanges.SixMonths,
   ESupportedTimeRanges.OneYear,
 ];
-export type ReserveRateTimeRange = (typeof reserveRateTimeRangeOptions)[number];
+export type ReserveRateTimeRange = typeof reserveRateTimeRangeOptions[number];
 
 type RestAPIResponse = {
   liquidityRate_avg: number;
@@ -161,8 +161,8 @@ export function useReserveRatesHistory(reserveAddress: string, timeRange: Reserv
         currentMarketData?.v3 && addressesProvider
           ? `${reserveAddress}${addressesProvider}${currentMarketData.chainId}`
           : addressesProvider
-            ? `${reserveAddress}${addressesProvider}`
-            : reserveAddress;
+          ? `${reserveAddress}${addressesProvider}`
+          : reserveAddress;
       promise = fetchFromRest(restId, timeRange, ratesHistoryApiUrl);
     }
 
@@ -184,7 +184,15 @@ export function useReserveRatesHistory(reserveAddress: string, timeRange: Reserv
       });
 
     return cancelable.cancel;
-  }, [reserveAddress, timeRange, ratesHistoryApiUrl, subgraphUrl, addressesProvider, currentMarketData?.v3, currentMarketData?.chainId]);
+  }, [
+    reserveAddress,
+    timeRange,
+    ratesHistoryApiUrl,
+    subgraphUrl,
+    addressesProvider,
+    currentMarketData?.v3,
+    currentMarketData?.chainId,
+  ]);
 
   useEffect(() => {
     const cancel = refetchData();

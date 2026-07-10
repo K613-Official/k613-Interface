@@ -1,8 +1,10 @@
 import { ProtocolAction } from '@aave/contract-helpers';
 import { Trans } from '@lingui/macro';
 import { Box, Button } from '@mui/material';
+import { ModalType } from 'src/components/Modals/types';
 import { useAssetCaps } from 'src/hooks/useAssetCaps';
 import { useRootStore } from 'src/store/root';
+import { useModalStore } from 'src/store/useModalStore';
 import { DashboardReserve } from 'src/utils/dashboardSortUtils';
 
 import { CapsHint } from '../../../../components/caps/CapsHint';
@@ -10,8 +12,6 @@ import { CapType } from '../../../../components/caps/helper';
 import { IncentivesCard } from '../../../../components/incentives/IncentivesCard';
 import { Link, ROUTES } from '../../../../components/primitives/Link';
 import { Row } from '../../../../components/primitives/Row';
-import { useModalStore } from 'src/store/useModalStore';
-import { ModalType } from 'src/components/Modals/types';
 import { ListItemCanBeCollateral } from '../ListItemCanBeCollateral';
 import { ListMobileItemWrapper } from '../ListMobileItemWrapper';
 import { ListValueRow } from '../ListValueRow';
@@ -69,12 +69,7 @@ export const SupplyAssetsListMobileItem = ({
         }
       />
 
-      <Row
-        caption={<Trans>Supply APY</Trans>}
-        align="flex-start"
-        captionVariant="body2"
-        mb={2}
-      >
+      <Row caption={<Trans>Supply APY</Trans>} align="flex-start" captionVariant="body2" mb={2}>
         <IncentivesCard
           value={Number(supplyAPY)}
           incentives={aIncentivesData}

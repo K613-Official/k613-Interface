@@ -20,6 +20,7 @@ export const DrawerWrapper = ({ open, setOpen, children, headerHeight }: DrawerW
       PaperProps={{
         sx: {
           background: 'rgba(27, 32, 48, 0.98)',
+          WebkitBackdropFilter: 'blur(20px)',
           backdropFilter: 'blur(20px)',
           boxShadow: 'none',
           borderRadius: 'unset',
@@ -27,7 +28,8 @@ export const DrawerWrapper = ({ open, setOpen, children, headerHeight }: DrawerW
           top: `${headerHeight}px`,
           pt: 6,
           pb: 15,
-          minHeight: '100vh',
+          // 100dvh accounts for mobile Safari's dynamic toolbar; 100vh overshoots the visible viewport
+          minHeight: '100dvh',
         },
       }}
     >

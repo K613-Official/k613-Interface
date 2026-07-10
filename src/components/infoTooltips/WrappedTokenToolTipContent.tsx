@@ -40,12 +40,7 @@ export const WrappedTokenTooltipContent = ({
           <Skeleton variant="rectangular" width={120} height={14} />
         ) : (
           <Stack direction="row" alignItems="center" gap={1}>
-            <FormattedNumber
-              value="1"
-              visibleDecimals={0}
-              variant="caption"
-              color="text.primary"
-            />
+            <FormattedNumber value="1" visibleDecimals={0} variant="caption" color="text.primary" />
             <Typography variant="caption">{tokenInSymbol}</Typography>
             <SvgIcon color="primary" sx={{ fontSize: '12px' }}>
               <ArrowNarrowRightIcon />
