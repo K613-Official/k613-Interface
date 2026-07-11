@@ -13,8 +13,6 @@ import {
   MONAD_POOL,
   MONAD_POOL_ADDRESSES_PROVIDER,
   MONAD_POOL_CONFIGURATOR,
-  MONAD_REWARDS_DISTRIBUTION,
-  MONAD_STAKING,
   MONAD_TREASURY,
   MONAD_UI_INCENTIVE_DATA_PROVIDER,
   MONAD_UI_POOL_DATA_PROVIDER,
@@ -44,6 +42,12 @@ import {
   ARBITRUM_SEPOLIA_WALLET_BALANCE_PROVIDER,
   ARBITRUM_SEPOLIA_WETH_GATEWAY,
 } from 'src/const/testnet';
+
+// Monad mainnet staking — hardcoded rather than env-driven: these are fixed
+// mainnet deployments, and NEXT_PUBLIC_* vars are baked in at build time, so a
+// missing var on the deploy platform would silently ship an empty address.
+const MONAD_STAKING = '0x36451F6b4c06916aafd16359CCf99eB1f584DB0b';
+const MONAD_REWARDS_DISTRIBUTION = '0xE3E8925E8554464611c86419B9e99AD7Cd47428f';
 
 export type NetworkAddresses = {
   POOL_ADDRESSES_PROVIDER: string;
