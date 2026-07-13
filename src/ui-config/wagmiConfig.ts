@@ -8,7 +8,7 @@ import {
   networkConfigs,
 } from 'src/utils/marketsAndNetworksConfig';
 import { type Chain } from 'viem';
-import { createConfig, CreateConfigParameters, http } from 'wagmi';
+import { createConfig, CreateConfigParameters, CreateConnectorFn, http } from 'wagmi';
 import { arbitrumSepolia } from 'wagmi/chains';
 import { injected, safe, walletConnect } from 'wagmi/connectors';
 
@@ -69,8 +69,8 @@ const defaultConfig = {
  * injected connector commented out. Adding those back would re-introduce entries for
  * wallets the user does not have, so we deliberately do not.
  */
-const buildConnectors = () => {
-  const connectors: CreateConfigParameters['connectors'] = [];
+const buildConnectors = (): CreateConnectorFn[] => {
+  const connectors: CreateConnectorFn[] = [];
 
   // Safe only exists inside the Safe app's iframe.
   const inIframe = typeof window !== 'undefined' && window.parent !== window;
