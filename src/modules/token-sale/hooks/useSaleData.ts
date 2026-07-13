@@ -1,4 +1,5 @@
 import saleArtifact from 'src/abis/K613Sale/K613Sale.json';
+import { useRootStore } from 'src/store/root';
 import { useAccount, useReadContract } from 'wagmi';
 
 import { ERC20_ABI, HARD_CAP_USDC, SALE_ALLOCATION_K613 } from '../constants';
@@ -50,6 +51,12 @@ export function useSaleData(): SaleData {
   const config = useTokenSaleConfig();
   const { address } = useAccount();
 
+  // Sale stats are public — they must render for a visitor with no wallet. Without
+  // an explicit chainId wagmi reads through the *connected* chain, which does not
+  // exist when disconnected, so it falls back to the config's first chain and the
+  // calls silently return nothing. Pin every read to the chain the sale lives on.
+  const saleChainId = useRootStore((s) => s.currentMarketData.chainId) as number | undefined;
+
   const saleAddress = (config?.SALE_CONTRACT || undefined) as `0x${string}` | undefined;
   const usdcAddress = (config?.USDC || undefined) as `0x${string}` | undefined;
   const saleEnabled = Boolean(saleAddress);
@@ -60,6 +67,7 @@ export function useSaleData(): SaleData {
     address: saleAddress,
     abi: SALE_ABI,
     functionName: 'saleInfo',
+    chainId: saleChainId,
     query: { enabled: saleEnabled, refetchInterval: POLLING_INTERVAL },
   });
   const userInfoRead = useReadContract({
@@ -67,6 +75,7 @@ export function useSaleData(): SaleData {
     abi: SALE_ABI,
     functionName: 'userInfo',
     args: address ? [address] : undefined,
+    chainId: saleChainId,
     query: { enabled: userEnabled, refetchInterval: POLLING_INTERVAL },
   });
 
@@ -75,6 +84,7 @@ export function useSaleData(): SaleData {
     address: saleAddress,
     abi: SALE_ABI,
     functionName: 'saleToken',
+    chainId: saleChainId,
     query: { enabled: saleEnabled },
   });
 
@@ -83,6 +93,7 @@ export function useSaleData(): SaleData {
     abi: ERC20_ABI,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
+    chainId: saleChainId,
     query: { enabled: Boolean(usdcAddress && address), refetchInterval: POLLING_INTERVAL },
   });
   const usdcAllowanceRead = useReadContract({
@@ -90,6 +101,7 @@ export function useSaleData(): SaleData {
     abi: ERC20_ABI,
     functionName: 'allowance',
     args: address && saleAddress ? [address, saleAddress] : undefined,
+    chainId: saleChainId,
     query: { enabled: Boolean(usdcAddress && address && saleAddress) },
   });
 
