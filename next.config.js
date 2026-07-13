@@ -32,6 +32,26 @@ module.exports = withBundleAnalyzer({
       );
       fileLoaderRule.exclude = /\.svg$/i;
     }
+
+    // `@wagmi/connectors` is a barrel: importing it (ConnectKit does) pulls in every
+    // connector, each of which requires its wallet SDK as an *optional* peer dep.
+    // We connect through EIP-6963 discovery and plain `injected()`, so none of these
+    // SDKs are installed — tell webpack that's intentional instead of warning about
+    // nine unresolved modules on every build. Adding one of these connectors back
+    // means installing its SDK and dropping it from this list.
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@base-org/account': false,
+      '@coinbase/wallet-sdk': false,
+      '@gemini-wallet/core': false,
+      '@metamask/sdk': false,
+      '@safe-global/safe-apps-provider': false,
+      '@safe-global/safe-apps-sdk': false,
+      '@walletconnect/ethereum-provider': false,
+      porto: false,
+      'porto/internal': false,
+    };
+
     return config;
   },
   // NOTE: Needed for SAFE testing locally

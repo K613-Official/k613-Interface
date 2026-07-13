@@ -10,7 +10,7 @@ import {
 import { type Chain } from 'viem';
 import { createConfig, CreateConfigParameters, CreateConnectorFn, http } from 'wagmi';
 import { arbitrumSepolia } from 'wagmi/chains';
-import { injected, safe, walletConnect } from 'wagmi/connectors';
+import { injected } from 'wagmi/connectors';
 
 import { prodNetworkConfig, testnetConfig } from './networksConfig';
 
@@ -57,53 +57,23 @@ const defaultConfig = {
 };
 
 /**
- * The wallet list is driven by EIP-6963 discovery, not by a hardcoded roster:
+ * The wallet list is driven by EIP-6963 discovery rather than a hardcoded roster:
  * wagmi's `multiInjectedProviderDiscovery` (on by default) turns every extension
  * that announces itself — MetaMask, Phantom, Rabby, OKX, Coinbase… — into a
- * connector, and ConnectKit renders whatever connectors the config exposes. So the
- * modal ends up showing exactly what the user actually has installed.
+ * connector, and ConnectKit renders whatever connectors the config exposes. The
+ * modal therefore shows exactly what the user actually has installed.
  *
- * ConnectKit's own default list works the other way round and is why the modal used
- * to lie: it hardcodes `injected({ target: 'metaMask' })` plus the Coinbase SDK
- * (which reports itself as installed even when it isn't) and leaves the generic
- * injected connector commented out. Adding those back would re-introduce entries for
- * wallets the user does not have, so we deliberately do not.
+ * Everything else is deliberately left out. ConnectKit's own defaults hardcode
+ * `injected({ target: 'metaMask' })` plus the Coinbase SDK, and the SDK-backed
+ * connectors (Coinbase, MetaMask SDK, WalletConnect, Safe) each need an optional
+ * package that this project does not depend on — so they would render a wallet in
+ * the modal that throws the moment it is clicked.
  */
-const buildConnectors = (): CreateConnectorFn[] => {
-  const connectors: CreateConnectorFn[] = [];
-
-  // Safe only exists inside the Safe app's iframe.
-  const inIframe = typeof window !== 'undefined' && window.parent !== window;
-  if (inIframe) {
-    connectors.push(
-      safe({ allowedDomains: [/gnosis-safe.io$/, /app.safe.global$/, /dhedge.org$/] })
-    );
-  }
-
+const buildConnectors = (): CreateConnectorFn[] => [
   // Fallback for a lone injected wallet too old to announce itself over EIP-6963.
   // Discovered wallets are deduped against it by rdns, so this adds no duplicates.
-  connectors.push(injected({ shimDisconnect: true }));
-
-  // WalletConnect brings in mobile wallets and the QR flow. Optional: without a
-  // project id it simply does not appear.
-  if (walletConnectProjectId) {
-    connectors.push(
-      walletConnect({
-        projectId: walletConnectProjectId,
-        // ConnectKit renders its own QR screen.
-        showQrModal: false,
-        metadata: {
-          name: defaultConfig.appName,
-          description: defaultConfig.appDescription,
-          url: defaultConfig.appUrl,
-          icons: [defaultConfig.appIcon],
-        },
-      })
-    );
-  }
-
-  return connectors;
-};
+  injected({ shimDisconnect: true }),
+];
 
 const cypressConfig = createConfig(
   getDefaultConfig({
