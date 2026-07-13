@@ -35,6 +35,7 @@ export function K613StakingPanel() {
     paused,
     isLoading,
     hasStakingActivity,
+    xk613Address,
   } = ctx;
 
   useEffect(() => {
@@ -121,7 +122,12 @@ export function K613StakingPanel() {
           setOnboardingStep(null);
         }}
       />
-      <K613InfoDialog open={!!infoDialog} kind={infoDialog} onClose={() => setInfoDialog(null)} />
+      <K613InfoDialog
+        open={!!infoDialog}
+        kind={infoDialog}
+        xk613Address={xk613Address}
+        onClose={() => setInfoDialog(null)}
+      />
     </PageRoot>
   );
 }

@@ -2,6 +2,9 @@
 
 import { Alert, CircularProgress, Snackbar } from '@mui/material';
 import InputAdornment from '@mui/material/InputAdornment';
+import { useMemo } from 'react';
+import { AddTokenToWalletButton } from 'src/components/AddTokenToWallet';
+import { K613_TOKEN_META, XK613_TOKEN_META } from 'src/const/k613Tokens';
 
 import {
   AmountFieldWrap,
@@ -80,7 +83,18 @@ export function K613LockExitTab() {
     formatTokenAmount,
     successMessage,
     setSuccessMessage,
+    k613Address,
+    xk613Address,
   } = useK613StakingPage();
+
+  const k613Token = useMemo(
+    () => (k613Address ? { address: k613Address, ...K613_TOKEN_META } : null),
+    [k613Address]
+  );
+  const xk613Token = useMemo(
+    () => (xk613Address ? { address: xk613Address, ...XK613_TOKEN_META } : null),
+    [xk613Address]
+  );
 
   const lockBusy = actionPending === 'lock' || isApprovePending;
   const initiateBusy = actionPending === 'initiateExit';
@@ -103,12 +117,14 @@ export function K613LockExitTab() {
             <StatInner>
               <StatLabel>Available to lock</StatLabel>
               <StatValue>{formatted.walletK613} K613</StatValue>
+              <AddTokenToWalletButton token={k613Token} sx={{ mt: 0.5, ml: -1 }} />
             </StatInner>
           </StatCard>
           <StatCard>
             <StatInner>
               <StatLabel>Locked</StatLabel>
               <StatValue>{formatted.stakedPosition} xK613</StatValue>
+              <AddTokenToWalletButton token={xk613Token} sx={{ mt: 0.5, ml: -1 }} />
             </StatInner>
           </StatCard>
         </StatsRow>

@@ -633,6 +633,8 @@ export function useK613StakingController() {
     gate,
     paused: Boolean(paused),
     isLoading: combinedLoading,
+    k613Address,
+    xk613Address,
     error,
     setError,
     successMessage,

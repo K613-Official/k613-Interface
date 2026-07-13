@@ -1,7 +1,9 @@
 import { Alert, Box } from '@mui/material';
 import { ConnectKitButton } from 'connectkit';
 import { useState } from 'react';
+import { AddTokenToWalletButton } from 'src/components/AddTokenToWallet';
 import { ROUTES } from 'src/components/primitives/Link';
+import { WatchableToken } from 'src/hooks/useAddTokenToWallet';
 
 import {
   formatK613,
@@ -36,6 +38,8 @@ type UserDashboardProps = {
   claimsClosed: boolean;
   stats: SaleStats;
   user: UserSaleState;
+  /** `null` until the sale contract reports its token address. */
+  k613Token: WatchableToken | null;
   pendingAction: SaleAction | null;
   onOpenDeposit: () => void;
   onClaimTokens: () => Promise<unknown>;
@@ -63,6 +67,7 @@ export function UserDashboard({
   claimsClosed,
   stats,
   user,
+  k613Token,
   pendingAction,
   onOpenDeposit,
   onClaimTokens,
@@ -175,6 +180,7 @@ export function UserDashboard({
                   ? 'Claim window closed'
                   : 'Available once claim opens'}
               </Small>
+              <AddTokenToWalletButton token={k613Token} sx={{ mt: 1, ml: -1 }} />
             </Metric>
             <Metric>
               <Label>Claimable Refund</Label>

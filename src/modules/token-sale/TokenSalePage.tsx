@@ -1,6 +1,8 @@
 import { Alert, Snackbar } from '@mui/material';
 import { ConnectKitButton } from 'connectkit';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { AddTokenToWalletDialog } from 'src/components/AddTokenToWallet';
+import { K613_TOKEN_META } from 'src/const/k613Tokens';
 import { useAccount } from 'wagmi';
 
 import { DepositDialog } from './components/DepositDialog';
@@ -78,13 +80,19 @@ export function TokenSalePage() {
   const { address } = useAccount();
   const connected = Boolean(address);
 
-  const { isSaleConfigured, schedule, stats, user, refetchAll } = useSaleData();
+  const { isSaleConfigured, schedule, stats, user, saleTokenAddress, refetchAll } = useSaleData();
   const { approve, deposit, claimTokens, claimRefund, pendingAction } = useSaleActions(refetchAll);
+
+  const k613Token = useMemo(
+    () => (saleTokenAddress ? { address: saleTokenAddress, ...K613_TOKEN_META } : null),
+    [saleTokenAddress]
+  );
 
   // nowMs stays null during SSR/hydration so the first client render matches
   // the server; the countdown starts ticking right after mount.
   const [nowMs, setNowMs] = useState<number | null>(null);
   const [depositOpen, setDepositOpen] = useState(false);
+  const [addTokenPromptOpen, setAddTokenPromptOpen] = useState(false);
   const [toast, setToast] = useState<{ open: boolean; message: string }>({
     open: false,
     message: '',
@@ -110,6 +118,14 @@ export function TokenSalePage() {
 
   const handleDeposited = () => {
     setToast({ open: true, message: 'Deposit successful' });
+    setAddTokenPromptOpen(true);
+  };
+
+  // Only offer the token once the claim actually lands — a throw keeps the prompt shut.
+  const handleClaimTokens = async () => {
+    const result = await claimTokens();
+    setAddTokenPromptOpen(true);
+    return result;
   };
 
   const scrollTo = (ref: typeof dashboardRef) => {
@@ -259,9 +275,10 @@ export function TokenSalePage() {
             claimsClosed={claimsClosed}
             stats={stats}
             user={user}
+            k613Token={k613Token}
             pendingAction={pendingAction}
             onOpenDeposit={() => setDepositOpen(true)}
-            onClaimTokens={claimTokens}
+            onClaimTokens={handleClaimTokens}
             onClaimRefund={claimRefund}
           />
         </div>
@@ -313,6 +330,13 @@ If Total Deposits ≤ ${hardCapText} the full deposit converts into K613 and the
         onApprove={approve}
         onDeposit={deposit}
         onDeposited={handleDeposited}
+      />
+
+      <AddTokenToWalletDialog
+        open={addTokenPromptOpen}
+        token={k613Token}
+        description="Track your K613 balance in your wallet without importing the token by hand."
+        onClose={() => setAddTokenPromptOpen(false)}
       />
 
       <Snackbar
