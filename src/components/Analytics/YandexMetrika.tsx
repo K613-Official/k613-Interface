@@ -1,8 +1,10 @@
 import Script from 'next/script';
-import { IS_PRODUCTION, YANDEX_METRIKA_ID } from 'src/const/env';
+import { IS_PRODUCTION } from 'src/const/env';
+
+import { YANDEX_METRIKA_ID } from './const';
 
 export const YandexMetrika = () => {
-  if (!IS_PRODUCTION || !YANDEX_METRIKA_ID) {
+  if (!IS_PRODUCTION) {
     return null;
   }
 

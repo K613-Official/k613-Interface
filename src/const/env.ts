@@ -27,8 +27,6 @@ const rawEnv = {
   MONAD_WETH_GATEWAY: process.env.NEXT_PUBLIC_MONAD_WETH_GATEWAY,
   MONAD_L2_ENCODER: process.env.NEXT_PUBLIC_MONAD_L2_ENCODER,
   MONAD_COLLECTOR: process.env.NEXT_PUBLIC_MONAD_COLLECTOR,
-
-  YANDEX_METRIKA_ID: process.env.NEXT_PUBLIC_YANDEX_METRIKA_ID,
 };
 
 const env = cleanEnv(rawEnv, {
@@ -57,8 +55,6 @@ const env = cleanEnv(rawEnv, {
   MONAD_WETH_GATEWAY: str({ default: '' }),
   MONAD_L2_ENCODER: str({ default: '' }),
   MONAD_COLLECTOR: str({ default: '' }),
-
-  YANDEX_METRIKA_ID: str({ default: '' }),
 });
 
 export const {
@@ -86,7 +82,6 @@ export const {
   MONAD_WETH_GATEWAY,
   MONAD_L2_ENCODER,
   MONAD_COLLECTOR,
-  YANDEX_METRIKA_ID,
 } = env;
 
 export const IS_PRODUCTION = NODE_ENV === 'production';
