@@ -40,6 +40,8 @@ export type SaleData = {
   schedule: SaleSchedule;
   stats: SaleStats;
   user: UserSaleState;
+  /** K613 address, straight from the sale contract — never hardcoded per network. */
+  saleTokenAddress?: `0x${string}`;
   isLoading: boolean;
   refetchAll: () => Promise<unknown>;
 };
@@ -66,6 +68,14 @@ export function useSaleData(): SaleData {
     functionName: 'userInfo',
     args: address ? [address] : undefined,
     query: { enabled: userEnabled, refetchInterval: POLLING_INTERVAL },
+  });
+
+  // Immutable on the contract, so it never needs polling.
+  const saleTokenRead = useReadContract({
+    address: saleAddress,
+    abi: SALE_ABI,
+    functionName: 'saleToken',
+    query: { enabled: saleEnabled },
   });
 
   const usdcBalanceRead = useReadContract({
@@ -142,6 +152,7 @@ export function useSaleData(): SaleData {
     schedule,
     stats,
     user,
+    saleTokenAddress: saleTokenRead.data as `0x${string}` | undefined,
     isLoading: saleEnabled && saleInfoRead.isLoading,
     refetchAll,
   };
