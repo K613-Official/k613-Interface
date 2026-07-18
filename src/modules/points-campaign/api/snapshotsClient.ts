@@ -1,4 +1,4 @@
-import type { LeaderboardSnapshot, UserProof } from '../types';
+import type { LeaderboardSnapshot, SeasonProof, UserProof } from '../types';
 
 class HttpError extends Error {
   constructor(public status: number, message: string) {
@@ -47,6 +47,17 @@ function parseLeaderboard(json: unknown): LeaderboardSnapshot {
   };
 }
 
+function parseSeasonProof(json: unknown): SeasonProof {
+  if (!json || typeof json !== 'object') throw new Error('Invalid season proof payload');
+  const obj = json as Record<string, unknown>;
+  if (!Array.isArray(obj.proof)) throw new Error('Invalid season proof.proof');
+  return {
+    address: String(obj.address).toLowerCase(),
+    totalAllocation: toBigInt(obj.totalAllocation, 'totalAllocation'),
+    proof: obj.proof.map((p) => String(p) as `0x${string}`),
+  };
+}
+
 function parseProof(json: unknown): UserProof {
   if (!json || typeof json !== 'object') throw new Error('Invalid proof payload');
   const obj = json as Record<string, unknown>;
@@ -77,6 +88,19 @@ export async function fetchLeaderboard(
   const json = await fetchJson(url);
   if (json === null) return null;
   return parseLeaderboard(json);
+}
+
+/** Season-final conversion proof. 404 → `null` (address not in the snapshot). */
+export async function fetchSeasonProof(
+  baseUrl: string,
+  address: string
+): Promise<SeasonProof | null> {
+  if (!baseUrl) return null;
+  const normalized = address.toLowerCase().replace(/^0x/, '');
+  const url = `${baseUrl}/proofs/${normalized}.json`;
+  const json = await fetchJson(url);
+  if (json === null) return null;
+  return parseSeasonProof(json);
 }
 
 export async function fetchUserProof(
