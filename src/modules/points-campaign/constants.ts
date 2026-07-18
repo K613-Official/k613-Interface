@@ -1,4 +1,4 @@
-export type CampaignTab = 'leaderboard' | 'overview' | 'rules';
+export type CampaignTab = 'leaderboard' | 'overview' | 'convert' | 'rules';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 
