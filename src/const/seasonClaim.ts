@@ -27,9 +27,9 @@ export const SEASON_CLAIM_ARBITRUM_SEPOLIA: SeasonClaimConfig = {
     'https://raw.githubusercontent.com/K613-Official/K613-points/main/snapshots/season-final-testnet',
 };
 
-// Monad — mainnet. SEASON_CLAIM stays empty until the TGE deploy.
+// Monad — mainnet.
 export const SEASON_CLAIM_MONAD: SeasonClaimConfig = {
-  SEASON_CLAIM: '',
+  SEASON_CLAIM: '0xe41b3D63c7Aa5E54C57c9810217a60dc887364Be',
   K613S1: '0x4f9ba5CaE0e3F651821283EC4e303fE8D1dA542a',
   K613: '0xb09582631336068d4B0089d943f40CbF46dE5189',
   PROOFS_BASE_URL:

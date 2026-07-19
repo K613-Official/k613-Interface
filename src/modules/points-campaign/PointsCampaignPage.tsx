@@ -132,7 +132,7 @@ export function PointsCampaignPage() {
   const [availableWeeks, setAvailableWeeks] = useState<number[]>(() =>
     campaign ? getAvailableWeeks(campaign) : [1]
   );
-  const [activeTab, setActiveTab] = useState<CampaignTab>('leaderboard');
+  const [activeTab, setActiveTab] = useState<CampaignTab>('convert');
   const [page, setPage] = useState(1);
   const [pageInput, setPageInput] = useState('1');
   const [countdownLabel, setCountdownLabel] = useState(() =>
