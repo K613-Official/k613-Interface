@@ -80,12 +80,14 @@ import {
   WeekSelect,
   WeekSelectControl,
 } from './pointsCampaign.styles';
+import { SeasonConvertSection } from './SeasonConvertSection';
 
 const PAGE_SIZE = 10;
 
 const tabs: { key: CampaignTab; label: string }[] = [
   { key: 'leaderboard', label: 'Leaderboard' },
   { key: 'overview', label: 'Overview' },
+  { key: 'convert', label: 'Convert' },
   { key: 'rules', label: 'Rules' },
 ];
 
@@ -130,7 +132,7 @@ export function PointsCampaignPage() {
   const [availableWeeks, setAvailableWeeks] = useState<number[]>(() =>
     campaign ? getAvailableWeeks(campaign) : [1]
   );
-  const [activeTab, setActiveTab] = useState<CampaignTab>('leaderboard');
+  const [activeTab, setActiveTab] = useState<CampaignTab>('convert');
   const [page, setPage] = useState(1);
   const [pageInput, setPageInput] = useState('1');
   const [countdownLabel, setCountdownLabel] = useState(() =>
@@ -241,6 +243,7 @@ export function PointsCampaignPage() {
               >
                 Explore Missions
               </SecondaryCta>
+              <SecondaryCta onClick={() => handleSetTab('convert')}>Convert to K613</SecondaryCta>
               <SecondaryCta onClick={() => handleSetTab('rules')}>View Rules</SecondaryCta>
               <SecondaryCta onClick={() => setSnapshotModalOpen(true)}>How It Works</SecondaryCta>
             </HeroActions>
@@ -526,6 +529,8 @@ export function PointsCampaignPage() {
               )}
             </Card>
           )}
+
+          {activeTab === 'convert' && <SeasonConvertSection />}
 
           {activeTab === 'rules' && (
             <Card elevation={0}>

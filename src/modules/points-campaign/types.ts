@@ -23,6 +23,12 @@ export type UserProof = {
   root: `0x${string}`;
 };
 
+export type SeasonProof = {
+  address: string;
+  totalAllocation: bigint;
+  proof: `0x${string}`[];
+};
+
 export type WeekOverview = {
   rank: number;
   minSupplyUsd: bigint;
