@@ -10,6 +10,18 @@ import { fetchSeasonProof } from '../api/snapshotsClient';
 
 const SEASON_CLAIM_ABI = (seasonClaimArtifact as unknown as { abi: unknown[] }).abi;
 
+// Minimal ERC20 read used to check the user's K613S1 balance before a conversion —
+// the season claim burns K613S1 from this balance, so a short balance reverts.
+const ERC20_BALANCE_ABI = [
+  {
+    type: 'function',
+    name: 'balanceOf',
+    stateMutability: 'view',
+    inputs: [{ name: 'account', type: 'address' }],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+] as const;
+
 export const SEASON_TRANCHE_COUNT = 5;
 export const SEASON_TRANCHE_INTERVAL_S = 15 * 86_400;
 
@@ -45,6 +57,7 @@ export function useSeasonClaim() {
   const { address } = useAccount();
   const config = useSeasonClaimConfig();
   const seasonClaim = config?.SEASON_CLAIM ?? '';
+  const k613s1 = config?.K613S1 ?? '';
   const baseUrl = config?.PROOFS_BASE_URL ?? '';
   const isConfigured = Boolean(seasonClaim);
   const enabled = Boolean(address && seasonClaim);
@@ -81,6 +94,15 @@ export function useSeasonClaim() {
     query: { enabled },
   });
 
+  // The user's live K613S1 balance — what the next conversion actually burns from.
+  const k613s1BalanceRead = useReadContract({
+    address: k613s1 as `0x${string}` | undefined,
+    abi: ERC20_BALANCE_ABI,
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
+    query: { enabled: Boolean(address && k613s1) },
+  });
+
   const proofQuery = useQuery({
     queryKey: ['points-campaign', 'season-proof', baseUrl, address?.toLowerCase()],
     queryFn: () => fetchSeasonProof(baseUrl, address as string),
@@ -93,13 +115,19 @@ export function useSeasonClaim() {
 
   const totalAllocation = proofQuery.data?.totalAllocation ?? 0n;
   const alreadyClaimed = (claimedRead.data as bigint | undefined) ?? 0n;
+  const k613s1Balance = (k613s1BalanceRead.data as bigint | undefined) ?? 0n;
   const tgeTimestamp = tgeRead.data != null ? Number(tgeRead.data as bigint) : null;
   const claimDeadline = deadlineRead.data != null ? Number(deadlineRead.data as bigint) : null;
 
   const nowS = Math.floor(nowMs / 1000);
   const unlockedTranches = tgeTimestamp != null ? getUnlockedTranches(tgeTimestamp, nowS) : 0;
   const vested = (totalAllocation * BigInt(unlockedTranches)) / BigInt(SEASON_TRANCHE_COUNT);
+  // Amount of K613S1 the next conversion burns from the wallet.
   const availableNow = vested > alreadyClaimed ? vested - alreadyClaimed : 0n;
+  // The conversion reverts (ERC20InsufficientBalance) when the wallet holds fewer
+  // K613S1 than it needs to burn — typically because the weekly points were never
+  // claimed from the distributor.
+  const hasEnoughK613S1 = k613s1Balance >= availableNow;
 
   const tranches: SeasonTranche[] = useMemo(() => {
     if (tgeTimestamp == null || totalAllocation === 0n) return [];
@@ -144,12 +172,16 @@ export function useSeasonClaim() {
       args: [proofQuery.data.totalAllocation, proofQuery.data.proof],
     });
     await waitForTransactionReceipt(wagmiConfig, { hash });
-    await claimedRead.refetch();
+    await Promise.all([claimedRead.refetch(), k613s1BalanceRead.refetch()]);
     // Refresh wallet balances (K613 minted, K613S1 burned) tracked by wagmi.
     await queryClient.invalidateQueries({ queryKey: ['balance'] });
     await queryClient.invalidateQueries({ queryKey: ['readContract'] });
     return hash;
   };
+
+  // Re-read the K613S1 balance after an external mint (a distributor points claim)
+  // so the "enough to convert" gate reopens without a page reload.
+  const refetchK613S1Balance = () => k613s1BalanceRead.refetch();
 
   return {
     config,
@@ -158,13 +190,20 @@ export function useSeasonClaim() {
     totalAllocation,
     alreadyClaimed,
     availableNow,
+    k613s1Balance,
+    hasEnoughK613S1,
+    refetchK613S1Balance,
     unlockedTranches,
     tranches,
     tgeTimestamp,
     claimDeadline,
     isConfigured,
     isLoading:
-      proofQuery.isLoading || claimedRead.isLoading || tgeRead.isLoading || deadlineRead.isLoading,
+      proofQuery.isLoading ||
+      claimedRead.isLoading ||
+      tgeRead.isLoading ||
+      deadlineRead.isLoading ||
+      k613s1BalanceRead.isLoading,
     isPending: isWritePending,
     error: proofQuery.error ?? claimedRead.error ?? tgeRead.error ?? deadlineRead.error,
   };

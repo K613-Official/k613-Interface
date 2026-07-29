@@ -6,6 +6,7 @@ import { K613_TOKEN_META } from 'src/const/k613Tokens';
 import { useAccount } from 'wagmi';
 
 import { SEASON_TRANCHE_COUNT, useSeasonClaim } from './hooks/useSeasonClaim';
+import { useUserClaim } from './hooks/useUserClaim';
 import {
   Card,
   CardHead,
@@ -22,6 +23,28 @@ import {
   Small,
   StatusBadge,
 } from './pointsCampaign.styles';
+
+// Turn a raw contract revert into something a user can act on. The common failure
+// here is a conversion attempted before the K613S1 points were claimed: the season
+// claim burns K613S1 the wallet does not hold, so the ERC20 reverts on burn.
+function humanizeConvertError(err: unknown): string {
+  const raw = err instanceof Error ? err.message : String(err);
+  const msg = raw.toLowerCase();
+  if (msg.includes('user rejected') || msg.includes('user denied')) {
+    return 'Transaction rejected.';
+  }
+  if (
+    msg.includes('insufficientbalance') ||
+    msg.includes('insufficient balance') ||
+    msg.includes('exceeds balance') ||
+    msg.includes('burn amount exceeds') ||
+    msg.includes('safeerc20failedoperation') ||
+    msg.includes('erc20:')
+  ) {
+    return 'You need to claim your K613S1 points first.';
+  }
+  return raw;
+}
 
 const TOKEN_DECIMALS = 18n;
 
@@ -62,6 +85,50 @@ const TRANCHE_BADGES = {
   locked: { label: 'Locked', color: 'warning' as const },
 };
 
+type FlowStep = 'idle' | 'claiming-points' | 'converting';
+
+// Two-step progress indicator for the "claim points → convert" flow. Step 1 is the
+// distributor points claim, step 2 the season conversion.
+function ConvertStepper({ flowStep }: { flowStep: FlowStep }) {
+  const step1Done = flowStep === 'converting';
+  const steps = [
+    { n: 1, label: 'Claim K613S1 points', active: flowStep === 'claiming-points', done: step1Done },
+    { n: 2, label: 'Convert to K613', active: flowStep === 'converting', done: false },
+  ];
+
+  return (
+    <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+      {steps.map((step, index) => (
+        <Box key={step.n} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box
+              sx={{
+                width: 24,
+                height: 24,
+                flexShrink: 0,
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 13,
+                fontWeight: 600,
+                color: step.active || step.done ? '#0b0b0b' : '#bdbdbd',
+                background: step.active || step.done ? '#61d000' : 'rgba(255,255,255,0.1)',
+              }}
+            >
+              {step.done ? '✓' : step.n}
+            </Box>
+            <Small sx={{ color: step.active ? 'text.primary' : undefined }}>{step.label}</Small>
+          </Box>
+          {index === 0 && (
+            <Box sx={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.15)' }} />
+          )}
+        </Box>
+      ))}
+    </Box>
+  );
+}
+
 export function SeasonConvertSection() {
   const { address } = useAccount();
   const {
@@ -71,6 +138,8 @@ export function SeasonConvertSection() {
     totalAllocation,
     alreadyClaimed,
     availableNow,
+    hasEnoughK613S1,
+    refetchK613S1Balance,
     tranches,
     claimDeadline,
     isLoading,
@@ -78,29 +147,67 @@ export function SeasonConvertSection() {
     error,
   } = useSeasonClaim();
 
+  // The distributor points claim (Step 1) — the same flow the Overview tab exposes.
+  const {
+    claim: claimPoints,
+    claimable: pointsClaimable,
+    isLoading: pointsLoading,
+    isPending: pointsPending,
+  } = useUserClaim();
+
   const [localError, setLocalError] = useState<string | null>(null);
   const [toastOpen, setToastOpen] = useState(false);
   const [addTokenPromptOpen, setAddTokenPromptOpen] = useState(false);
+  const [flowStep, setFlowStep] = useState<FlowStep>('idle');
 
   const k613Token = useMemo(
     () => (config?.K613 ? { address: config.K613, ...K613_TOKEN_META } : null),
     [config?.K613]
   );
 
+  const onConvertSuccess = (hash: string | undefined) => {
+    if (hash) {
+      setToastOpen(true);
+      setAddTokenPromptOpen(true);
+    }
+  };
+
   const handleConvert = async () => {
     setLocalError(null);
+    setFlowStep('converting');
     try {
-      const hash = await convert();
-      if (hash) {
-        setToastOpen(true);
-        setAddTokenPromptOpen(true);
-      }
+      onConvertSuccess(await convert());
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : String(err));
+      setLocalError(humanizeConvertError(err));
+    } finally {
+      setFlowStep('idle');
+    }
+  };
+
+  // Step 1 → Step 2 in a single click: mint the K613S1 points, wait for the balance
+  // to update, then convert. Used when the wallet has unclaimed distributor points.
+  const handleClaimAndConvert = async () => {
+    setLocalError(null);
+    try {
+      setFlowStep('claiming-points');
+      await claimPoints();
+      await refetchK613S1Balance();
+      setFlowStep('converting');
+      onConvertSuccess(await convert());
+    } catch (err) {
+      setLocalError(humanizeConvertError(err));
+    } finally {
+      setFlowStep('idle');
     }
   };
 
   const nextLockedTranche = tranches.find((tranche) => tranche.status === 'locked') ?? null;
+
+  // When there is a vested amount to convert but the wallet is short on K613S1, the
+  // points must be claimed from the distributor first (Step 1).
+  const needsPointsClaim = status === 'claimable' && !hasEnoughK613S1;
+  const canClaimPoints = pointsClaimable > 0n;
+  const busy = flowStep !== 'idle' || isPending || pointsPending;
 
   const renderBody = () => {
     if (status === 'not-configured') {
@@ -237,14 +344,49 @@ export function SeasonConvertSection() {
           Converting burns the equivalent amount of your K613S1. This cannot be undone.
         </Alert>
 
-        <PrimaryCta
-          onClick={handleConvert}
-          disabled={availableNow === 0n || isPending}
-          sx={{ mt: 2 }}
-        >
-          {ctaLabel}
-        </PrimaryCta>
-        {ctaReason && <Small sx={{ mt: 1, display: 'block' }}>{ctaReason}</Small>}
+        {needsPointsClaim ? (
+          pointsLoading ? (
+            <PrimaryCta disabled sx={{ mt: 2 }}>
+              Checking your K613S1 points…
+            </PrimaryCta>
+          ) : canClaimPoints ? (
+            <>
+              <ConvertStepper flowStep={flowStep} />
+              <PrimaryCta onClick={handleClaimAndConvert} disabled={busy} sx={{ mt: 2 }}>
+                {flowStep === 'claiming-points'
+                  ? 'Step 1 of 2: Claiming points…'
+                  : flowStep === 'converting'
+                  ? 'Step 2 of 2: Converting…'
+                  : 'Claim & Convert'}
+              </PrimaryCta>
+              <Small sx={{ mt: 1, display: 'block' }}>
+                Your K613S1 points are not claimed yet. We&apos;ll claim them, then convert — two
+                wallet confirmations, one after another.
+              </Small>
+            </>
+          ) : (
+            <>
+              <Alert severity="info" sx={{ mt: 2 }}>
+                Not enough K613S1 to convert. Your wallet balance is below the amount this
+                conversion would burn, and there are no unclaimed points to top it up.
+              </Alert>
+              <PrimaryCta disabled sx={{ mt: 2 }}>
+                Convert {formatTokens(availableNow)} K613S1
+              </PrimaryCta>
+            </>
+          )
+        ) : (
+          <>
+            <PrimaryCta
+              onClick={handleConvert}
+              disabled={availableNow === 0n || busy}
+              sx={{ mt: 2 }}
+            >
+              {flowStep === 'converting' ? 'Converting…' : ctaLabel}
+            </PrimaryCta>
+            {ctaReason && <Small sx={{ mt: 1, display: 'block' }}>{ctaReason}</Small>}
+          </>
+        )}
         {claimDeadline != null && claimDeadline > 0 && status !== 'fully-claimed' && (
           <Small sx={{ mt: 0.5, display: 'block' }}>
             {`Conversion is open until ${formatUnlockDate(claimDeadline)}.`}
