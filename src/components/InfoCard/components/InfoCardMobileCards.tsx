@@ -1,4 +1,5 @@
 import { Box, Button, Stack, Typography } from '@mui/material';
+import { IncentivesButton } from 'src/components/incentives/IncentivesButton';
 import { TokenIcon } from 'src/components/primitives/TokenIcon';
 
 import { InfoCardType, InfoPosition } from '../data';
@@ -63,7 +64,10 @@ export function InfoCardMobileCards({
 
           <MobileRow>
             <MobileLabel>APY</MobileLabel>
-            <PrimaryValue>{position.apy}</PrimaryValue>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <PrimaryValue>{position.apy}</PrimaryValue>
+              <IncentivesButton incentives={position.incentives} symbol={position.symbol} />
+            </Box>
           </MobileRow>
 
           {isSupply && (

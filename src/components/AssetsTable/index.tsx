@@ -2,6 +2,7 @@
 
 import { API_ETH_MOCK_ADDRESS } from '@aave/contract-helpers';
 import { USD_DECIMALS, valueToBigNumber } from '@aave/math-utils';
+import { ReserveIncentiveResponse } from '@aave/math-utils/dist/esm/formatters/incentive/calculate-reserve-incentives';
 import { Check, MoreHorizOutlined } from '@mui/icons-material';
 import {
   Alert,
@@ -29,6 +30,7 @@ import {
 } from '@mui/material';
 import { BigNumber } from 'bignumber.js';
 import { useEffect, useMemo, useState } from 'react';
+import { IncentivesButton } from 'src/components/incentives/IncentivesButton';
 import { SortIcon } from 'src/components/InfoCard/positionStyles';
 import { ModalType } from 'src/components/Modals/types';
 import { ROUTES } from 'src/components/primitives/Link';
@@ -73,6 +75,8 @@ type SupplyRow = {
   walletBalanceNum: number;
   walletBalanceStr: string;
   apyPercent: number;
+  /** On-chain reward emissions (xK613) shown as a badge next to the base APY. */
+  incentives: ReserveIncentiveResponse[];
   canBeCollateral: boolean;
   disableSupply: boolean;
 };
@@ -85,6 +89,8 @@ type BorrowRow = {
   underlyingAsset: string;
   availableBorrows: number;
   borrowApyPercent: number;
+  /** On-chain reward emissions (xK613) shown as a badge next to the base APY. */
+  incentives: ReserveIncentiveResponse[];
   disableBorrow: boolean;
 };
 
@@ -285,6 +291,7 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
         walletBalanceNum,
         walletBalanceStr: wb,
         apyPercent: Number(item.supplyAPY),
+        incentives: item.aIncentivesData ?? [],
         canBeCollateral: Boolean(item.usageAsCollateralEnabledOnUser),
         disableSupply,
       };
@@ -362,6 +369,7 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
       underlyingAsset: item.underlyingAsset,
       availableBorrows: item.availableBorrows,
       borrowApyPercent: item.variableBorrowRate,
+      incentives: item.vIncentivesData ?? [],
       disableBorrow: item.isFrozen || Number(item.availableBorrows) <= 0,
     }));
   }, [isSupply, reserves, user, marketReferencePriceInUsd, currentMarket, baseAssetSymbol]);
@@ -778,9 +786,12 @@ function SupplyMobileCard({
         </Box>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="body2">APY</Typography>
-          <Typography variant="body2" fontWeight={600}>
-            {(row.apyPercent * 100).toFixed(2)}%
-          </Typography>
+          <Box display="flex" alignItems="center" gap={0.5}>
+            <Typography variant="body2" fontWeight={600}>
+              {(row.apyPercent * 100).toFixed(2)}%
+            </Typography>
+            <IncentivesButton incentives={row.incentives} symbol={row.symbol} />
+          </Box>
         </Box>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="body2">Can be collateral</Typography>
@@ -842,7 +853,10 @@ function BorrowMobileCard({
         </Box>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="body2">APY, variable</Typography>
-          <Typography variant="body2">{apyLabel}</Typography>
+          <Box display="flex" alignItems="center" gap={0.5}>
+            <Typography variant="body2">{apyLabel}</Typography>
+            <IncentivesButton incentives={row.incentives} symbol={row.symbol} />
+          </Box>
         </Box>
       </Box>
 
@@ -894,7 +908,12 @@ function SupplyTableRow({
       <TableCell align="center">
         {Number(row.walletBalanceStr).toLocaleString(undefined, { maximumFractionDigits: 6 })}
       </TableCell>
-      <TableCell align="center">{(row.apyPercent * 100).toFixed(2)}%</TableCell>
+      <TableCell align="center">
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+          {(row.apyPercent * 100).toFixed(2)}%
+          <IncentivesButton incentives={row.incentives} symbol={row.symbol} />
+        </Box>
+      </TableCell>
 
       <TableCell align="center">
         {row.canBeCollateral ? (
@@ -953,7 +972,12 @@ function BorrowTableRow({
       <TableCell align="center">
         {row.availableBorrows.toLocaleString(undefined, { maximumFractionDigits: 6 })}
       </TableCell>
-      <TableCell align="center">{apyLabel}</TableCell>
+      <TableCell align="center">
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+          {apyLabel}
+          <IncentivesButton incentives={row.incentives} symbol={row.symbol} />
+        </Box>
+      </TableCell>
 
       <TableCell align="center">
         <Stack direction="row" spacing={2} justifyContent="flex-end">

@@ -4,6 +4,9 @@ export const Paper = styled(PaperBase, {
   shouldForwardProp: (prop) => prop !== 'isOpen',
 })<{ isOpen?: boolean }>(({ isOpen }) => ({
   flex: 1,
+  // Without this a flex item keeps `min-width: auto` and refuses to shrink below its
+  // content width, so the table overflows the card and gets clipped by `overflow: hidden`.
+  minInlineSize: 0,
   border: '1px solid #FFFFFF4D',
   borderRadius: 4,
   padding: 24,
@@ -15,6 +18,9 @@ export const Paper = styled(PaperBase, {
 
 export const DesktopTable = styled(Box)(({ theme }) => ({
   display: 'block',
+  // Scroll the table itself when the columns still don't fit, instead of letting the
+  // card clip them.
+  overflowX: 'auto',
 
   [theme.breakpoints.down('lg')]: {
     display: 'none',

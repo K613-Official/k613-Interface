@@ -5,9 +5,14 @@ import {
   addresses_testnet,
   ARBITRUM_SEPOLIA_SUBGRAPH_URL,
   IS_PRODUCTION,
-  SUBGRAPH_MONAD_URL,
 } from 'src/const';
 import { MONAD_CHAIN_ID } from 'src/ui-config/networksConfig';
+
+// Hardcoded rather than env-driven for the same reason as the staking addresses:
+// NEXT_PUBLIC_* vars are baked in at build time, and a missing var on the deploy
+// platform would silently ship charts/history pointing at nothing.
+const MONAD_SUBGRAPH_URL =
+  'https://api.goldsky.com/api/public/project_cmq51h6qmx8qq01rehav1eu2o/subgraphs/k613-protocol-v3-monad/1.0.0/gn';
 
 export type MarketDataType = {
   v3?: boolean;
@@ -115,7 +120,7 @@ const mainnetMarket: MarketDataType = {
   enabledFeatures: {
     incentives: true,
   },
-  subgraphUrl: SUBGRAPH_MONAD_URL,
+  subgraphUrl: MONAD_SUBGRAPH_URL,
   addresses: {
     LENDING_POOL_ADDRESS_PROVIDER: addresses_mainnet.POOL_ADDRESSES_PROVIDER,
     LENDING_POOL: addresses_mainnet.POOL,
