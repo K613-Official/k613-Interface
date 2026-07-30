@@ -30,7 +30,11 @@ import {
 } from '@mui/material';
 import { BigNumber } from 'bignumber.js';
 import { useEffect, useMemo, useState } from 'react';
-import { IncentivesButton } from 'src/components/incentives/IncentivesButton';
+import {
+  ApyWithIncentives,
+  compareApy,
+  getTotalApy,
+} from 'src/components/incentives/ApyWithIncentives';
 import { SortIcon } from 'src/components/InfoCard/positionStyles';
 import { ModalType } from 'src/components/Modals/types';
 import { ROUTES } from 'src/components/primitives/Link';
@@ -75,7 +79,7 @@ type SupplyRow = {
   walletBalanceNum: number;
   walletBalanceStr: string;
   apyPercent: number;
-  /** On-chain reward emissions (xK613) shown as a badge next to the base APY. */
+  /** On-chain reward emissions (xK613), folded into the displayed total APY. */
   incentives: ReserveIncentiveResponse[];
   canBeCollateral: boolean;
   disableSupply: boolean;
@@ -89,7 +93,7 @@ type BorrowRow = {
   underlyingAsset: string;
   availableBorrows: number;
   borrowApyPercent: number;
-  /** On-chain reward emissions (xK613) shown as a badge next to the base APY. */
+  /** On-chain reward emissions (xK613), folded into the displayed total APY. */
   incentives: ReserveIncentiveResponse[];
   disableBorrow: boolean;
 };
@@ -389,9 +393,11 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
             (Number.isFinite(b.walletBalanceNum) ? b.walletBalanceNum : 0);
           break;
         case 'apy':
-          diff =
-            (Number.isFinite(a.apyPercent) ? a.apyPercent : -Infinity) -
-            (Number.isFinite(b.apyPercent) ? b.apyPercent : -Infinity);
+          // Sort by the combined figure the cell renders, not the bare protocol rate.
+          diff = compareApy(
+            getTotalApy(a.apyPercent, a.incentives),
+            getTotalApy(b.apyPercent, b.incentives)
+          );
           break;
       }
       if (diff === 0) {
@@ -417,9 +423,11 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
             (Number.isFinite(b.availableBorrows) ? b.availableBorrows : 0);
           break;
         case 'apy':
-          diff =
-            (Number.isFinite(a.borrowApyPercent) ? a.borrowApyPercent : -Infinity) -
-            (Number.isFinite(b.borrowApyPercent) ? b.borrowApyPercent : -Infinity);
+          // Sort by the combined figure the cell renders, not the bare protocol rate.
+          diff = compareApy(
+            getTotalApy(a.borrowApyPercent, a.incentives),
+            getTotalApy(b.borrowApyPercent, b.incentives)
+          );
           break;
       }
       if (diff === 0) {
@@ -786,12 +794,13 @@ function SupplyMobileCard({
         </Box>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="body2">APY</Typography>
-          <Box display="flex" alignItems="center" gap={0.5}>
-            <Typography variant="body2" fontWeight={600}>
-              {(row.apyPercent * 100).toFixed(2)}%
-            </Typography>
-            <IncentivesButton incentives={row.incentives} symbol={row.symbol} />
-          </Box>
+          <Typography variant="body2" fontWeight={600} component="div">
+            <ApyWithIncentives
+              value={row.apyPercent}
+              incentives={row.incentives}
+              symbol={row.symbol}
+            />
+          </Typography>
         </Box>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="body2">Can be collateral</Typography>
@@ -835,8 +844,6 @@ function BorrowMobileCard({
   currentMarket: CustomMarket;
   onBorrow: (underlyingAsset: string) => void;
 }) {
-  const apyLabel = row.borrowApyPercent < 0 ? '—' : `${(row.borrowApyPercent * 100).toFixed(2)}%`;
-
   return (
     <MobileAssetCard>
       <Stack direction="row" spacing={1} alignItems="center">
@@ -853,10 +860,13 @@ function BorrowMobileCard({
         </Box>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="body2">APY, variable</Typography>
-          <Box display="flex" alignItems="center" gap={0.5}>
-            <Typography variant="body2">{apyLabel}</Typography>
-            <IncentivesButton incentives={row.incentives} symbol={row.symbol} />
-          </Box>
+          <Typography variant="body2" component="div">
+            <ApyWithIncentives
+              value={row.borrowApyPercent}
+              incentives={row.incentives}
+              symbol={row.symbol}
+            />
+          </Typography>
         </Box>
       </Box>
 
@@ -909,10 +919,7 @@ function SupplyTableRow({
         {Number(row.walletBalanceStr).toLocaleString(undefined, { maximumFractionDigits: 6 })}
       </TableCell>
       <TableCell align="center">
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-          {(row.apyPercent * 100).toFixed(2)}%
-          <IncentivesButton incentives={row.incentives} symbol={row.symbol} />
-        </Box>
+        <ApyWithIncentives value={row.apyPercent} incentives={row.incentives} symbol={row.symbol} />
       </TableCell>
 
       <TableCell align="center">
@@ -958,8 +965,6 @@ function BorrowTableRow({
   currentMarket: CustomMarket;
   onBorrow: (underlyingAsset: string) => void;
 }) {
-  const apyLabel = row.borrowApyPercent < 0 ? '—' : `${(row.borrowApyPercent * 100).toFixed(2)}%`;
-
   return (
     <TableRow>
       <TableCell>
@@ -973,10 +978,11 @@ function BorrowTableRow({
         {row.availableBorrows.toLocaleString(undefined, { maximumFractionDigits: 6 })}
       </TableCell>
       <TableCell align="center">
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-          {apyLabel}
-          <IncentivesButton incentives={row.incentives} symbol={row.symbol} />
-        </Box>
+        <ApyWithIncentives
+          value={row.borrowApyPercent}
+          incentives={row.incentives}
+          symbol={row.symbol}
+        />
       </TableCell>
 
       <TableCell align="center">

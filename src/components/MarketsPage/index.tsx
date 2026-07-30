@@ -21,7 +21,11 @@ import {
   Typography,
 } from '@mui/material';
 import { useMemo, useState } from 'react';
-import { IncentivesButton } from 'src/components/incentives/IncentivesButton';
+import {
+  ApyWithIncentives,
+  compareApy,
+  getTotalApy,
+} from 'src/components/incentives/ApyWithIncentives';
 import Layout from 'src/components/Layout';
 import MaxWidthContainer from 'src/components/MaxWidthContainer';
 import { BigStat } from 'src/components/primitives/BigStat';
@@ -114,6 +118,19 @@ export default function MarketsPage() {
         const byName = a.name.localeCompare(b.name);
         if (byName !== 0) return byName;
         return a.symbol.localeCompare(b.symbol);
+      }
+      // The APY columns render protocol rate + rewards combined, so rank them the same way.
+      if (sortBy === 'supplyAPY') {
+        return compareApy(
+          getTotalApy(Number(a.supplyAPY), a.aIncentivesData),
+          getTotalApy(Number(b.supplyAPY), b.aIncentivesData)
+        );
+      }
+      if (sortBy === 'variableBorrowAPY') {
+        return compareApy(
+          getTotalApy(Number(a.variableBorrowAPY), a.vIncentivesData),
+          getTotalApy(Number(b.variableBorrowAPY), b.vIncentivesData)
+        );
       }
       const av = Number(a[sortBy] ?? 0);
       const bv = Number(b[sortBy] ?? 0);
@@ -389,26 +406,13 @@ export default function MarketsPage() {
                             </Box>
                           </TableCell>
                           <TableCell align="center">
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                gap: 0.5,
-                              }}
-                            >
-                              <FormattedNumber
-                                value={row.supplyAPY}
-                                percent
-                                variant="body1"
-                                visibleDecimals={2}
-                                sx={{ justifyContent: 'center' }}
-                              />
-                              <IncentivesButton
+                            <Typography variant="body1" component="div">
+                              <ApyWithIncentives
+                                value={Number(row.supplyAPY)}
                                 incentives={row.aIncentivesData}
                                 symbol={row.symbol}
                               />
-                            </Box>
+                            </Typography>
                           </TableCell>
                           <TableCell align="center">
                             <Box>
@@ -431,26 +435,13 @@ export default function MarketsPage() {
                           </TableCell>
                           <TableCell align="center">
                             {row.borrowingEnabled ? (
-                              <Box
-                                sx={{
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  alignItems: 'center',
-                                  gap: 0.5,
-                                }}
-                              >
-                                <FormattedNumber
-                                  value={row.variableBorrowAPY}
-                                  percent
-                                  variant="body1"
-                                  visibleDecimals={2}
-                                  sx={{ justifyContent: 'center' }}
-                                />
-                                <IncentivesButton
+                              <Typography variant="body1" component="div">
+                                <ApyWithIncentives
+                                  value={Number(row.variableBorrowAPY)}
                                   incentives={row.vIncentivesData}
                                   symbol={row.symbol}
                                 />
-                              </Box>
+                              </Typography>
                             ) : (
                               <Typography variant="body1">—</Typography>
                             )}
@@ -505,18 +496,13 @@ export default function MarketsPage() {
                         </Box>
                         <Box display="flex" justifyContent="space-between" alignItems="center">
                           <Typography variant="body2">Supply APY</Typography>
-                          <Box display="flex" alignItems="center" gap={0.5}>
-                            <FormattedNumber
-                              value={row.supplyAPY}
-                              percent
-                              variant="body2"
-                              visibleDecimals={2}
-                            />
-                            <IncentivesButton
+                          <Typography variant="body2" component="div">
+                            <ApyWithIncentives
+                              value={Number(row.supplyAPY)}
                               incentives={row.aIncentivesData}
                               symbol={row.symbol}
                             />
-                          </Box>
+                          </Typography>
                         </Box>
                         <Box display="flex" justifyContent="space-between">
                           <Typography variant="body2">Total borrowed</Typography>
@@ -534,18 +520,13 @@ export default function MarketsPage() {
                         <Box display="flex" justifyContent="space-between" alignItems="center">
                           <Typography variant="body2">Borrow APY</Typography>
                           {row.borrowingEnabled ? (
-                            <Box display="flex" alignItems="center" gap={0.5}>
-                              <FormattedNumber
-                                value={row.variableBorrowAPY}
-                                percent
-                                variant="body2"
-                                visibleDecimals={2}
-                              />
-                              <IncentivesButton
+                            <Typography variant="body2" component="div">
+                              <ApyWithIncentives
+                                value={Number(row.variableBorrowAPY)}
                                 incentives={row.vIncentivesData}
                                 symbol={row.symbol}
                               />
-                            </Box>
+                            </Typography>
                           ) : (
                             <Typography variant="body2">—</Typography>
                           )}

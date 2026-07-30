@@ -18,7 +18,9 @@ export type InfoPosition = {
   secondaryValue: string;
   accrued?: string;
   apy: string;
-  /** On-chain reward emissions (xK613) rendered as a badge next to the APY. */
+  /** Same rate as `apy`, unformatted, so the total APY can be computed and sorted on. */
+  apyValue: number;
+  /** On-chain reward emissions (xK613), folded into the displayed total APY. */
   incentives?: ReserveIncentiveResponse[];
   collateralEnabled?: boolean;
   canToggleCollateral?: boolean;
