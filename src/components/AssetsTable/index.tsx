@@ -30,7 +30,11 @@ import {
 } from '@mui/material';
 import { BigNumber } from 'bignumber.js';
 import { useEffect, useMemo, useState } from 'react';
-import { ApyWithIncentives, getTotalApy } from 'src/components/incentives/ApyWithIncentives';
+import {
+  ApyWithIncentives,
+  compareApy,
+  getTotalApy,
+} from 'src/components/incentives/ApyWithIncentives';
 import { SortIcon } from 'src/components/InfoCard/positionStyles';
 import { ModalType } from 'src/components/Modals/types';
 import { ROUTES } from 'src/components/primitives/Link';
@@ -95,18 +99,6 @@ type BorrowRow = {
 };
 
 const ROWS_PER_PAGE = 10;
-
-/**
- * Ranks two APY figures. Plain subtraction breaks here because reserves with rewards but no
- * liquidity total to `Infinity`, and `Infinity - Infinity` is NaN. Missing rates sink to the bottom.
- */
-const compareApy = (a: number, b: number) => {
-  const rank = (value: number) => (Number.isNaN(value) ? -Infinity : value);
-  const left = rank(a);
-  const right = rank(b);
-  if (left === right) return 0;
-  return left < right ? -1 : 1;
-};
 
 const SHOW_SUPPLY_ZERO_BALANCE_KEY = 'showSupplyZeroAssets';
 const DEFAULT_SORT_DIRECTION: Record<SortKey, 'asc' | 'desc'> = {
@@ -607,16 +599,7 @@ export default function AssetsTable({ type }: { type: 'supply' | 'borrow' }) {
       ) : (
         <>
           <DesktopTable>
-            <Table
-              size="small"
-              sx={{
-                // The incentives badge in the APY column costs ~90px per row, so the
-                // default 16px cell gutters and icon-button padding push the table past
-                // the card. Tightened here rather than globally: other tables still fit.
-                '& .MuiTableCell-root': { px: 1 },
-                '& .MuiIconButton-sizeSmall': { p: 0.25 },
-              }}
-            >
+            <Table>
               <TableHead>
                 <TableRow>
                   <TableCell>
@@ -1003,7 +986,7 @@ function BorrowTableRow({
       </TableCell>
 
       <TableCell align="center">
-        <Stack direction="row" spacing={1} justifyContent="flex-end">
+        <Stack direction="row" spacing={2} justifyContent="flex-end">
           <Button
             size="small"
             variant="contained"

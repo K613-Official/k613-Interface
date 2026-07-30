@@ -33,6 +33,19 @@ export const getTotalApy = (value: number, incentives?: ReserveIncentiveResponse
   return Math.max(value, 0) + active.reduce((acc, incentive) => acc + +incentive.incentiveAPR, 0);
 };
 
+/**
+ * Ranks two total-APY figures. Plain subtraction breaks here because reserves with rewards but
+ * no liquidity total to `Infinity`, and `Infinity - Infinity` is NaN. Missing rates sink to the
+ * bottom.
+ */
+export const compareApy = (a: number, b: number) => {
+  const rank = (value: number) => (Number.isNaN(value) ? -Infinity : value);
+  const left = rank(a);
+  const right = rank(b);
+  if (left === right) return 0;
+  return left < right ? -1 : 1;
+};
+
 const formatPercent = (fraction: number) =>
   `${(fraction * 100).toLocaleString(undefined, {
     minimumFractionDigits: 2,
@@ -136,7 +149,9 @@ export const ApyWithIncentives = ({
         </Box>
       }
     >
+      {/* Spans, not divs: this renders inside <Typography> wrappers that default to a span. */}
       <Box
+        component="span"
         sx={{
           display: 'inline-flex',
           flexDirection: 'column',
@@ -147,7 +162,7 @@ export const ApyWithIncentives = ({
         }}
       >
         {total}
-        <Box sx={{ display: 'inline-flex' }}>
+        <Box component="span" sx={{ display: 'inline-flex' }}>
           {mapped.slice(0, MAX_ICONS).map((incentive) => (
             <TokenIcon
               aToken={incentive.aToken}

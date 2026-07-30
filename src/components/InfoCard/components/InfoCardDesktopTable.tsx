@@ -10,7 +10,11 @@ import {
   Typography,
 } from '@mui/material';
 import { useMemo, useState } from 'react';
-import { IncentivesButton } from 'src/components/incentives/IncentivesButton';
+import {
+  ApyWithIncentives,
+  compareApy,
+  getTotalApy,
+} from 'src/components/incentives/ApyWithIncentives';
 import { TokenIcon } from 'src/components/primitives/TokenIcon';
 
 import { InfoCardType, InfoPosition } from '../data';
@@ -79,7 +83,11 @@ export function InfoCardDesktopTable({
           diff = parseNumericValue(a.primaryValue) - parseNumericValue(b.primaryValue);
           break;
         case 'apy':
-          diff = parseNumericValue(a.apy) - parseNumericValue(b.apy);
+          // Sort by the combined figure the cell renders, not the bare protocol rate.
+          diff = compareApy(
+            getTotalApy(a.apyValue, a.incentives),
+            getTotalApy(b.apyValue, b.incentives)
+          );
           break;
       }
 
@@ -177,12 +185,13 @@ export function InfoCardDesktopTable({
             </TableCell>
 
             <TableCell align="right">
-              <Box
-                sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}
-              >
-                <TablePrimaryValue>{position.apy}</TablePrimaryValue>
-                <IncentivesButton incentives={position.incentives} symbol={position.symbol} />
-              </Box>
+              <TablePrimaryValue>
+                <ApyWithIncentives
+                  value={position.apyValue}
+                  incentives={position.incentives}
+                  symbol={position.symbol}
+                />
+              </TablePrimaryValue>
             </TableCell>
 
             {isSupply && (
