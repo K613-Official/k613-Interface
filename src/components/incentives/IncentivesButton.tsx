@@ -244,7 +244,7 @@ const Content = ({
         setOpen(!open);
       }}
     >
-      <Box sx={{ mr: 2 }}>
+      <Box sx={{ mr: 0.5 }}>
         {plus ? '+' : ''} {incentivesButtonValue()}
       </Box>
       <Box sx={{ display: 'inline-flex' }}>
@@ -320,7 +320,7 @@ const ContentEthenaButton = ({ points }: { points: number }) => {
         setOpen(!open);
       }}
     >
-      <Box sx={{ mr: 2 }}>
+      <Box sx={{ mr: 0.5 }}>
         <Typography component="span" variant="caption" color="text.secondary">
           {`${points}x`}
         </Typography>
