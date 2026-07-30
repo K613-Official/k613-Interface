@@ -21,6 +21,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useMemo, useState } from 'react';
+import { IncentivesButton } from 'src/components/incentives/IncentivesButton';
 import Layout from 'src/components/Layout';
 import MaxWidthContainer from 'src/components/MaxWidthContainer';
 import { BigStat } from 'src/components/primitives/BigStat';
@@ -388,13 +389,26 @@ export default function MarketsPage() {
                             </Box>
                           </TableCell>
                           <TableCell align="center">
-                            <FormattedNumber
-                              value={row.supplyAPY}
-                              percent
-                              variant="body1"
-                              visibleDecimals={2}
-                              sx={{ justifyContent: 'center' }}
-                            />
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: 0.5,
+                              }}
+                            >
+                              <FormattedNumber
+                                value={row.supplyAPY}
+                                percent
+                                variant="body1"
+                                visibleDecimals={2}
+                                sx={{ justifyContent: 'center' }}
+                              />
+                              <IncentivesButton
+                                incentives={row.aIncentivesData}
+                                symbol={row.symbol}
+                              />
+                            </Box>
                           </TableCell>
                           <TableCell align="center">
                             <Box>
@@ -417,13 +431,26 @@ export default function MarketsPage() {
                           </TableCell>
                           <TableCell align="center">
                             {row.borrowingEnabled ? (
-                              <FormattedNumber
-                                value={row.variableBorrowAPY}
-                                percent
-                                variant="body1"
-                                visibleDecimals={2}
-                                sx={{ justifyContent: 'center' }}
-                              />
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                  gap: 0.5,
+                                }}
+                              >
+                                <FormattedNumber
+                                  value={row.variableBorrowAPY}
+                                  percent
+                                  variant="body1"
+                                  visibleDecimals={2}
+                                  sx={{ justifyContent: 'center' }}
+                                />
+                                <IncentivesButton
+                                  incentives={row.vIncentivesData}
+                                  symbol={row.symbol}
+                                />
+                              </Box>
                             ) : (
                               <Typography variant="body1">—</Typography>
                             )}
@@ -478,12 +505,18 @@ export default function MarketsPage() {
                         </Box>
                         <Box display="flex" justifyContent="space-between" alignItems="center">
                           <Typography variant="body2">Supply APY</Typography>
-                          <FormattedNumber
-                            value={row.supplyAPY}
-                            percent
-                            variant="body2"
-                            visibleDecimals={2}
-                          />
+                          <Box display="flex" alignItems="center" gap={0.5}>
+                            <FormattedNumber
+                              value={row.supplyAPY}
+                              percent
+                              variant="body2"
+                              visibleDecimals={2}
+                            />
+                            <IncentivesButton
+                              incentives={row.aIncentivesData}
+                              symbol={row.symbol}
+                            />
+                          </Box>
                         </Box>
                         <Box display="flex" justifyContent="space-between">
                           <Typography variant="body2">Total borrowed</Typography>
@@ -501,12 +534,18 @@ export default function MarketsPage() {
                         <Box display="flex" justifyContent="space-between" alignItems="center">
                           <Typography variant="body2">Borrow APY</Typography>
                           {row.borrowingEnabled ? (
-                            <FormattedNumber
-                              value={row.variableBorrowAPY}
-                              percent
-                              variant="body2"
-                              visibleDecimals={2}
-                            />
+                            <Box display="flex" alignItems="center" gap={0.5}>
+                              <FormattedNumber
+                                value={row.variableBorrowAPY}
+                                percent
+                                variant="body2"
+                                visibleDecimals={2}
+                              />
+                              <IncentivesButton
+                                incentives={row.vIncentivesData}
+                                symbol={row.symbol}
+                              />
+                            </Box>
                           ) : (
                             <Typography variant="body2">—</Typography>
                           )}

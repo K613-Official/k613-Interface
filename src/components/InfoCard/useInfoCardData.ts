@@ -82,6 +82,7 @@ export function useInfoCardData(type: InfoCardType): {
             secondaryValue: formatCurrency(position.underlyingBalanceUSD),
             accrued: formatAccrued(netSupplied?.[position.underlyingAsset.toLowerCase()]),
             apy: formatPercent(position.reserve.supplyAPY),
+            incentives: position.reserve.aIncentivesData ?? [],
             collateralEnabled: Boolean(position.usageAsCollateralEnabledOnUser),
             canToggleCollateral,
             disableAction: !position.reserve.isActive || position.reserve.isPaused,
@@ -128,6 +129,7 @@ export function useInfoCardData(type: InfoCardType): {
             secondaryValue: formatCurrency(position.variableBorrowsUSD),
             accrued: formatAccrued(netBorrowed?.[position.underlyingAsset.toLowerCase()]),
             apy: formatPercent(position.reserve.variableBorrowAPY),
+            incentives: position.reserve.vIncentivesData ?? [],
             disableAction: !position.reserve.isActive || position.reserve.isPaused,
             onAction: () =>
               openModal(ModalType.Repay, {

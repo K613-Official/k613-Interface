@@ -10,6 +10,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useMemo, useState } from 'react';
+import { IncentivesButton } from 'src/components/incentives/IncentivesButton';
 import { TokenIcon } from 'src/components/primitives/TokenIcon';
 
 import { InfoCardType, InfoPosition } from '../data';
@@ -176,7 +177,12 @@ export function InfoCardDesktopTable({
             </TableCell>
 
             <TableCell align="right">
-              <TablePrimaryValue>{position.apy}</TablePrimaryValue>
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}
+              >
+                <TablePrimaryValue>{position.apy}</TablePrimaryValue>
+                <IncentivesButton incentives={position.incentives} symbol={position.symbol} />
+              </Box>
             </TableCell>
 
             {isSupply && (

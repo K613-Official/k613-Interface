@@ -1,3 +1,5 @@
+import { ReserveIncentiveResponse } from '@aave/math-utils/dist/esm/formatters/incentive/calculate-reserve-incentives';
+
 export type InfoCardType = 'supply' | 'borrow';
 
 export type InfoMetric = {
@@ -16,6 +18,8 @@ export type InfoPosition = {
   secondaryValue: string;
   accrued?: string;
   apy: string;
+  /** On-chain reward emissions (xK613) rendered as a badge next to the APY. */
+  incentives?: ReserveIncentiveResponse[];
   collateralEnabled?: boolean;
   canToggleCollateral?: boolean;
   disableAction: boolean;

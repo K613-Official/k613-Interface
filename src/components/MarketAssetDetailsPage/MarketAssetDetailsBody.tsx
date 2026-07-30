@@ -2,6 +2,7 @@ import { valueToBigNumber } from '@aave/math-utils';
 import { ArrowBack, OpenInNew } from '@mui/icons-material';
 import { Box, Button, Link as MuiLink, Typography } from '@mui/material';
 import { useMemo, useState } from 'react';
+import { IncentivesButton } from 'src/components/incentives/IncentivesButton';
 import { FormattedNumber } from 'src/components/primitives/FormattedNumber';
 import { Link, ROUTES } from 'src/components/primitives/Link';
 import { TokenIcon } from 'src/components/primitives/TokenIcon';
@@ -335,12 +336,18 @@ export function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveDa
                   <Typography variant="body2" color="text.secondary">
                     APY
                   </Typography>
-                  <FormattedNumber
-                    value={reserve.supplyAPY}
-                    percent
-                    variant="h6"
-                    visibleDecimals={2}
-                  />
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <FormattedNumber
+                      value={reserve.supplyAPY}
+                      percent
+                      variant="h6"
+                      visibleDecimals={2}
+                    />
+                    <IncentivesButton
+                      incentives={reserve.aIncentivesData}
+                      symbol={reserve.symbol}
+                    />
+                  </Box>
                 </MetricCell>
               </MetricsRow>
             </SupplyBorrowMain>
@@ -504,12 +511,18 @@ export function MarketAssetDetailsBody({ reserve }: { reserve: ComputedReserveDa
                   <Typography variant="body2" color="text.secondary">
                     APY, variable
                   </Typography>
-                  <FormattedNumber
-                    value={reserve.variableBorrowAPY}
-                    percent
-                    variant="h6"
-                    visibleDecimals={2}
-                  />
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <FormattedNumber
+                      value={reserve.variableBorrowAPY}
+                      percent
+                      variant="h6"
+                      visibleDecimals={2}
+                    />
+                    <IncentivesButton
+                      incentives={reserve.vIncentivesData}
+                      symbol={reserve.symbol}
+                    />
+                  </Box>
                 </MetricCell>
                 <MetricDivider />
                 <MetricCell>
