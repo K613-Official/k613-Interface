@@ -395,7 +395,7 @@ export function useK613RewardsAPR(
             address: rewardsDistributorAddress as `0x${string}`,
             fromBlock: 'earliest' as const,
           })
-          .catch(() => [] as ReturnType<typeof publicClient.getLogs>);
+          .catch(() => []);
 
         if (!logs || logs.length < 2) {
           setApr(null);
