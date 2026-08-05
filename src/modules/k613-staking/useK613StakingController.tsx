@@ -9,6 +9,7 @@ import {
   parseStakingDepositsRead,
   useK613Approve,
   useK613RewardsActions,
+  useK613RewardsAPR,
   useK613RewardsData,
   useK613StakingActions,
   useK613StakingData,
@@ -101,6 +102,7 @@ export function useK613StakingController() {
     rewardsDistributor as `0x${string}` | undefined
   );
   const rewardsData = useK613RewardsData(rewardsDistributor);
+  const { apr: calculatedApr } = useK613RewardsAPR(rewardsDistributor);
 
   const {
     stake,
@@ -121,7 +123,7 @@ export function useK613StakingController() {
 
   const depositData = parseStakingDepositsRead(deposits.data);
   const stakedAmount = depositData?.amount ?? BigInt(0);
-  const exitQueue = depositData?.exitQueue ?? [];
+  const exitQueue = useMemo(() => depositData?.exitQueue ?? [], [depositData?.exitQueue]);
   const lockDurationSeconds = (lockDuration.data as bigint | undefined) ?? BigInt(0);
   const penaltyBps = Number((instantExitPenaltyBps.data as bigint | undefined) ?? 0);
   const penaltyPercent = (penaltyBps / 100).toFixed(1);
@@ -154,10 +156,7 @@ export function useK613StakingController() {
   const claimableTotal = pendingRewardsAmount + orphanXk613;
   const hasStakingActivity = stakedAmount > 0n || walletXk613 > 0n || queuedTotal > 0n;
 
-  const displayApy =
-    typeof process !== 'undefined' && process.env.NEXT_PUBLIC_K613_DISPLAY_APY
-      ? process.env.NEXT_PUBLIC_K613_DISPLAY_APY
-      : '—';
+  const displayApy = calculatedApr || '—';
 
   const lastAccrualDisplay = useMemo(() => {
     const lastEpoch = rewardsData.lastEpochFlushAt;
