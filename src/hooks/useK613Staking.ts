@@ -339,7 +339,20 @@ export function useK613RewardsData(rewardsDistributorAddress: `0x${string}` | un
   const totalDepositsValue = (totalDeposits.data as bigint | undefined) ?? BigInt(0);
   const xk613BalanceValue = (xk613Balance.data as bigint | undefined) ?? BigInt(0);
   const poolRewardBalance =
-    xk613BalanceValue > totalDepositsValue ? xk613BalanceValue - totalDepositsValue : BigInt(0);
+    !xk613Balance.isLoading && !totalDeposits.isLoading && xk613BalanceValue > totalDepositsValue
+      ? xk613BalanceValue - totalDepositsValue
+      : BigInt(0);
+
+  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+    console.log(
+      '[RewardsData] xK613 Balance:',
+      xk613BalanceValue.toString(),
+      'totalDeposits:',
+      totalDepositsValue.toString(),
+      'poolReward:',
+      poolRewardBalance.toString()
+    );
+  }
 
   return {
     pendingRewardsOf,
@@ -383,8 +396,15 @@ export function useK613RewardsAPR(
     const fetchAPR = async () => {
       try {
         setIsLoading(true);
+        console.log(
+          '[APR] Fetching APR for address:',
+          rewardsDistributorAddress,
+          'totalDeposits:',
+          totalDeposits?.toString()
+        );
 
         if (!totalDeposits || totalDeposits === BigInt(0)) {
+          console.log('[APR] No totalDeposits');
           setApr(null);
           setIsLoading(false);
           return;
@@ -395,9 +415,15 @@ export function useK613RewardsAPR(
             address: rewardsDistributorAddress as `0x${string}`,
             fromBlock: 'earliest' as const,
           })
-          .catch(() => []);
+          .catch((e) => {
+            console.log('[APR] getLogs error:', e);
+            return [];
+          });
+
+        console.log('[APR] Logs count:', logs.length);
 
         if (!logs || logs.length < 2) {
+          console.log('[APR] Not enough logs for APR calculation');
           setApr(null);
           setIsLoading(false);
           return;
@@ -418,9 +444,10 @@ export function useK613RewardsAPR(
 
         const apr365 = (totalSum * BigInt(365) * BigInt(100)) / totalDeposits;
         const aprValue = Number(apr365) / 1e18;
+        console.log('[APR] Calculated APR:', aprValue.toFixed(2), '%');
         setApr(aprValue.toFixed(2));
       } catch (e) {
-        console.error('Failed to fetch APR:', e);
+        console.error('[APR] Failed to fetch APR:', e);
         setApr(null);
       } finally {
         setIsLoading(false);
