@@ -1,5 +1,5 @@
+import { useQuery } from '@tanstack/react-query';
 import { waitForTransactionReceipt } from '@wagmi/core';
-import { useEffect, useState } from 'react';
 import k613Artifact from 'src/abis/K613/K613.json';
 import rewardsDistributorArtifact from 'src/abis/RewardsDistributor/RewardsDistributor.json';
 import stakingArtifact from 'src/abis/Staking/Staking.json';
@@ -10,7 +10,7 @@ const STAKING_ABI = (stakingArtifact as unknown as { abi: unknown[] }).abi;
 const K613_ABI = (k613Artifact as unknown as { abi: unknown[] }).abi;
 const REWARDS_DISTRIBUTOR_ABI = (rewardsDistributorArtifact as unknown as { abi: unknown[] }).abi;
 
-const XK613_ABI = ['function balanceOf(address account) view returns (uint256)'] as const;
+const XK613_ADDRESS = '0x9064d55A8A8473fA39c41A16492Fa1094Eb4E8b5' as const;
 
 export type StakingExitRequest = {
   amount: bigint;
@@ -329,8 +329,8 @@ export function useK613RewardsData(rewardsDistributorAddress: `0x${string}` | un
   });
 
   const xk613Balance = useReadContract({
-    address: '0x9064d55A8A8473fA39c41A16492Fa1094Eb4E8b5' as `0x${string}`,
-    abi: XK613_ABI,
+    address: XK613_ADDRESS,
+    abi: K613_ABI,
     functionName: 'balanceOf',
     args: rewardsDistributorAddress ? [rewardsDistributorAddress] : undefined,
   });
@@ -339,14 +339,6 @@ export function useK613RewardsData(rewardsDistributorAddress: `0x${string}` | un
   const xk613BalanceValue = (xk613Balance.data as bigint | undefined) ?? BigInt(0);
   const poolRewardBalance =
     xk613BalanceValue > totalDepositsValue ? xk613BalanceValue - totalDepositsValue : BigInt(0);
-
-  if (typeof window !== 'undefined') {
-    console.log('[RewardsData]', {
-      xk613Balance: (Number(xk613BalanceValue) / 1e18).toFixed(2),
-      totalDeposits: (Number(totalDepositsValue) / 1e18).toFixed(2),
-      poolReward: (Number(poolRewardBalance) / 1e18).toFixed(2),
-    });
-  }
 
   return {
     pendingRewardsOf,
@@ -373,96 +365,105 @@ export function useK613RewardsData(rewardsDistributorAddress: `0x${string}` | un
   };
 }
 
-export function useK613RewardsAPR(
-  rewardsDistributorAddress: `0x${string}` | undefined,
-  totalDeposits: bigint | undefined
-) {
+/**
+ * Reward pool APR.
+ *
+ * The contract has no reward rate: payouts arrive as discrete `RewardNotified`
+ * events on every buyback. Summing those logs is not an option — Monad RPCs cap
+ * `eth_getLogs` at a small block range (100 on the public node), while 30 days
+ * is ~8.6M blocks.
+ *
+ * So we read `accRewardPerShare` instead — the cumulative index that grows by
+ * `amount * 1e18 / totalDeposits` on every notify. Its growth over the window
+ * is the yield per deposited xK613, regardless of how the pool size changed in
+ * between. Two `eth_call`s instead of thousands of log requests.
+ */
+const APR_WINDOW_DAYS = 30;
+const APR_MIN_WINDOW_DAYS = 7;
+const APR_SAMPLES = 6;
+/** How many separate payouts must land in the window for an average to mean anything. */
+const APR_MIN_ACCRUALS = 2;
+const BLOCK_TIME_PROBE_SPAN = 100_000n;
+
+export function useK613RewardsAPR(rewardsDistributorAddress: `0x${string}` | undefined) {
   const publicClient = usePublicClient();
-  const [apr, setApr] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (!publicClient || !rewardsDistributorAddress) {
-      setApr(null);
-      return;
-    }
+  const { data } = useQuery({
+    queryKey: ['k613-rewards-apr', rewardsDistributorAddress, publicClient?.chain?.id],
+    enabled: Boolean(publicClient && rewardsDistributorAddress),
+    staleTime: 10 * 60 * 1000,
+    retry: false,
+    queryFn: async (): Promise<{ apr: string | null }> => {
+      if (!publicClient || !rewardsDistributorAddress) return { apr: null };
 
-    const fetchAPR = async () => {
-      try {
-        setIsLoading(true);
-        console.log(
-          '[APR] Fetching APR for address:',
-          rewardsDistributorAddress,
-          'totalDeposits:',
-          totalDeposits?.toString()
-        );
+      const readAcc = (blockNumber: bigint) =>
+        publicClient.readContract({
+          address: rewardsDistributorAddress,
+          abi: REWARDS_DISTRIBUTOR_ABI,
+          functionName: 'accRewardPerShare',
+          blockNumber,
+        }) as Promise<bigint>;
 
-        if (!totalDeposits || totalDeposits === BigInt(0)) {
-          console.log('[APR] No totalDeposits');
-          setApr(null);
-          setIsLoading(false);
-          return;
+      const latest = await publicClient.getBlockNumber();
+      const [latestBlock, probeBlock] = await Promise.all([
+        publicClient.getBlock({ blockNumber: latest }),
+        publicClient.getBlock({ blockNumber: latest - BLOCK_TIME_PROBE_SPAN }),
+      ]);
+      const secondsPerBlock =
+        Number(latestBlock.timestamp - probeBlock.timestamp) / Number(BLOCK_TIME_PROBE_SPAN);
+      if (!Number.isFinite(secondsPerBlock) || secondsPerBlock <= 0) return { apr: null };
+
+      // Nodes keep historical state for a limited depth: ask for 30 days and
+      // halve the window until the node serves the historical call.
+      const minSpan = BigInt(Math.round((APR_MIN_WINDOW_DAYS * 86400) / secondsPerBlock));
+      let span = BigInt(Math.round((APR_WINDOW_DAYS * 86400) / secondsPerBlock));
+      let startBlock: bigint | null = null;
+      let accStart = 0n;
+
+      while (span >= minSpan) {
+        const candidate = latest - span;
+        try {
+          accStart = await readAcc(candidate);
+          startBlock = candidate;
+          break;
+        } catch {
+          span /= 2n;
         }
-
-        const latestBlock = await publicClient.getBlockNumber();
-        const fromBlock = latestBlock > BigInt(100) ? latestBlock - BigInt(100) : BigInt(0);
-
-        console.log(
-          '[APR] Fetching logs from block',
-          fromBlock.toString(),
-          'to',
-          latestBlock.toString()
-        );
-
-        const logs = await publicClient
-          .getLogs({
-            address: rewardsDistributorAddress as `0x${string}`,
-            fromBlock,
-            toBlock: latestBlock,
-          })
-          .catch((e) => {
-            console.log('[APR] getLogs error:', e);
-            return [];
-          });
-
-        console.log('[APR] Logs count:', logs.length);
-
-        if (!logs || logs.length < 2) {
-          console.log('[APR] Not enough logs for APR calculation');
-          setApr(null);
-          setIsLoading(false);
-          return;
-        }
-
-        let totalSum = BigInt(0);
-
-        for (const log of logs) {
-          try {
-            if (log.data && log.data.length >= 66) {
-              const amount = BigInt('0x' + log.data.slice(2));
-              totalSum = totalSum + amount;
-            }
-          } catch {
-            continue;
-          }
-        }
-
-        const apr365 = (totalSum * BigInt(365) * BigInt(100)) / totalDeposits;
-        const aprValue = Number(apr365) / 1e18;
-        console.log('[APR] Calculated APR:', aprValue.toFixed(2), '%');
-        setApr(aprValue.toFixed(2));
-      } catch (e) {
-        console.error('[APR] Failed to fetch APR:', e);
-        setApr(null);
-      } finally {
-        setIsLoading(false);
       }
-    };
 
-    fetchAPR();
-  }, [publicClient, rewardsDistributorAddress, totalDeposits]);
+      // A zero index at the window start means the pool only began accruing
+      // inside the window. Annualising that cold start invents a 3-digit APR.
+      if (startBlock === null || accStart === 0n) return { apr: null };
 
-  return { apr, isLoading };
+      const windowStart = startBlock;
+      const step = (latest - windowStart) / BigInt(APR_SAMPLES);
+      const sampleBlocks = Array.from(
+        { length: APR_SAMPLES - 1 },
+        (_, i) => windowStart + step * BigInt(i + 1)
+      );
+      const [startTsBlock, samples, accLatest] = await Promise.all([
+        publicClient.getBlock({ blockNumber: windowStart }),
+        Promise.all(sampleBlocks.map(readAcc)),
+        readAcc(latest),
+      ]);
+
+      const series = [accStart, ...samples, accLatest];
+      const accruals = series.reduce(
+        (count, value, i) => (i > 0 && value > series[i - 1] ? count + 1 : count),
+        0
+      );
+      if (accruals < APR_MIN_ACCRUALS) return { apr: null };
+
+      const windowSeconds = Number(latestBlock.timestamp - startTsBlock.timestamp);
+      if (windowSeconds <= 0) return { apr: null };
+
+      const growthPerToken = Number(accLatest - accStart) / 1e18;
+      const apr = growthPerToken * ((365 * 86400) / windowSeconds) * 100;
+      return { apr: apr.toFixed(2) };
+    },
+  });
+
+  return { apr: data?.apr ?? null };
 }
 
 export function useK613RewardsActions(rewardsDistributorAddress: `0x${string}` | undefined) {

@@ -159,6 +159,9 @@ export function K613RewardPoolTab() {
             </RewardStatsRow>
 
             <PanelSection>
+              {displayApy === '—' && (
+                <BalanceCaption>APR appears after several buyback cycles</BalanceCaption>
+              )}
               <BalanceCaption>
                 Available to claim: <strong>{formatted.claimableTotal} xK613</strong> → K613 1:1
               </BalanceCaption>

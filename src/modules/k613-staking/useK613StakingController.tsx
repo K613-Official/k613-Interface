@@ -102,7 +102,7 @@ export function useK613StakingController() {
     rewardsDistributor as `0x${string}` | undefined
   );
   const rewardsData = useK613RewardsData(rewardsDistributor);
-  const { apr: calculatedApr } = useK613RewardsAPR(rewardsDistributor, rewardsData.totalDeposits);
+  const { apr: calculatedApr } = useK613RewardsAPR(rewardsDistributor);
 
   const {
     stake,
