@@ -98,7 +98,7 @@ export function K613LockExitTab() {
 
   const lockBusy = actionPending === 'lock' || isApprovePending;
   const initiateBusy = actionPending === 'initiateExit';
-  const queueFull = exitQueue.length >= maxExitSlots;
+  const queueFull = maxExitSlots !== null && exitQueue.length >= maxExitSlots;
 
   const lockParsedPositive =
     stakeAmount.trim() !== '' &&
@@ -296,7 +296,7 @@ export function K613LockExitTab() {
                 <ExitQueueHeader>
                   <ExitQueueTitle>Exit queue</ExitQueueTitle>
                   <ExitQueueCount>
-                    {exitQueue.length}/{maxExitSlots}
+                    {exitQueue.length}/{maxExitSlots ?? '—'}
                   </ExitQueueCount>
                 </ExitQueueHeader>
                 <ExitQueueSubtitle>Track your exit requests</ExitQueueSubtitle>

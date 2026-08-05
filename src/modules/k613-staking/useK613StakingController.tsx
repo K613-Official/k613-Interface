@@ -127,7 +127,9 @@ export function useK613StakingController() {
   const lockDurationSeconds = (lockDuration.data as bigint | undefined) ?? BigInt(0);
   const penaltyBps = Number((instantExitPenaltyBps.data as bigint | undefined) ?? 0);
   const penaltyPercent = (penaltyBps / 100).toFixed(1);
-  const maxExitSlots = maxExitRequests !== undefined ? Number(maxExitRequests) : 10;
+  // Read from the contract — no numeric fallback: inventing a limit would both
+  // show a wrong cap and block new requests once the queue reaches it.
+  const maxExitSlots = maxExitRequests !== undefined ? Number(maxExitRequests) : null;
   const isZeroAddress =
     !rewardsDistributor || rewardsDistributor === '0x0000000000000000000000000000000000000000';
   const instantExitRequiresDistributor = penaltyBps > 0 && isZeroAddress;
@@ -181,7 +183,7 @@ export function useK613StakingController() {
       pendingRewards: formatTokenAmount(pendingRewardsAmount),
       claimableTotal: formatTokenAmount(claimableTotal),
       orphanXk613: formatTokenAmount(orphanXk613),
-      exitSlots: `${exitQueue.length} / ${maxExitSlots}`,
+      exitSlots: `${exitQueue.length} / ${maxExitSlots ?? '—'}`,
       lockPeriodShort: formatStakeLockPeriod(lockDurationSeconds),
       penaltyPercent,
       userPoolBalance: formatTokenAmount(userPoolBalance),
@@ -268,7 +270,7 @@ export function useK613StakingController() {
       setError('Enter an amount');
       return;
     }
-    if (exitQueue.length >= maxExitSlots) {
+    if (maxExitSlots !== null && exitQueue.length >= maxExitSlots) {
       setError('Exit queue is full');
       return;
     }
