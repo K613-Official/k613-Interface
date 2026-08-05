@@ -1,13 +1,16 @@
 import { waitForTransactionReceipt } from '@wagmi/core';
+import { useEffect, useState } from 'react';
 import k613Artifact from 'src/abis/K613/K613.json';
 import rewardsDistributorArtifact from 'src/abis/RewardsDistributor/RewardsDistributor.json';
 import stakingArtifact from 'src/abis/Staking/Staking.json';
 import { addressesByChainId } from 'src/utils/addresses';
-import { useAccount, useConfig, useReadContract, useWriteContract } from 'wagmi';
+import { useAccount, useConfig, usePublicClient, useReadContract, useWriteContract } from 'wagmi';
 
 const STAKING_ABI = (stakingArtifact as unknown as { abi: unknown[] }).abi;
 const K613_ABI = (k613Artifact as unknown as { abi: unknown[] }).abi;
 const REWARDS_DISTRIBUTOR_ABI = (rewardsDistributorArtifact as unknown as { abi: unknown[] }).abi;
+
+const XK613_ABI = ['function balanceOf(address account) view returns (uint256)'] as const;
 
 export type StakingExitRequest = {
   amount: bigint;
@@ -292,6 +295,7 @@ export function useK613Approve() {
 
 export function useK613RewardsData(rewardsDistributorAddress: `0x${string}` | undefined) {
   const { address: userAddress } = useAccount();
+  const XK613_ADDRESS = '0x9064d55A8A8473fA39c41A16492Fa1094Eb4E8b5' as const;
 
   const pendingRewardsOf = useReadContract({
     address: rewardsDistributorAddress,
@@ -325,35 +329,108 @@ export function useK613RewardsData(rewardsDistributorAddress: `0x${string}` | un
     functionName: 'totalDeposits',
   });
 
-  const poolPendingRewards = useReadContract({
-    address: rewardsDistributorAddress,
-    abi: REWARDS_DISTRIBUTOR_ABI,
-    functionName: 'pendingRewards',
+  const xk613Balance = useReadContract({
+    address: XK613_ADDRESS,
+    abi: XK613_ABI,
+    functionName: 'balanceOf',
+    args: rewardsDistributorAddress ? [rewardsDistributorAddress] : undefined,
   });
+
+  const totalDepositsValue = (totalDeposits.data as bigint | undefined) ?? BigInt(0);
+  const xk613BalanceValue = (xk613Balance.data as bigint | undefined) ?? BigInt(0);
+  const poolRewardBalance =
+    xk613BalanceValue > totalDepositsValue ? xk613BalanceValue - totalDepositsValue : BigInt(0);
 
   return {
     pendingRewardsOf,
     lastEpochFlushAt: lastEpochFlushAt.data as bigint | undefined,
     nextEpochAt: nextEpochAt.data as bigint | undefined,
     userPoolBalance: userPoolBalance.data as bigint | undefined,
-    totalDeposits: totalDeposits.data as bigint | undefined,
-    poolPendingRewards: poolPendingRewards.data as bigint | undefined,
+    totalDeposits: totalDepositsValue,
+    poolPendingRewards: poolRewardBalance,
     isLoading:
       pendingRewardsOf.isLoading ||
       lastEpochFlushAt.isLoading ||
       nextEpochAt.isLoading ||
       userPoolBalance.isLoading ||
       totalDeposits.isLoading ||
-      poolPendingRewards.isLoading,
+      xk613Balance.isLoading,
     refetch: () => {
       pendingRewardsOf.refetch();
       lastEpochFlushAt.refetch();
       nextEpochAt.refetch();
       userPoolBalance.refetch();
       totalDeposits.refetch();
-      poolPendingRewards.refetch();
+      xk613Balance.refetch();
     },
   };
+}
+
+export function useK613RewardsAPR(
+  rewardsDistributorAddress: `0x${string}` | undefined,
+  totalDeposits: bigint | undefined
+) {
+  const publicClient = usePublicClient();
+  const [apr, setApr] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!publicClient || !rewardsDistributorAddress) {
+      setApr(null);
+      return;
+    }
+
+    const fetchAPR = async () => {
+      try {
+        setIsLoading(true);
+
+        if (!totalDeposits || totalDeposits === BigInt(0)) {
+          setApr(null);
+          setIsLoading(false);
+          return;
+        }
+
+        const logs = await publicClient
+          .getLogs({
+            address: rewardsDistributorAddress as `0x${string}`,
+            fromBlock: 'earliest' as const,
+          })
+          .catch(() => [] as ReturnType<typeof publicClient.getLogs>);
+
+        if (!logs || logs.length < 2) {
+          setApr(null);
+          setIsLoading(false);
+          return;
+        }
+
+        let totalSum = BigInt(0);
+
+        for (const log of logs) {
+          try {
+            if (log.data && log.data.length >= 66) {
+              const amount = BigInt('0x' + log.data.slice(2));
+              totalSum = totalSum + amount;
+            }
+          } catch {
+            continue;
+          }
+        }
+
+        const apr365 = (totalSum * BigInt(365) * BigInt(100)) / totalDeposits;
+        const aprValue = Number(apr365) / 1e18;
+        setApr(aprValue.toFixed(2));
+      } catch (e) {
+        console.error('Failed to fetch APR:', e);
+        setApr(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAPR();
+  }, [publicClient, rewardsDistributorAddress, totalDeposits]);
+
+  return { apr, isLoading };
 }
 
 export function useK613RewardsActions(rewardsDistributorAddress: `0x${string}` | undefined) {

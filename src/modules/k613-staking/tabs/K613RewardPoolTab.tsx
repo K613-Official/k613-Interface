@@ -107,7 +107,7 @@ export function K613RewardPoolTab() {
           <StatCard>
             <StatInner>
               <StatLabel>Total Rewards</StatLabel>
-              <StatValue>{formatted.poolPendingRewards} K613</StatValue>
+              <StatValue>{formatted.poolPendingRewards} xK613</StatValue>
             </StatInner>
           </StatCard>
         </StatsRow>
