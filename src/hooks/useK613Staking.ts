@@ -295,7 +295,6 @@ export function useK613Approve() {
 
 export function useK613RewardsData(rewardsDistributorAddress: `0x${string}` | undefined) {
   const { address: userAddress } = useAccount();
-  const XK613_ADDRESS = '0x9064d55A8A8473fA39c41A16492Fa1094Eb4E8b5' as const;
 
   const pendingRewardsOf = useReadContract({
     address: rewardsDistributorAddress,
@@ -330,7 +329,7 @@ export function useK613RewardsData(rewardsDistributorAddress: `0x${string}` | un
   });
 
   const xk613Balance = useReadContract({
-    address: XK613_ADDRESS,
+    address: '0x9064d55A8A8473fA39c41A16492Fa1094Eb4E8b5' as `0x${string}`,
     abi: XK613_ABI,
     functionName: 'balanceOf',
     args: rewardsDistributorAddress ? [rewardsDistributorAddress] : undefined,
@@ -339,19 +338,14 @@ export function useK613RewardsData(rewardsDistributorAddress: `0x${string}` | un
   const totalDepositsValue = (totalDeposits.data as bigint | undefined) ?? BigInt(0);
   const xk613BalanceValue = (xk613Balance.data as bigint | undefined) ?? BigInt(0);
   const poolRewardBalance =
-    !xk613Balance.isLoading && !totalDeposits.isLoading && xk613BalanceValue > totalDepositsValue
-      ? xk613BalanceValue - totalDepositsValue
-      : BigInt(0);
+    xk613BalanceValue > totalDepositsValue ? xk613BalanceValue - totalDepositsValue : BigInt(0);
 
-  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-    console.log(
-      '[RewardsData] xK613 Balance:',
-      xk613BalanceValue.toString(),
-      'totalDeposits:',
-      totalDepositsValue.toString(),
-      'poolReward:',
-      poolRewardBalance.toString()
-    );
+  if (typeof window !== 'undefined') {
+    console.log('[RewardsData]', {
+      xk613Balance: (Number(xk613BalanceValue) / 1e18).toFixed(2),
+      totalDeposits: (Number(totalDepositsValue) / 1e18).toFixed(2),
+      poolReward: (Number(poolRewardBalance) / 1e18).toFixed(2),
+    });
   }
 
   return {
@@ -410,10 +404,21 @@ export function useK613RewardsAPR(
           return;
         }
 
+        const latestBlock = await publicClient.getBlockNumber();
+        const fromBlock = latestBlock > BigInt(100) ? latestBlock - BigInt(100) : BigInt(0);
+
+        console.log(
+          '[APR] Fetching logs from block',
+          fromBlock.toString(),
+          'to',
+          latestBlock.toString()
+        );
+
         const logs = await publicClient
           .getLogs({
             address: rewardsDistributorAddress as `0x${string}`,
-            fromBlock: 'earliest' as const,
+            fromBlock,
+            toBlock: latestBlock,
           })
           .catch((e) => {
             console.log('[APR] getLogs error:', e);
