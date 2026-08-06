@@ -162,15 +162,22 @@ export function K613RewardPoolTab() {
               {displayApy === '—' && (
                 <BalanceCaption>APR appears after several buyback cycles</BalanceCaption>
               )}
-              <BalanceCaption>
-                Available to claim: <strong>{formatted.claimableTotal} xK613</strong> → K613 1:1
-              </BalanceCaption>
-              {orphanXk613 > 0n && pendingRewardsAmount > 0n && (
+              {claimableTotal > 0n ? (
+                <BalanceCaption>
+                  Available to claim: <strong>{formatted.claimableTotal} xK613</strong> → K613 1:1
+                </BalanceCaption>
+              ) : (
+                <BalanceCaption>
+                  Nothing can be swapped for K613 right now — withdraw your deposit from the reward
+                  pool first
+                </BalanceCaption>
+              )}
+              {claimableTotal > 0n && orphanXk613 > 0n && pendingRewardsAmount > 0n && (
                 <BalanceCaption>
                   Includes {formatted.orphanXk613} xK613 leftover in wallet
                 </BalanceCaption>
               )}
-              {orphanXk613 > 0n && pendingRewardsAmount <= 0n && (
+              {claimableTotal > 0n && orphanXk613 > 0n && pendingRewardsAmount <= 0n && (
                 <BalanceCaption>
                   {formatted.orphanXk613} xK613 leftover from a previous claim — will be redeemed
                 </BalanceCaption>
