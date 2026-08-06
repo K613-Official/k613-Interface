@@ -148,7 +148,14 @@ export function useK613StakingController() {
     typeof rewardsData.poolPendingRewards === 'bigint' ? rewardsData.poolPendingRewards : BigInt(0);
   const protocolTVL = typeof totalBacking === 'bigint' ? totalBacking : BigInt(0);
 
-  const queuedTotal = exitPendingSum ?? BigInt(0);
+  // The contract's own tally. Until that read resolves, fall back to summing the
+  // rows — otherwise the total reads 0 while the queue table below is showing
+  // requests.
+  const queuedFromRows = useMemo(
+    () => exitQueue.reduce((acc, row) => acc + row.amount, BigInt(0)),
+    [exitQueue]
+  );
+  const queuedTotal = exitPendingSum ?? queuedFromRows;
 
   // In V2 there is no separate stake position: the position *is* the xK613 the
   // wallet holds. `initiateExit` moves those tokens into the contract, so the

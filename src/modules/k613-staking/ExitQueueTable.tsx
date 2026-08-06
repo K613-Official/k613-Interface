@@ -108,9 +108,11 @@ export function ExitQueueTable({
                 >
                   {exitBusy ? <CircularProgress size={14} color="inherit" /> : 'Exit'}
                 </QueueExitButton>
+                {/* The contract reverts `instantExit` with `Unlocked()` once the lock
+                    has elapsed — and by then `Exit` returns the full amount anyway. */}
                 <QueuePenaltyButton
                   size="small"
-                  disabled={disabled || anyBusy}
+                  disabled={disabled || anyBusy || unlocked}
                   onClick={() => onInstantExit(BigInt(index))}
                 >
                   {instantBusy ? (
