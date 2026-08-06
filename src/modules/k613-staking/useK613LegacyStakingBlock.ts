@@ -7,6 +7,8 @@ import {
   useK613LegacyStakingData,
 } from 'src/hooks/useK613Staking';
 
+import type { K613ConfirmRequest } from './K613ConfirmDialog';
+
 const LEGACY_KEY_PREFIX = 'legacy';
 
 /**
@@ -21,11 +23,13 @@ export function useK613LegacyStakingBlock({
   onSettled,
   setError,
   setSuccessMessage,
+  requestConfirm,
 }: {
   /** Refetches wallet balances and V2 state — a legacy exit changes both. */
   onSettled: () => void;
   setError: (message: string | null) => void;
   setSuccessMessage: (message: string | null) => void;
+  requestConfirm: (request: K613ConfirmRequest) => Promise<boolean>;
 }) {
   const { legacyAddress, deposits, lockDurationSeconds, instantExitPenaltyBps, paused, refetch } =
     useK613LegacyStakingData();
@@ -66,18 +70,21 @@ export function useK613LegacyStakingBlock({
   );
 
   const handleInstantExit = useCallback(
-    (index: bigint) => {
-      const confirmed = window.confirm(
-        `Instant exit from old staking forfeits ${penaltyPercent}% of this request. Continue?`
-      );
-      if (!confirmed) return Promise.resolve();
-      return run(
+    async (index: bigint) => {
+      const confirmed = await requestConfirm({
+        title: 'Instant exit from old staking',
+        body: `This forfeits ${penaltyPercent}% of the request. Cancelling it instead returns your xK613 to your wallet, from where you can exit through StakingV2 with no penalty.`,
+        confirmLabel: `Forfeit ${penaltyPercent}% and exit`,
+        danger: true,
+      });
+      if (!confirmed) return;
+      await run(
         `${LEGACY_KEY_PREFIX}:instant:${index.toString()}`,
         () => instantExit(index),
         `Instant exit completed. ${penaltyPercent}% was forfeited.`
       );
     },
-    [run, instantExit, penaltyPercent]
+    [run, instantExit, penaltyPercent, requestConfirm]
   );
 
   const handleCancelExit = useCallback(

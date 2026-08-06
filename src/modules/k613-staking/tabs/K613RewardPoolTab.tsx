@@ -50,8 +50,6 @@ export function K613RewardPoolTab() {
     isClaimPending,
     error,
     pendingRewardsAmount,
-    penaltyPercent,
-    lockPeriodLabel,
     displayApy,
     handleClaimRewards,
     handleDeposit,
@@ -154,9 +152,6 @@ export function K613RewardPoolTab() {
               {displayApy === '—' && (
                 <BalanceCaption>APR appears after several buyback cycles</BalanceCaption>
               )}
-              <BalanceCaption>
-                {`Rewards are paid in xK613 and land in your wallet. They leave the same way as any other xK613 — through the exit queue (${lockPeriodLabel}), or with Instant exit for a ${penaltyPercent}% fee. There is no 1:1 swap.`}
-              </BalanceCaption>
             </PanelSection>
 
             <CtaButton

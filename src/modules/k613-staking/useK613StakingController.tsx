@@ -19,6 +19,7 @@ import { getNetworkConfig } from 'src/utils/marketsAndNetworksConfig';
 import { formatUnits, parseUnits } from 'viem';
 import { useAccount, useSwitchChain } from 'wagmi';
 
+import type { K613ConfirmRequest } from './K613ConfirmDialog';
 import { CtaButton, StatePaper, StateText } from './k613Staking.styles';
 import type {
   K613InfoDialogKind,
@@ -64,6 +65,11 @@ export function useK613StakingController() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState<string | null>(null);
   const [infoDialog, setInfoDialog] = useState<K613InfoDialogKind>(null);
+  // In-app replacement for `window.confirm`: the handler awaits the promise and
+  // the dialog's buttons settle it.
+  const [confirmRequest, setConfirmRequest] = useState<
+    (K613ConfirmRequest & { resolve: (confirmed: boolean) => void }) | null
+  >(null);
   // Re-renders the tree once a second so the per-request unlock countdowns tick.
   const [, setUnlockCountdownTick] = useState(0);
 
@@ -73,6 +79,28 @@ export function useK613StakingController() {
     }, 1000);
     return () => window.clearInterval(id);
   }, []);
+
+  const requestConfirm = useCallback(
+    (request: K613ConfirmRequest) =>
+      new Promise<boolean>((resolve) => {
+        setConfirmRequest((previous) => {
+          // A second prompt while one is open would otherwise leave the first
+          // handler awaiting a promise nothing can settle.
+          previous?.resolve(false);
+          return { ...request, resolve };
+        });
+      }),
+    []
+  );
+
+  const resolveConfirm = useCallback(
+    (confirmed: boolean) => {
+      if (!confirmRequest) return;
+      confirmRequest.resolve(confirmed);
+      setConfirmRequest(null);
+    },
+    [confirmRequest]
+  );
 
   const {
     stakingAddress,
@@ -282,9 +310,11 @@ export function useK613StakingController() {
       return;
     }
 
-    const confirmed = window.confirm(
-      `xK613 will be locked for ${lockPeriodLabel}. Exiting early forfeits ${penaltyPercent}% of the amount, which is redistributed to the remaining stakers.`
-    );
+    const confirmed = await requestConfirm({
+      title: 'Initiate exit',
+      body: `xK613 will be locked for ${lockPeriodLabel}. Exiting early forfeits ${penaltyPercent}% of the amount, which is redistributed to the remaining stakers.`,
+      confirmLabel: 'Initiate exit',
+    });
     if (!confirmed) return;
 
     setActionPending('initiateExit');
@@ -317,6 +347,7 @@ export function useK613StakingController() {
     availableToExit,
     penaltyPercent,
     lockPeriodLabel,
+    requestConfirm,
     initiateExit,
     refetch,
     xk613Allowance,
@@ -353,9 +384,12 @@ export function useK613StakingController() {
         setError('Instant exit is unavailable until the rewards distributor is configured');
         return;
       }
-      const confirmed = window.confirm(
-        `Instant exit forfeits ${penaltyPercent}% of this request, which is redistributed to the remaining stakers. Continue?`
-      );
+      const confirmed = await requestConfirm({
+        title: 'Instant exit',
+        body: `This forfeits ${penaltyPercent}% of the request, which is redistributed to the remaining stakers. Waiting out the ${lockPeriodLabel} lock returns the full amount instead.`,
+        confirmLabel: `Forfeit ${penaltyPercent}% and exit`,
+        danger: true,
+      });
       if (!confirmed) return;
 
       const key = `v2:instant:${index.toString()}`;
@@ -371,7 +405,15 @@ export function useK613StakingController() {
         setActionPending(null);
       }
     },
-    [instantExit, refetch, k613Balance, penaltyPercent, instantExitRequiresDistributor]
+    [
+      instantExit,
+      refetch,
+      k613Balance,
+      penaltyPercent,
+      lockPeriodLabel,
+      requestConfirm,
+      instantExitRequiresDistributor,
+    ]
   );
 
   const handleCancelExit = useCallback(
@@ -534,6 +576,7 @@ export function useK613StakingController() {
     onSettled: refetchAllRewardsState,
     setError,
     setSuccessMessage,
+    requestConfirm,
   });
 
   const gate = useMemo(() => {
@@ -608,6 +651,8 @@ export function useK613StakingController() {
     setWithdrawAmount,
     infoDialog,
     setInfoDialog,
+    confirmRequest,
+    resolveConfirm,
     formatted,
     displayApy,
     lockDurationSeconds,

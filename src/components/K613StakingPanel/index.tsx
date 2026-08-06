@@ -2,6 +2,7 @@
 
 import { CircularProgress } from '@mui/material';
 import { SyntheticEvent, useEffect, useState } from 'react';
+import { K613ConfirmDialog } from 'src/modules/k613-staking/K613ConfirmDialog';
 import { K613InfoDialog } from 'src/modules/k613-staking/K613InfoDialog';
 import { K613MigrationBlock } from 'src/modules/k613-staking/K613MigrationBlock';
 import { K613OnboardingDialog } from 'src/modules/k613-staking/K613OnboardingDialog';
@@ -37,6 +38,8 @@ export function K613StakingPanel() {
     isLoading,
     hasStakingActivity,
     xk613Address,
+    confirmRequest,
+    resolveConfirm,
   } = ctx;
 
   useEffect(() => {
@@ -61,6 +64,7 @@ export function K613StakingPanel() {
           {gate}
           <K613MigrationBlock />
         </K613StakingProvider>
+        <K613ConfirmDialog request={confirmRequest} onResolve={resolveConfirm} />
       </PageRoot>
     );
   }
@@ -139,6 +143,7 @@ export function K613StakingPanel() {
         xk613Address={xk613Address}
         onClose={() => setInfoDialog(null)}
       />
+      <K613ConfirmDialog request={confirmRequest} onResolve={resolveConfirm} />
     </PageRoot>
   );
 }
