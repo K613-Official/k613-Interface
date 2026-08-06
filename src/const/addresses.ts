@@ -45,7 +45,13 @@ import {
 // Monad mainnet staking — hardcoded rather than env-driven: these are fixed
 // mainnet deployments, and NEXT_PUBLIC_* vars are baked in at build time, so a
 // missing var on the deploy platform would silently ship an empty address.
-const MONAD_STAKING = '0x36451F6b4c06916aafd16359CCf99eB1f584DB0b';
+//
+// StakingV2 address goes here once deployed. While it is empty the staking page
+// shows a "not configured" gate instead of reading zeros off address(0), and the
+// legacy block below stays live so anyone already in the old exit queue can
+// still finish withdrawing.
+const MONAD_STAKING_V2 = '';
+const MONAD_STAKING_LEGACY = '0x36451F6b4c06916aafd16359CCf99eB1f584DB0b';
 const MONAD_REWARDS_DISTRIBUTION = '0xE3E8925E8554464611c86419B9e99AD7Cd47428f';
 const MONAD_UI_INCENTIVE_DATA_PROVIDER = '0xF872C01f32B653462a4eD7F5688342d568EeA488';
 
@@ -71,8 +77,12 @@ export type NetworkAddresses = {
   L2_ENCODER: string;
   COLLECTOR: string;
   STAKING: string;
+  /** StakingV2 — the contract every new stake and exit request goes to. */
+  STAKING_V2: string;
+  /** Previous Staking deployment, kept only to drain its exit queue. Empty when there is nothing to migrate. */
+  STAKING_LEGACY: string;
   REWARDS_DISTRIBUTION: string;
-  /** @deprecated используй `STAKING` */
+  /** @deprecated используй `STAKING_V2` */
   staking: string;
   /** @deprecated используй `REWARDS_DISTRIBUTION` */
   rewardsDistribution: string;
@@ -100,6 +110,9 @@ export const addresses_testnet: NetworkAddresses = {
   L2_ENCODER: ARBITRUM_SEPOLIA_L2_ENCODER,
   COLLECTOR: ARBITRUM_SEPOLIA_COLLECTOR,
   STAKING: ARBITRUM_SEPOLIA_STAKING,
+  STAKING_V2: ARBITRUM_SEPOLIA_STAKING,
+  // Testnet is redeployed rather than migrated, so there is no legacy queue there.
+  STAKING_LEGACY: '',
   REWARDS_DISTRIBUTION: ARBITRUM_SEPOLIA_REWARDS_DISTRIBUTION,
   staking: ARBITRUM_SEPOLIA_STAKING,
   rewardsDistribution: ARBITRUM_SEPOLIA_REWARDS_DISTRIBUTION,
@@ -126,9 +139,11 @@ export const addresses_mainnet: NetworkAddresses = {
   WETH_GATEWAY: MONAD_WETH_GATEWAY,
   L2_ENCODER: MONAD_L2_ENCODER,
   COLLECTOR: MONAD_COLLECTOR,
-  STAKING: MONAD_STAKING,
+  STAKING: MONAD_STAKING_V2,
+  STAKING_V2: MONAD_STAKING_V2,
+  STAKING_LEGACY: MONAD_STAKING_LEGACY,
   REWARDS_DISTRIBUTION: MONAD_REWARDS_DISTRIBUTION,
-  staking: MONAD_STAKING,
+  staking: MONAD_STAKING_V2,
   rewardsDistribution: MONAD_REWARDS_DISTRIBUTION,
 };
 

@@ -50,8 +50,8 @@ export function K613RewardPoolTab() {
     isClaimPending,
     error,
     pendingRewardsAmount,
-    claimableTotal,
-    orphanXk613,
+    penaltyPercent,
+    lockPeriodLabel,
     displayApy,
     handleClaimRewards,
     handleDeposit,
@@ -62,17 +62,9 @@ export function K613RewardPoolTab() {
     setSuccessMessage,
   } = useK613StakingPage();
 
-  const claimBusy =
-    isClaimPending ||
-    actionPending === 'claimRewards:approve' ||
-    actionPending === 'claimRewards:claim' ||
-    actionPending === 'claimRewards:redeem';
+  const claimBusy = isClaimPending || actionPending === 'claimRewards:claim';
   const claimButtonLabel =
-    actionPending === 'claimRewards:approve' || actionPending === 'claimRewards:claim'
-      ? 'Confirm in wallet xK613'
-      : actionPending === 'claimRewards:redeem'
-      ? 'Converting xK613 → K613…'
-      : 'Claim rewards';
+    actionPending === 'claimRewards:claim' ? 'Confirm in wallet' : 'Claim rewards';
   const onClaimClick = handleClaimRewards;
   const depositBusy = actionPending === 'deposit';
   const withdrawBusy = actionPending === 'withdraw';
@@ -162,31 +154,14 @@ export function K613RewardPoolTab() {
               {displayApy === '—' && (
                 <BalanceCaption>APR appears after several buyback cycles</BalanceCaption>
               )}
-              {claimableTotal > 0n ? (
-                <BalanceCaption>
-                  Available to claim: <strong>{formatted.claimableTotal} xK613</strong> → K613 1:1
-                </BalanceCaption>
-              ) : (
-                <BalanceCaption>
-                  Nothing can be swapped for K613 right now — withdraw your deposit from the reward
-                  pool first
-                </BalanceCaption>
-              )}
-              {claimableTotal > 0n && orphanXk613 > 0n && pendingRewardsAmount > 0n && (
-                <BalanceCaption>
-                  Includes {formatted.orphanXk613} xK613 leftover in wallet
-                </BalanceCaption>
-              )}
-              {claimableTotal > 0n && orphanXk613 > 0n && pendingRewardsAmount <= 0n && (
-                <BalanceCaption>
-                  {formatted.orphanXk613} xK613 leftover from a previous claim — will be redeemed
-                </BalanceCaption>
-              )}
+              <BalanceCaption>
+                {`Rewards are paid in xK613 and land in your wallet. They leave the same way as any other xK613 — through the exit queue (${lockPeriodLabel}), or with Instant exit for a ${penaltyPercent}% fee. There is no 1:1 swap.`}
+              </BalanceCaption>
             </PanelSection>
 
             <CtaButton
               variant="contained"
-              disabled={paused || claimBusy || claimableTotal <= 0n}
+              disabled={paused || claimBusy || pendingRewardsAmount <= 0n}
               onClick={onClaimClick}
             >
               {claimBusy ? <CircularProgress color="inherit" size={22} /> : claimButtonLabel}

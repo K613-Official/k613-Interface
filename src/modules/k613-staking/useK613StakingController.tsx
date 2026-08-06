@@ -3,9 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ConnectWalletButton } from 'src/components/WalletConnection/ConnectWalletButton';
 import {
-  formatExitRequestId,
   formatStakeLockPeriod,
-  formatUnlockCountdown,
   parseStakingDepositsRead,
   useK613Approve,
   useK613RewardsActions,
@@ -28,6 +26,7 @@ import type {
   K613MainTab,
   K613RewardPoolSubTab,
 } from './k613Staking.types';
+import { useK613LegacyStakingBlock } from './useK613LegacyStakingBlock';
 
 const MAX_UINT256 = BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
 
@@ -60,13 +59,13 @@ export function useK613StakingController() {
   const [exitAmount, setExitAmount] = useState('');
   const [depositAmount, setDepositAmount] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
-  const [instantExitMode, setInstantExitMode] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState<string | null>(null);
   const [infoDialog, setInfoDialog] = useState<K613InfoDialogKind>(null);
-  const [unlockCountdownTick, setUnlockCountdownTick] = useState(0);
+  // Re-renders the tree once a second so the per-request unlock countdowns tick.
+  const [, setUnlockCountdownTick] = useState(0);
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -110,7 +109,6 @@ export function useK613StakingController() {
     exit,
     instantExit,
     cancelExit,
-    redeemRewards,
     isPending: isStakingActionPending,
   } = useK613StakingActions();
   const { approve, isPending: isApprovePending } = useK613Approve();
@@ -122,11 +120,12 @@ export function useK613StakingController() {
   } = useK613RewardsActions(rewardsDistributor);
 
   const depositData = parseStakingDepositsRead(deposits.data);
-  const stakedAmount = depositData?.amount ?? BigInt(0);
   const exitQueue = useMemo(() => depositData?.exitQueue ?? [], [depositData?.exitQueue]);
   const lockDurationSeconds = (lockDuration.data as bigint | undefined) ?? BigInt(0);
   const penaltyBps = Number((instantExitPenaltyBps.data as bigint | undefined) ?? 0);
   const penaltyPercent = (penaltyBps / 100).toFixed(1);
+  // Both come off the contract — governance can change either one.
+  const lockPeriodLabel = formatStakeLockPeriod(lockDurationSeconds);
   // Read from the contract — no numeric fallback: inventing a limit would both
   // show a wrong cap and block new requests once the queue reaches it.
   const maxExitSlots = maxExitRequests !== undefined ? Number(maxExitRequests) : null;
@@ -153,22 +152,19 @@ export function useK613StakingController() {
     [exitQueue]
   );
 
-  const availableToUnstake = walletXk613 > queuedTotal ? walletXk613 - queuedTotal : BigInt(0);
+  // In V2 there is no separate stake position: the position *is* the xK613 the
+  // wallet holds. `initiateExit` moves those tokens into the contract, so the
+  // balance already excludes anything queued — subtracting the queue again would
+  // hide funds the user can actually withdraw.
+  const availableToExit = walletXk613;
+  const totalInSystem = walletXk613 + queuedTotal;
 
-  // `Staking.redeemRewards` only converts xK613 that exceeds the user's own
-  // stake position, and reverts with ExceedsRewardPortion otherwise. The
-  // position still backed by the stake is what is deposited minus what already
-  // sits in the exit queue.
-  const stakeBackedXk613 = stakedAmount > queuedTotal ? stakedAmount - queuedTotal : BigInt(0);
-  const orphanXk613 = walletXk613 > stakeBackedXk613 ? walletXk613 - stakeBackedXk613 : BigInt(0);
-  // Claiming first moves the pending rewards into the wallet, so the redeemable
-  // portion is measured against the balance the wallet will hold by then. While
-  // xK613 sits in the reward pool the wallet balance stays below the stake
-  // position and nothing is redeemable — the user has to withdraw it first.
-  const walletAfterClaim = walletXk613 + pendingRewardsAmount;
-  const claimableTotal =
-    walletAfterClaim > stakeBackedXk613 ? walletAfterClaim - stakeBackedXk613 : BigInt(0);
-  const hasStakingActivity = stakedAmount > 0n || walletXk613 > 0n || queuedTotal > 0n;
+  // xK613 parked in the reward pool is not in the wallet, so there is nothing to
+  // exit until it is withdrawn. Worth saying out loud — otherwise a user with a
+  // full pool deposit sees a zero balance and no explanation.
+  const needsPoolWithdrawal = walletXk613 === 0n && userPoolBalance > 0n;
+
+  const hasStakingActivity = walletXk613 > 0n || queuedTotal > 0n || userPoolBalance > 0n;
 
   const displayApy = calculatedApr || '—';
 
@@ -191,10 +187,9 @@ export function useK613StakingController() {
       walletK613: formatTokenAmount(walletK613),
       lockedInExit: formatTokenAmount(queuedTotal),
       stakedXk613: formatTokenAmount(walletXk613),
-      stakedPosition: formatTokenAmount(stakedAmount),
+      availableToExit: formatTokenAmount(availableToExit),
+      totalInSystem: formatTokenAmount(totalInSystem),
       pendingRewards: formatTokenAmount(pendingRewardsAmount),
-      claimableTotal: formatTokenAmount(claimableTotal),
-      orphanXk613: formatTokenAmount(orphanXk613),
       exitSlots: `${exitQueue.length} / ${maxExitSlots ?? '—'}`,
       lockPeriodShort: formatStakeLockPeriod(lockDurationSeconds),
       penaltyPercent,
@@ -207,7 +202,8 @@ export function useK613StakingController() {
       walletK613,
       queuedTotal,
       walletXk613,
-      stakedAmount,
+      availableToExit,
+      totalInSystem,
       pendingRewardsAmount,
       exitQueue.length,
       maxExitSlots,
@@ -217,17 +213,7 @@ export function useK613StakingController() {
       totalPoolDeposits,
       poolPendingRewards,
       protocolTVL,
-      claimableTotal,
-      orphanXk613,
     ]
-  );
-
-  const isLockDurationPassed = useCallback(
-    (exitInitiatedAt: bigint): boolean => {
-      const now = BigInt(Math.floor(Date.now() / 1000));
-      return now >= exitInitiatedAt + lockDurationSeconds;
-    },
-    [lockDurationSeconds]
   );
 
   const handleLock = useCallback(async () => {
@@ -286,17 +272,15 @@ export function useK613StakingController() {
       setError('Exit queue is full');
       return;
     }
-    if (amount > availableToUnstake) {
+    if (amount > availableToExit) {
       setError('Amount exceeds available xK613');
       return;
     }
 
-    if (instantExitMode && !instantExitRequiresDistributor) {
-      const confirmed = window.confirm(
-        `Instant exit will incur a ${penaltyPercent}% fee. Continue?`
-      );
-      if (!confirmed) return;
-    }
+    const confirmed = window.confirm(
+      `xK613 will be locked for ${lockPeriodLabel}. Exiting early forfeits ${penaltyPercent}% of the amount, which is redistributed to the remaining stakers.`
+    );
+    if (!confirmed) return;
 
     setActionPending('initiateExit');
     try {
@@ -306,30 +290,16 @@ export function useK613StakingController() {
         await xk613Allowance.refetch();
       }
       await initiateExit(amount);
-
-      if (instantExitMode && !instantExitRequiresDistributor) {
-        const newIndex = BigInt(exitQueue.length);
-        await instantExit(newIndex);
-        setExitAmount('');
-        await Promise.all([
-          refetch(),
-          xk613Balance.refetch(),
-          xk613Allowance.refetch(),
-          k613Balance.refetch(),
-        ]);
-        setSuccessMessage('Instant exit completed successfully.');
-      } else {
-        setExitAmount('');
-        await Promise.all([
-          refetch(),
-          xk613Balance.refetch(),
-          xk613Allowance.refetch(),
-          k613Balance.refetch(),
-        ]);
-        setSuccessMessage(
-          'Exit request created. Your tokens are now in the exit queue. You can track status below or cancel the exit request.'
-        );
-      }
+      setExitAmount('');
+      await Promise.all([
+        refetch(),
+        xk613Balance.refetch(),
+        xk613Allowance.refetch(),
+        k613Balance.refetch(),
+      ]);
+      setSuccessMessage(
+        `Exit request created. Wait out the ${lockPeriodLabel} lock and press Exit, or use Instant exit on the request to withdraw now for a ${penaltyPercent}% fee.`
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to create exit request');
     } finally {
@@ -339,12 +309,10 @@ export function useK613StakingController() {
     exitAmount,
     exitQueue.length,
     maxExitSlots,
-    availableToUnstake,
+    availableToExit,
     penaltyPercent,
+    lockPeriodLabel,
     initiateExit,
-    instantExit,
-    instantExitMode,
-    instantExitRequiresDistributor,
     refetch,
     xk613Allowance,
     xk613Address,
@@ -357,13 +325,13 @@ export function useK613StakingController() {
   const handleExit = useCallback(
     async (index: bigint) => {
       setError(null);
-      const key = `exit:${index.toString()}`;
+      const key = `v2:exit:${index.toString()}`;
       setActionPending(key);
       try {
         await exit(index);
         refetch();
         k613Balance.refetch();
-        setSuccessMessage('Exit completed. Tokens have been credited to your wallet.');
+        setSuccessMessage('Exit completed. K613 has been credited to your wallet.');
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Exit failed');
       } finally {
@@ -376,30 +344,41 @@ export function useK613StakingController() {
   const handleInstantExit = useCallback(
     async (index: bigint) => {
       setError(null);
-      const key = `instant:${index.toString()}`;
+      if (instantExitRequiresDistributor) {
+        setError('Instant exit is unavailable until the rewards distributor is configured');
+        return;
+      }
+      const confirmed = window.confirm(
+        `Instant exit forfeits ${penaltyPercent}% of this request, which is redistributed to the remaining stakers. Continue?`
+      );
+      if (!confirmed) return;
+
+      const key = `v2:instant:${index.toString()}`;
       setActionPending(key);
       try {
         await instantExit(index);
         refetch();
         k613Balance.refetch();
+        setSuccessMessage(`Instant exit completed. ${penaltyPercent}% was forfeited.`);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Instant exit failed');
       } finally {
         setActionPending(null);
       }
     },
-    [instantExit, refetch, k613Balance]
+    [instantExit, refetch, k613Balance, penaltyPercent, instantExitRequiresDistributor]
   );
 
   const handleCancelExit = useCallback(
     async (index: bigint) => {
       setError(null);
-      const key = `cancel:${index.toString()}`;
+      const key = `v2:cancel:${index.toString()}`;
       setActionPending(key);
       try {
         await cancelExit(index);
         refetch();
         xk613Balance.refetch();
+        setSuccessMessage('Request cancelled. xK613 is back in your wallet.');
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Cancel failed');
       } finally {
@@ -417,54 +396,29 @@ export function useK613StakingController() {
     xk613Allowance.refetch();
   }, [rewardsData, refetch, xk613Balance, k613Balance, xk613Allowance]);
 
+  // Rewards are paid in xK613 and stay xK613. There is no redeem step any more —
+  // getting back to K613 means going through the exit queue like any other xK613.
   const handleClaimRewards = useCallback(async () => {
     setError(null);
     setSuccessMessage(null);
-    if (claimableTotal <= 0n) {
+    if (pendingRewardsAmount <= 0n) {
       setError('Nothing to claim');
       return;
     }
-    if (!stakingAddress || !xk613Address) {
-      setError('Staking contract not configured');
-      return;
-    }
 
-    const amountToRedeem = claimableTotal;
-    setActionPending('claimRewards:approve');
+    const claimed = pendingRewardsAmount;
+    setActionPending('claimRewards:claim');
     try {
-      const currentAllowance = BigInt((xk613Allowance.data as bigint | undefined) ?? 0);
-      if (currentAllowance < amountToRedeem) {
-        await approve(xk613Address, stakingAddress as `0x${string}`, MAX_UINT256);
-        await xk613Allowance.refetch();
-      }
-
-      if (pendingRewardsAmount > 0n) {
-        setActionPending('claimRewards:claim');
-        await claimRewards();
-      }
-
-      setActionPending('claimRewards:redeem');
-      await redeemRewards(amountToRedeem);
-
+      await claimRewards();
       refetchAllRewardsState();
-      setSuccessMessage(`Claimed ${formatTokenAmount(amountToRedeem)} K613.`);
+      setSuccessMessage(`Claimed ${formatTokenAmount(claimed)} xK613 to your wallet.`);
     } catch (e) {
       refetchAllRewardsState();
       setError(e instanceof Error ? e.message : 'Claim failed');
     } finally {
       setActionPending(null);
     }
-  }, [
-    claimableTotal,
-    pendingRewardsAmount,
-    stakingAddress,
-    xk613Address,
-    xk613Allowance,
-    approve,
-    claimRewards,
-    redeemRewards,
-    refetchAllRewardsState,
-  ]);
+  }, [pendingRewardsAmount, claimRewards, refetchAllRewardsState]);
 
   const handleDeposit = useCallback(async () => {
     setError(null);
@@ -560,8 +514,8 @@ export function useK613StakingController() {
   }, [walletK613]);
 
   const setMaxExit = useCallback(() => {
-    setExitAmount(availableToUnstake <= 0n ? '0' : formatUnits(availableToUnstake, 18));
-  }, [availableToUnstake]);
+    setExitAmount(availableToExit <= 0n ? '0' : formatUnits(availableToExit, 18));
+  }, [availableToExit]);
 
   const setMaxDeposit = useCallback(() => {
     setDepositAmount(walletXk613 <= 0n ? '0' : formatUnits(walletXk613, 18));
@@ -571,31 +525,11 @@ export function useK613StakingController() {
     setWithdrawAmount(userPoolBalance <= 0n ? '0' : formatUnits(userPoolBalance, 18));
   }, [userPoolBalance]);
 
-  const earliestUnlockRemaining = useMemo(() => {
-    if (exitQueue.length === 0) return '—';
-    const now = BigInt(Math.floor(Date.now() / 1000));
-    let best: bigint | null = null;
-    for (const row of exitQueue) {
-      const unlock = row.exitInitiatedAt + lockDurationSeconds;
-      const remaining = unlock - now;
-      if (remaining <= 0n) continue;
-      if (best === null || remaining < best) best = remaining;
-    }
-    if (best === null) return 'Ready';
-    const s = Number(best);
-    if (s < 60) return `${s}s`;
-    if (s < 3600) {
-      const mm = Math.floor(s / 60);
-      const ss = s % 60;
-      return `${mm}m ${String(ss).padStart(2, '0')}s`;
-    }
-    const d = Math.floor(s / 86400);
-    const rem = s % 86400;
-    const h = Math.floor(rem / 3600);
-    const m = Math.floor((rem % 3600) / 60);
-    if (d > 0) return `${d}d ${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
-    return `${h}h ${String(m).padStart(2, '0')}m`;
-  }, [exitQueue, lockDurationSeconds, unlockCountdownTick]);
+  const legacyStaking = useK613LegacyStakingBlock({
+    onSettled: refetchAllRewardsState,
+    setError,
+    setSuccessMessage,
+  });
 
   const gate = useMemo(() => {
     if (!userAddress) {
@@ -626,7 +560,8 @@ export function useK613StakingController() {
       return (
         <StatePaper>
           <StateText variant="body2">
-            Staking contract address is missing for this chain. Check addresses configuration.
+            StakingV2 is not configured for this chain yet. Staking and new exit requests are
+            unavailable — any request already in the previous contract can still be completed below.
           </StateText>
         </StatePaper>
       );
@@ -666,28 +601,26 @@ export function useK613StakingController() {
     setDepositAmount,
     withdrawAmount,
     setWithdrawAmount,
-    instantExitMode,
-    setInstantExitMode,
     infoDialog,
     setInfoDialog,
     formatted,
     displayApy,
     lockDurationSeconds,
+    lockPeriodLabel,
     exitQueue,
     maxExitSlots,
-    availableToUnstakeFormatted: formatTokenAmount(availableToUnstake),
-    earliestUnlockRemaining,
+    availableToExit,
+    needsPoolWithdrawal,
     penaltyPercent,
     hasStakingActivity,
     instantExitRequiresDistributor,
+    legacyStaking,
     pendingRewardsAmount,
     lastAccrualDisplay,
     actionPending,
     isApprovePending,
     isClaimPending: isStakingActionPending || isClaimPending,
     handleClaimRewards,
-    claimableTotal,
-    orphanXk613,
     handleLock,
     handleInitiateExit,
     handleExit,
@@ -699,9 +632,6 @@ export function useK613StakingController() {
     setMaxExit,
     setMaxDeposit,
     setMaxWithdraw,
-    isLockDurationPassed,
-    formatUnlockCountdown,
-    formatExitRequestId,
     formatTokenAmount: (a: bigint) => formatTokenAmount(a),
     refetch,
   };

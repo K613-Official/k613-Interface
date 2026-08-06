@@ -2,15 +2,20 @@ import { useQuery } from '@tanstack/react-query';
 import { waitForTransactionReceipt } from '@wagmi/core';
 import k613Artifact from 'src/abis/K613/K613.json';
 import rewardsDistributorArtifact from 'src/abis/RewardsDistributor/RewardsDistributor.json';
-import stakingArtifact from 'src/abis/Staking/Staking.json';
+import legacyStakingArtifact from 'src/abis/Staking/Staking.json';
+import stakingArtifact from 'src/abis/Staking/StakingV2.json';
 import { addressesByChainId } from 'src/utils/addresses';
 import { useAccount, useConfig, usePublicClient, useReadContract, useWriteContract } from 'wagmi';
 
 const STAKING_ABI = (stakingArtifact as unknown as { abi: unknown[] }).abi;
+/**
+ * Previous Staking deployment. Identical to V2 except for `redeemRewards` and the
+ * system-staker functions, but kept as its own ABI so the migration block can only
+ * ever call what that contract actually exposes.
+ */
+const LEGACY_STAKING_ABI = (legacyStakingArtifact as unknown as { abi: unknown[] }).abi;
 const K613_ABI = (k613Artifact as unknown as { abi: unknown[] }).abi;
 const REWARDS_DISTRIBUTOR_ABI = (rewardsDistributorArtifact as unknown as { abi: unknown[] }).abi;
-
-const XK613_ADDRESS = '0x9064d55A8A8473fA39c41A16492Fa1094Eb4E8b5' as const;
 
 export type StakingExitRequest = {
   amount: bigint;
@@ -71,7 +76,13 @@ export function parseStakingDepositsRead(data: unknown): StakingDepositView | un
 export function useK613StakingAddress() {
   const { chainId } = useAccount();
   const addresses = chainId ? addressesByChainId(chainId) : null;
-  return addresses?.staking || null;
+  return addresses?.STAKING_V2 || null;
+}
+
+export function useK613LegacyStakingAddress() {
+  const { chainId } = useAccount();
+  const addresses = chainId ? addressesByChainId(chainId) : null;
+  return addresses?.STAKING_LEGACY || null;
 }
 
 export function useK613StakingData() {
@@ -168,6 +179,61 @@ export function useK613StakingData() {
   };
 }
 
+/**
+ * Reads for the previous Staking deployment during the migration window. Only the
+ * fields the migration block needs: its queue, and the lock/penalty terms that
+ * govern that queue — governance can have set them to something other than V2's.
+ */
+export function useK613LegacyStakingData() {
+  const { address: userAddress } = useAccount();
+  const legacyAddress = useK613LegacyStakingAddress();
+  const enabled = Boolean(legacyAddress && userAddress);
+
+  const deposits = useReadContract({
+    address: legacyAddress as `0x${string}` | undefined,
+    abi: LEGACY_STAKING_ABI,
+    functionName: 'deposits',
+    args: userAddress ? [userAddress] : undefined,
+    query: { enabled },
+  });
+
+  const lockDuration = useReadContract({
+    address: legacyAddress as `0x${string}` | undefined,
+    abi: LEGACY_STAKING_ABI,
+    functionName: 'lockDuration',
+    query: { enabled },
+  });
+
+  const instantExitPenaltyBps = useReadContract({
+    address: legacyAddress as `0x${string}` | undefined,
+    abi: LEGACY_STAKING_ABI,
+    functionName: 'instantExitPenaltyBps',
+    query: { enabled },
+  });
+
+  const paused = useReadContract({
+    address: legacyAddress as `0x${string}` | undefined,
+    abi: LEGACY_STAKING_ABI,
+    functionName: 'paused',
+    query: { enabled },
+  });
+
+  return {
+    legacyAddress,
+    deposits,
+    lockDurationSeconds: (lockDuration.data as bigint | undefined) ?? BigInt(0),
+    instantExitPenaltyBps: (instantExitPenaltyBps.data as bigint | undefined) ?? BigInt(0),
+    paused: Boolean(paused.data),
+    isLoading: deposits.isLoading || lockDuration.isLoading || instantExitPenaltyBps.isLoading,
+    refetch: () => {
+      deposits.refetch();
+      lockDuration.refetch();
+      instantExitPenaltyBps.refetch();
+      paused.refetch();
+    },
+  };
+}
+
 export function useK613TokenBalance(tokenAddress: `0x${string}` | undefined) {
   const { address: userAddress } = useAccount();
 
@@ -191,6 +257,48 @@ export function useK613TokenAllowance(
     functionName: 'allowance',
     args: userAddress && spenderAddress ? [userAddress, spenderAddress] : undefined,
   });
+}
+
+function useStakingContractActions(stakingAddress: string | null, abi: unknown[]) {
+  const { writeContractAsync, isPending } = useWriteContract();
+  const config = useConfig();
+
+  const writeAndWait = async (args: Parameters<typeof writeContractAsync>[0]) => {
+    const hash = await writeContractAsync(args);
+    await waitForTransactionReceipt(config, { hash });
+    return hash;
+  };
+
+  const call = async (functionName: string, args: unknown[]) => {
+    if (!stakingAddress) throw new Error('Staking contract not configured');
+    return writeAndWait({
+      address: stakingAddress as `0x${string}`,
+      abi,
+      functionName,
+      args,
+    } as Parameters<typeof writeContractAsync>[0]);
+  };
+
+  return {
+    exit: (index: bigint) => call('exit', [index]),
+    instantExit: (index: bigint) => call('instantExit', [index]),
+    cancelExit: (index: bigint) => call('cancelExit', [index]),
+    call,
+    isPending,
+  };
+}
+
+/**
+ * Exit actions against the previous Staking deployment. No `initiateExit` — new
+ * requests only ever go to V2; this contract is only ever drained.
+ */
+export function useK613LegacyStakingActions() {
+  const legacyAddress = useK613LegacyStakingAddress();
+  const { exit, instantExit, cancelExit, isPending } = useStakingContractActions(
+    legacyAddress,
+    LEGACY_STAKING_ABI
+  );
+  return { exit, instantExit, cancelExit, isPending };
 }
 
 export function useK613StakingActions() {
@@ -254,23 +362,12 @@ export function useK613StakingActions() {
     });
   };
 
-  const redeemRewards = async (amount: bigint) => {
-    if (!stakingAddress) throw new Error('Staking contract not configured');
-    return writeAndWait({
-      address: stakingAddress as `0x${string}`,
-      abi: STAKING_ABI,
-      functionName: 'redeemRewards',
-      args: [amount],
-    });
-  };
-
   return {
     stake,
     initiateExit,
     exit,
     instantExit,
     cancelExit,
-    redeemRewards,
     isPending,
   };
 }
@@ -328,8 +425,17 @@ export function useK613RewardsData(rewardsDistributorAddress: `0x${string}` | un
     functionName: 'totalDeposits',
   });
 
+  // Ask the distributor which token it actually holds rather than hardcoding an
+  // xK613 address: more than one xK613 deployment exists, and pointing this at
+  // the wrong one silently reports a zero reward balance.
+  const stakingToken = useReadContract({
+    address: rewardsDistributorAddress,
+    abi: REWARDS_DISTRIBUTOR_ABI,
+    functionName: 'stakingToken',
+  });
+
   const xk613Balance = useReadContract({
-    address: XK613_ADDRESS,
+    address: stakingToken.data as `0x${string}` | undefined,
     abi: K613_ABI,
     functionName: 'balanceOf',
     args: rewardsDistributorAddress ? [rewardsDistributorAddress] : undefined,
@@ -353,6 +459,7 @@ export function useK613RewardsData(rewardsDistributorAddress: `0x${string}` | un
       nextEpochAt.isLoading ||
       userPoolBalance.isLoading ||
       totalDeposits.isLoading ||
+      stakingToken.isLoading ||
       xk613Balance.isLoading,
     refetch: () => {
       pendingRewardsOf.refetch();
@@ -360,6 +467,7 @@ export function useK613RewardsData(rewardsDistributorAddress: `0x${string}` | un
       nextEpochAt.refetch();
       userPoolBalance.refetch();
       totalDeposits.refetch();
+      stakingToken.refetch();
       xk613Balance.refetch();
     },
   };
@@ -557,6 +665,15 @@ export function formatUnlockCountdown(
   return `${h}h ${String(m).padStart(2, '0')}m`;
 }
 
-export function formatExitRequestId(index: number): string {
-  return `REQ-${String(index + 1).padStart(3, '0')}`;
+/** Submission date of an exit request, e.g. `6 Aug 2026, 13:51`. */
+export function formatSubmittedAt(exitInitiatedAt: bigint): string {
+  const ms = Number(exitInitiatedAt) * 1000;
+  if (!Number.isFinite(ms) || ms <= 0) return '—';
+  return new Date(ms).toLocaleString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }

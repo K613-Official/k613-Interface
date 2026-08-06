@@ -6,46 +6,35 @@ import { useMemo } from 'react';
 import { AddTokenToWalletButton } from 'src/components/AddTokenToWallet';
 import { K613_TOKEN_META, XK613_TOKEN_META } from 'src/const/k613Tokens';
 
+import { ExitQueueTable } from '../ExitQueueTable';
+import { K613MigrationBlock } from '../K613MigrationBlock';
 import {
   AmountFieldWrap,
   BalanceCaption,
   BalanceRow,
   CtaButton,
   ErrorText,
-  ExitQueueCount,
-  ExitQueueHeader,
-  ExitQueueSection,
-  ExitQueueSubtitle,
-  ExitQueueTableHead,
-  ExitQueueTableRow,
-  ExitQueueTdCell,
-  ExitQueueThCell,
-  ExitQueueTitle,
   FieldLabel,
   InputSuffix,
-  InstantExitLabel,
-  InstantExitRow,
   MaxLink,
   PanelCaptionLeft,
   PanelCard,
   PanelHeading,
+  PanelNote,
   PanelSection,
-  QueueCancelButton,
-  QueueExitButton,
   QueueNotice,
   StatCard,
   StatInner,
   StatLabel,
   StatsOuter,
   StatsRow,
-  StatusChip,
   StatValue,
   StyledAmountField,
-  StyledCheckbox,
   TabBar,
   TabBarInner,
   TabContentColumn,
   TabItem,
+  WarningNote,
 } from '../k613Staking.styles';
 import { useK613StakingPage } from '../K613StakingContext';
 
@@ -58,28 +47,25 @@ export function K613LockExitTab() {
     setStakeAmount,
     exitAmount,
     setExitAmount,
-    instantExitMode,
-    setInstantExitMode,
     formatted,
     exitQueue,
     maxExitSlots,
-    availableToUnstakeFormatted,
+    availableToExit,
+    needsPoolWithdrawal,
     lockDurationSeconds,
+    lockPeriodLabel,
     actionPending,
     isApprovePending,
     error,
-    earliestUnlockRemaining,
     penaltyPercent,
     instantExitRequiresDistributor,
     handleLock,
     handleInitiateExit,
     handleExit,
+    handleInstantExit,
     handleCancelExit,
     setMaxStake,
     setMaxExit,
-    isLockDurationPassed,
-    formatUnlockCountdown,
-    formatExitRequestId,
     formatTokenAmount,
     successMessage,
     setSuccessMessage,
@@ -122,8 +108,8 @@ export function K613LockExitTab() {
           </StatCard>
           <StatCard>
             <StatInner>
-              <StatLabel>Locked</StatLabel>
-              <StatValue>{formatted.stakedPosition} xK613</StatValue>
+              <StatLabel>Available to exit</StatLabel>
+              <StatValue>{formatted.availableToExit} xK613</StatValue>
               <AddTokenToWalletButton token={xk613Token} sx={{ mt: 0.5, ml: -1 }} />
             </StatInner>
           </StatCard>
@@ -137,8 +123,8 @@ export function K613LockExitTab() {
           </StatCard>
           <StatCard>
             <StatInner>
-              <StatLabel>Next unlock</StatLabel>
-              <StatValue>{earliestUnlockRemaining}</StatValue>
+              <StatLabel>Total in system</StatLabel>
+              <StatValue>{formatted.totalInSystem} xK613</StatValue>
             </StatInner>
           </StatCard>
         </StatsRow>
@@ -213,7 +199,9 @@ export function K613LockExitTab() {
               <PanelSection>
                 <PanelHeading>Exit xK613</PanelHeading>
                 <PanelCaptionLeft>
-                  Request an exit, track its status, or withdraw instantly
+                  Exiting takes two steps: submit a request first, then either wait out the lock and
+                  press Exit, or use Instant exit on that request. There is no way to exit instantly
+                  without submitting a request first.
                 </PanelCaptionLeft>
               </PanelSection>
 
@@ -238,32 +226,26 @@ export function K613LockExitTab() {
                 </AmountFieldWrap>
                 <BalanceRow>
                   <BalanceCaption>
-                    Available to exit: <strong>{availableToUnstakeFormatted} xK613</strong>
+                    Available to exit: <strong>{formatted.availableToExit} xK613</strong>
                   </BalanceCaption>
-                  <MaxLink type="button" disabled={paused || queueFull} onClick={setMaxExit}>
+                  <MaxLink
+                    type="button"
+                    disabled={paused || queueFull || availableToExit <= 0n}
+                    onClick={setMaxExit}
+                  >
                     MAX
                   </MaxLink>
                 </BalanceRow>
               </PanelSection>
 
-              <InstantExitRow
-                onClick={() => {
-                  if (!paused && !instantExitRequiresDistributor) {
-                    setInstantExitMode(!instantExitMode);
-                  }
-                }}
-              >
-                <StyledCheckbox
-                  checked={instantExitMode}
-                  disabled={paused || instantExitRequiresDistributor}
-                  onChange={(e) => setInstantExitMode(e.target.checked)}
-                  onClick={(e) => e.stopPropagation()}
-                />
-                <InstantExitLabel>
-                  Instant Exit
-                  {instantExitMode && penaltyPercent !== '0.0' ? ` (${penaltyPercent}% fee)` : ''}
-                </InstantExitLabel>
-              </InstantExitRow>
+              <PanelSection>
+                <WarningNote>
+                  {`xK613 will be locked for ${lockPeriodLabel}. Exiting early forfeits ${penaltyPercent}% of the amount, which is redistributed to the remaining stakers.`}
+                </WarningNote>
+                {needsPoolWithdrawal && (
+                  <PanelNote>To exit, first withdraw your xK613 from the Rewards Pool.</PanelNote>
+                )}
+              </PanelSection>
 
               {instantExitRequiresDistributor && (
                 <QueueNotice>
@@ -278,82 +260,29 @@ export function K613LockExitTab() {
                 disabled={paused || queueFull || !exitParsedPositive || initiateBusy}
                 onClick={handleInitiateExit}
               >
-                {initiateBusy ? (
-                  <CircularProgress color="inherit" size={22} />
-                ) : instantExitMode ? (
-                  'Instant Exit'
-                ) : (
-                  'Request Exit'
-                )}
+                {initiateBusy ? <CircularProgress color="inherit" size={22} /> : 'Initiate exit'}
               </CtaButton>
 
               {error && <ErrorText>{error}</ErrorText>}
             </PanelCard>
 
-            {/* Exit queue table */}
-            {exitQueue.length > 0 && (
-              <ExitQueueSection>
-                <ExitQueueHeader>
-                  <ExitQueueTitle>Exit queue</ExitQueueTitle>
-                  <ExitQueueCount>
-                    {exitQueue.length}/{maxExitSlots ?? '—'}
-                  </ExitQueueCount>
-                </ExitQueueHeader>
-                <ExitQueueSubtitle>Track your exit requests</ExitQueueSubtitle>
+            <ExitQueueTable
+              title="Exit queue"
+              subtitle="Wait out the lock and press Exit, or take the penalty and leave now"
+              rows={exitQueue}
+              countLabel={`${exitQueue.length}/${maxExitSlots ?? '—'}`}
+              lockDurationSeconds={lockDurationSeconds}
+              penaltyPercent={penaltyPercent}
+              disabled={paused}
+              actionPending={actionPending}
+              keyPrefix="v2"
+              formatTokenAmount={formatTokenAmount}
+              onExit={handleExit}
+              onInstantExit={handleInstantExit}
+              onCancel={handleCancelExit}
+            />
 
-                <ExitQueueTableHead>
-                  <ExitQueueThCell>Request ID</ExitQueueThCell>
-                  <ExitQueueThCell>Amount</ExitQueueThCell>
-                  <ExitQueueThCell>Time left</ExitQueueThCell>
-                  <ExitQueueThCell>Status</ExitQueueThCell>
-                  <ExitQueueThCell />
-                </ExitQueueTableHead>
-
-                {exitQueue.map((item, index) => {
-                  const canExit = isLockDurationPassed(item.exitInitiatedAt);
-                  const timer = canExit
-                    ? 'Ready'
-                    : formatUnlockCountdown(item.exitInitiatedAt, lockDurationSeconds);
-                  const exitBusy = actionPending === `exit:${index}`;
-                  const cancelBusy = actionPending === `cancel:${index}`;
-                  const anyBusy = actionPending !== null;
-
-                  return (
-                    <ExitQueueTableRow key={`${item.exitInitiatedAt.toString()}-${index}`}>
-                      <ExitQueueTdCell>{formatExitRequestId(index)}</ExitQueueTdCell>
-                      <ExitQueueTdCell>{formatTokenAmount(item.amount)} xK613</ExitQueueTdCell>
-                      <ExitQueueTdCell>{timer}</ExitQueueTdCell>
-                      <ExitQueueTdCell>
-                        <StatusChip ready={canExit}>{canExit ? 'Ready' : 'In queue'}</StatusChip>
-                      </ExitQueueTdCell>
-                      <ExitQueueTdCell>
-                        {canExit ? (
-                          <QueueExitButton
-                            size="small"
-                            disabled={paused || anyBusy}
-                            onClick={() => handleExit(BigInt(index))}
-                          >
-                            {exitBusy ? <CircularProgress size={14} color="inherit" /> : 'Exit'}
-                          </QueueExitButton>
-                        ) : (
-                          <QueueCancelButton
-                            size="small"
-                            disabled={paused || anyBusy}
-                            onClick={() => handleCancelExit(BigInt(index))}
-                          >
-                            {cancelBusy ? (
-                              <CircularProgress size={14} color="inherit" />
-                            ) : (
-                              'Cancel Request'
-                            )}
-                          </QueueCancelButton>
-                        )}
-                      </ExitQueueTdCell>
-                    </ExitQueueTableRow>
-                  );
-                })}
-              </ExitQueueSection>
-            )}
+            <K613MigrationBlock />
           </>
         )}
       </TabContentColumn>
