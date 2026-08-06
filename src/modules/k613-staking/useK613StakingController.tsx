@@ -154,8 +154,20 @@ export function useK613StakingController() {
   );
 
   const availableToUnstake = walletXk613 > queuedTotal ? walletXk613 - queuedTotal : BigInt(0);
-  const orphanXk613 = walletXk613 > stakedAmount ? walletXk613 - stakedAmount : BigInt(0);
-  const claimableTotal = pendingRewardsAmount + orphanXk613;
+
+  // `Staking.redeemRewards` only converts xK613 that exceeds the user's own
+  // stake position, and reverts with ExceedsRewardPortion otherwise. The
+  // position still backed by the stake is what is deposited minus what already
+  // sits in the exit queue.
+  const stakeBackedXk613 = stakedAmount > queuedTotal ? stakedAmount - queuedTotal : BigInt(0);
+  const orphanXk613 = walletXk613 > stakeBackedXk613 ? walletXk613 - stakeBackedXk613 : BigInt(0);
+  // Claiming first moves the pending rewards into the wallet, so the redeemable
+  // portion is measured against the balance the wallet will hold by then. While
+  // xK613 sits in the reward pool the wallet balance stays below the stake
+  // position and nothing is redeemable — the user has to withdraw it first.
+  const walletAfterClaim = walletXk613 + pendingRewardsAmount;
+  const claimableTotal =
+    walletAfterClaim > stakeBackedXk613 ? walletAfterClaim - stakeBackedXk613 : BigInt(0);
   const hasStakingActivity = stakedAmount > 0n || walletXk613 > 0n || queuedTotal > 0n;
 
   const displayApy = calculatedApr || '—';
