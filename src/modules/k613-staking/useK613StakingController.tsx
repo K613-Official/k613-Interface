@@ -85,6 +85,7 @@ export function useK613StakingController() {
     rewardsDistributor,
     maxExitRequests,
     totalBacking,
+    exitPendingSum,
     isLoading,
     refetch,
   } = useK613StakingData();
@@ -147,10 +148,7 @@ export function useK613StakingController() {
     typeof rewardsData.poolPendingRewards === 'bigint' ? rewardsData.poolPendingRewards : BigInt(0);
   const protocolTVL = typeof totalBacking === 'bigint' ? totalBacking : BigInt(0);
 
-  const queuedTotal = useMemo(
-    () => exitQueue.reduce((acc, row) => acc + row.amount, BigInt(0)),
-    [exitQueue]
-  );
+  const queuedTotal = exitPendingSum ?? BigInt(0);
 
   // In V2 there is no separate stake position: the position *is* the xK613 the
   // wallet holds. `initiateExit` moves those tokens into the contract, so the

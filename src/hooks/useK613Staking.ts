@@ -144,6 +144,13 @@ export function useK613StakingData() {
     functionName: 'totalBacking',
   });
 
+  const exitPendingSum = useReadContract({
+    address: stakingAddress as `0x${string}` | undefined,
+    abi: STAKING_ABI,
+    functionName: 'exitPendingSum',
+    args: userAddress ? [userAddress] : undefined,
+  });
+
   return {
     stakingAddress,
     userAddress,
@@ -156,6 +163,7 @@ export function useK613StakingData() {
     rewardsDistributor: rewardsDistributor.data as `0x${string}` | undefined,
     maxExitRequests: maxExitRequests.data as bigint | undefined,
     totalBacking: totalBacking.data as bigint | undefined,
+    exitPendingSum: exitPendingSum.data as bigint | undefined,
     isLoading:
       deposits.isLoading ||
       lockDuration.isLoading ||
@@ -164,7 +172,8 @@ export function useK613StakingData() {
       xk613Address.isLoading ||
       paused.isLoading ||
       rewardsDistributor.isLoading ||
-      maxExitRequests.isLoading,
+      maxExitRequests.isLoading ||
+      exitPendingSum.isLoading,
     refetch: () => {
       deposits.refetch();
       lockDuration.refetch();
@@ -175,6 +184,7 @@ export function useK613StakingData() {
       rewardsDistributor.refetch();
       maxExitRequests.refetch();
       totalBacking.refetch();
+      exitPendingSum.refetch();
     },
   };
 }
