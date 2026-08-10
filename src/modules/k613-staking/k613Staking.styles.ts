@@ -589,6 +589,9 @@ export const ExitQueueThCell = styled(Box)(() => ({
   letterSpacing: '0.17px',
   color: 'rgba(255, 255, 255, 0.5)',
   paddingRight: 8,
+  // Grid items default to min-content width; without this a long cell widens its
+  // column and pushes the rest out of line with the header.
+  minWidth: 0,
 }));
 
 export const ExitQueueTdCell = styled(Box)(() => ({
@@ -599,6 +602,7 @@ export const ExitQueueTdCell = styled(Box)(() => ({
   letterSpacing: '0.17px',
   color: '#FFFFFF',
   paddingRight: 8,
+  minWidth: 0,
 }));
 
 export const StatusChip = styled(Box, {
