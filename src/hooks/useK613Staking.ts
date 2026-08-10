@@ -688,15 +688,22 @@ export function formatUnlockCountdown(
   return `${h}h ${String(m).padStart(2, '0')}m`;
 }
 
-/** Submission date of an exit request, e.g. `6 Aug 2026, 13:51`. */
+/**
+ * Submission date of an exit request, e.g. `10 Aug 2026, 13:38`.
+ *
+ * Pinned to en-GB rather than the browser locale: the rest of the page is
+ * English, so a Russian or German browser would otherwise render one stray
+ * localised string in the middle of an English table.
+ */
 export function formatSubmittedAt(exitInitiatedAt: bigint): string {
   const ms = Number(exitInitiatedAt) * 1000;
   if (!Number.isFinite(ms) || ms <= 0) return '—';
-  return new Date(ms).toLocaleString(undefined, {
+  return new Date(ms).toLocaleString('en-GB', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    hour12: false,
   });
 }

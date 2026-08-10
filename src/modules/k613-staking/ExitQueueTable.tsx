@@ -74,7 +74,15 @@ export function ExitQueueTable({
   const readOnly = !onExit && !onInstantExit && !onCancel;
   const cancelOnly = !readOnly && !onExit && !onInstantExit;
   const lockSeconds = lockDurationSeconds ?? BigInt(0);
-  const columns = readOnly ? '1fr 1fr 1fr 1fr' : cancelOnly ? '1fr 1fr auto' : undefined;
+  // The actions column is a fixed width in every variant. With `auto` it collapsed
+  // to nothing in the header — which has no buttons — while the body row was held
+  // open by them, so the `1fr` columns resolved to different widths in the head
+  // and the rows and every label sat off its column.
+  const columns = readOnly
+    ? 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)'
+    : cancelOnly
+    ? 'minmax(0, 1fr) minmax(0, 1fr) 110px'
+    : 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 340px';
 
   return (
     <ExitQueueSection embedded={embedded}>
