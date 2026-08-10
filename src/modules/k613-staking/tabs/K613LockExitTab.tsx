@@ -52,6 +52,8 @@ export function K613LockExitTab() {
     maxExitSlots,
     availableToExit,
     needsPoolWithdrawal,
+    globalExitQueue,
+    globalQueuedFormatted,
     lockDurationSeconds,
     lockPeriodLabel,
     actionPending,
@@ -268,10 +270,10 @@ export function K613LockExitTab() {
             </PanelCard>
 
             <ExitQueueTable
-              title="Exit queue"
+              title="Your exit queue"
               subtitle="Wait out the lock and press Exit, or take the penalty and leave now"
               rows={exitQueue}
-              countLabel={`${exitQueue.length}/${maxExitSlots ?? '—'}`}
+              countLabel={`${exitQueue.length}/${maxExitSlots ?? '—'} yours`}
               lockDurationSeconds={lockDurationSeconds}
               penaltyPercent={penaltyPercent}
               disabled={paused}
@@ -282,6 +284,25 @@ export function K613LockExitTab() {
               onInstantExit={handleInstantExit}
               onCancel={handleCancelExit}
             />
+
+            {globalExitQueue.error ? (
+              <QueueNotice>
+                protocol-wide queue unavailable — the RPC endpoint refused the log scan
+              </QueueNotice>
+            ) : globalExitQueue.isLoading ? (
+              <QueueNotice>loading the protocol-wide queue…</QueueNotice>
+            ) : (
+              <ExitQueueTable
+                title="All exit requests"
+                subtitle="Every open request across all users, newest first"
+                rows={globalExitQueue.rows}
+                countLabel={`${globalExitQueue.rows.length} active · ${globalQueuedFormatted} xK613`}
+                lockDurationSeconds={lockDurationSeconds}
+                actionPending={null}
+                keyPrefix="global"
+                formatTokenAmount={formatTokenAmount}
+              />
+            )}
 
             <K613MigrationBlock />
           </>
