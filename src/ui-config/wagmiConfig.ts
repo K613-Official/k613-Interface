@@ -8,7 +8,7 @@ import {
   networkConfigs,
 } from 'src/utils/marketsAndNetworksConfig';
 import { type Chain } from 'viem';
-import { createConfig, CreateConfigParameters, CreateConnectorFn, http } from 'wagmi';
+import { createConfig, CreateConfigParameters, CreateConnectorFn, fallback, http } from 'wagmi';
 import { arbitrumSepolia } from 'wagmi/chains';
 import { injected } from 'wagmi/connectors';
 
@@ -83,12 +83,27 @@ const cypressConfig = createConfig(
   })
 );
 
+/**
+ * Private endpoint first, public nodes behind it.
+ *
+ * This used to return `publicJsonRPCUrl[0]` only, so `privateJsonRPCUrl` was read
+ * into the network config and then never used by wagmi — every read in the app
+ * went to the public node regardless of the paid endpoint being configured. On
+ * Monad that meant inheriting the public node's 100-block `eth_getLogs` cap.
+ *
+ * `fallback` rather than the private URL alone: an expired or rate-limited key
+ * then degrades to the public node instead of taking the whole app down.
+ */
 const getTransport = (chainId: number) => {
-  return networkConfigs[chainId].publicJsonRPCUrl[0];
+  const config = networkConfigs[chainId];
+  const urls = [config.privateJsonRPCUrl, ...config.publicJsonRPCUrl].filter((url): url is string =>
+    Boolean(url)
+  );
+  return fallback(urls.map((url) => http(url)));
 };
 
 const buildTransports = (chains: CreateConfigParameters['chains']) =>
-  Object.fromEntries(chains.map((chain) => [chain.id, http(getTransport(chain.id))]));
+  Object.fromEntries(chains.map((chain) => [chain.id, getTransport(chain.id)]));
 
 const activeChains = ENABLE_TESTNET ? testnetChains : prodChainsWithArbitrumSepolia;
 const prodConfig = createConfig(
