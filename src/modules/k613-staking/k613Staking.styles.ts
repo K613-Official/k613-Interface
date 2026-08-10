@@ -553,18 +553,22 @@ export const ExitQueueSubtitle = styled(Typography)(() => ({
   borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
 }));
 
-export const ExitQueueTableHead = styled(Box)(() => ({
+export const ExitQueueTableHead = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'compact',
+})<{ compact?: boolean }>(({ compact }) => ({
   display: 'grid',
-  gridTemplateColumns: '1fr 1fr 1fr 1fr auto',
+  gridTemplateColumns: compact ? '1fr 1fr auto' : '1fr 1fr 1fr 1fr auto',
   gap: 0,
   paddingInline: 16,
   paddingBlock: '8px',
   borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
 }));
 
-export const ExitQueueTableRow = styled(Box)(() => ({
+export const ExitQueueTableRow = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'compact',
+})<{ compact?: boolean }>(({ compact }) => ({
   display: 'grid',
-  gridTemplateColumns: '1fr 1fr 1fr 1fr auto',
+  gridTemplateColumns: compact ? '1fr 1fr auto' : '1fr 1fr 1fr 1fr auto',
   gap: 0,
   paddingInline: 16,
   paddingBlock: '12px',

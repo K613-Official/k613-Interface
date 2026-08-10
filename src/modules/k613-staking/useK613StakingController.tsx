@@ -114,6 +114,7 @@ export function useK613StakingController() {
     maxExitRequests,
     totalBacking,
     exitPendingSum,
+    isV2Live,
     isLoading,
     refetch,
   } = useK613StakingData();
@@ -312,7 +313,7 @@ export function useK613StakingController() {
 
     const confirmed = await requestConfirm({
       title: 'Initiate exit',
-      body: `xK613 will be locked for ${lockPeriodLabel}. Exiting early forfeits ${penaltyPercent}% of the amount, which is redistributed to the remaining stakers.`,
+      body: `xK613 will be locked for ${lockPeriodLabel}. Exiting early forfeits ${penaltyPercent}% of the amount, which goes to the reward pool and is shared among its participants.`,
       confirmLabel: 'Initiate exit',
     });
     if (!confirmed) return;
@@ -386,7 +387,7 @@ export function useK613StakingController() {
       }
       const confirmed = await requestConfirm({
         title: 'Instant exit',
-        body: `This forfeits ${penaltyPercent}% of the request, which is redistributed to the remaining stakers. Waiting out the ${lockPeriodLabel} lock returns the full amount instead.`,
+        body: `This forfeits ${penaltyPercent}% of the request, which goes to the reward pool and is shared among its participants. Waiting out the ${lockPeriodLabel} lock returns the full amount instead.`,
         confirmLabel: `Forfeit ${penaltyPercent}% and exit`,
         danger: true,
       });
@@ -576,7 +577,6 @@ export function useK613StakingController() {
     onSettled: refetchAllRewardsState,
     setError,
     setSuccessMessage,
-    requestConfirm,
   });
 
   const gate = useMemo(() => {
@@ -614,6 +614,20 @@ export function useK613StakingController() {
         </StatePaper>
       );
     }
+    // Deployed but not yet handed the minter role: every stake and exit would
+    // revert. Explicitly false only — `undefined` means the read is still in
+    // flight, and gating on that would flash this at everyone on load.
+    if (isV2Live === false) {
+      return (
+        <StatePaper>
+          <StateText variant="body2">
+            StakingV2 is deployed but not live yet — it has not been granted the xK613 minter role,
+            so staking and exits would fail. This page will start working the moment the cutover
+            transaction goes through.
+          </StateText>
+        </StatePaper>
+      );
+    }
     return null;
   }, [
     userAddress,
@@ -621,6 +635,7 @@ export function useK613StakingController() {
     stakingChainId,
     stakingNetworkName,
     stakingAddress,
+    isV2Live,
     switchChainAsync,
     isSwitchChainPending,
   ]);

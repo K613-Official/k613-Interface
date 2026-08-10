@@ -47,11 +47,11 @@ import {
 // mainnet deployments, and NEXT_PUBLIC_* vars are baked in at build time, so a
 // missing var on the deploy platform would silently ship an empty address.
 //
-// StakingV2 address goes here once deployed. While it is empty the staking page
-// shows a "not configured" gate instead of reading zeros off address(0), and the
-// legacy block below stays live so anyone already in the old exit queue can
-// still finish withdrawing.
-const MONAD_STAKING_V2 = '';
+// Deployed, but NOT live until the Gov Safe batch grants MINTER_ROLE to it and
+// runs `xK613.setMinter(StakingV2)`. Until that batch executes, every V2 call
+// that mints or burns reverts, so the page gates itself on `xK613.minter()`
+// rather than trusting this constant alone.
+const MONAD_STAKING_V2 = '0x5A3DA7644c25F0A74DCb0bA13ae38214D8856415';
 const MONAD_STAKING_LEGACY = '0x36451F6b4c06916aafd16359CCf99eB1f584DB0b';
 const MONAD_REWARDS_DISTRIBUTION = '0xE3E8925E8554464611c86419B9e99AD7Cd47428f';
 const MONAD_UI_INCENTIVE_DATA_PROVIDER = '0xF872C01f32B653462a4eD7F5688342d568EeA488';

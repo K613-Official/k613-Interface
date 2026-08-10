@@ -123,7 +123,8 @@ export function K613LockExitTab() {
           </StatCard>
           <StatCard>
             <StatInner>
-              <StatLabel>Total in system</StatLabel>
+              {/* Named "your" on purpose: this is wallet + own queue, not a protocol total. */}
+              <StatLabel>Your total</StatLabel>
               <StatValue>{formatted.totalInSystem} xK613</StatValue>
             </StatInner>
           </StatCard>
@@ -240,7 +241,7 @@ export function K613LockExitTab() {
 
               <PanelSection>
                 <WarningNote>
-                  {`xK613 will be locked for ${lockPeriodLabel}. Exiting early forfeits ${penaltyPercent}% of the amount, which is redistributed to the remaining stakers.`}
+                  {`xK613 will be locked for ${lockPeriodLabel}. Exiting early forfeits ${penaltyPercent}% of the amount, which goes to the reward pool and is shared among its participants.`}
                 </WarningNote>
                 {needsPoolWithdrawal && (
                   <PanelNote>To exit, first withdraw your xK613 from the Rewards Pool.</PanelNote>

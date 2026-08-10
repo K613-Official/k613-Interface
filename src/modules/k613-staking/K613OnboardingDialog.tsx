@@ -28,7 +28,7 @@ const SLIDES = [
   {
     title: 'Earn',
     heading: 'Earn automatically from protocol activity',
-    body: 'Once xK613 is in the reward pool, you start earning. Income from protocol fees is distributed automatically among all xK613 holders.',
+    body: 'Once xK613 is in the reward pool, you start earning. Income from protocol fees is distributed automatically among reward pool participants — holding xK613 in your wallet earns nothing on its own.',
     caption:
       'No manual actions are required - rewards accumulate over time. Yield is not fixed and depends on overall activity in the protocol.',
     cta: 'continue',

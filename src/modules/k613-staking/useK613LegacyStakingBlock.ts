@@ -7,107 +7,68 @@ import {
   useK613LegacyStakingData,
 } from 'src/hooks/useK613Staking';
 
-import type { K613ConfirmRequest } from './K613ConfirmDialog';
-
 const LEGACY_KEY_PREFIX = 'legacy';
 
 /**
- * The previous Staking deployment during the migration window.
+ * The previous Staking deployment after the cutover.
  *
- * Read-and-drain only: the block appears solely to let anyone already in the old
- * exit queue finish withdrawing. New exit requests always go to V2, so there is
- * no `initiateExit` here. `Cancel` is offered because it returns xK613 to the
- * wallet, from where it can enter V2 with no penalty at all.
+ * `xK613.setMinter(StakingV2)` lands atomically with seeding V2, and from that
+ * block V1 has exactly one working function: `cancelExit`. `stake` reverts on
+ * mint, `exit` and `instantExit` revert on burnFrom — V1 no longer holds
+ * MINTER_ROLE. So this hook exposes cancel and nothing else: a button that is
+ * guaranteed to revert is worse than no button.
+ *
+ * Cancelling is also the right move on its own — it returns xK613 to the wallet,
+ * from where the exit runs through StakingV2 with no penalty at all.
  */
 export function useK613LegacyStakingBlock({
   onSettled,
   setError,
   setSuccessMessage,
-  requestConfirm,
 }: {
-  /** Refetches wallet balances and V2 state — a legacy exit changes both. */
+  /** Refetches wallet balances and V2 state — a cancel changes both. */
   onSettled: () => void;
   setError: (message: string | null) => void;
   setSuccessMessage: (message: string | null) => void;
-  requestConfirm: (request: K613ConfirmRequest) => Promise<boolean>;
 }) {
-  const { legacyAddress, deposits, lockDurationSeconds, instantExitPenaltyBps, paused, refetch } =
+  const { legacyAddress, deposits, exitQueueLength, isCutoverDone, refetch } =
     useK613LegacyStakingData();
-  const { exit, instantExit, cancelExit } = useK613LegacyStakingActions();
+  const { cancelExit } = useK613LegacyStakingActions();
 
   const [actionPending, setActionPending] = useState<string | null>(null);
 
   const depositData = parseStakingDepositsRead(deposits.data);
   const exitQueue = useMemo(() => depositData?.exitQueue ?? [], [depositData?.exitQueue]);
-  const penaltyPercent = (Number(instantExitPenaltyBps) / 100).toFixed(1);
 
-  const run = useCallback(
-    async (key: string, action: () => Promise<unknown>, success: string) => {
+  const handleCancelExit = useCallback(
+    async (index: bigint) => {
       setError(null);
-      setActionPending(key);
+      setActionPending(`${LEGACY_KEY_PREFIX}:cancel:${index.toString()}`);
       try {
-        await action();
+        await cancelExit(index);
         refetch();
         onSettled();
-        setSuccessMessage(success);
+        setSuccessMessage(
+          'Request cancelled. xK613 is back in your wallet — you can now exit through StakingV2 with no penalty.'
+        );
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Old staking action failed');
+        setError(e instanceof Error ? e.message : 'Cancel failed');
       } finally {
         setActionPending(null);
       }
     },
-    [refetch, onSettled, setError, setSuccessMessage]
-  );
-
-  const handleExit = useCallback(
-    (index: bigint) =>
-      run(
-        `${LEGACY_KEY_PREFIX}:exit:${index.toString()}`,
-        () => exit(index),
-        'Withdrawn from old staking. K613 has been credited to your wallet.'
-      ),
-    [run, exit]
-  );
-
-  const handleInstantExit = useCallback(
-    async (index: bigint) => {
-      const confirmed = await requestConfirm({
-        title: 'Instant exit from old staking',
-        body: `This forfeits ${penaltyPercent}% of the request. Cancelling it instead returns your xK613 to your wallet, from where you can exit through StakingV2 with no penalty.`,
-        confirmLabel: `Forfeit ${penaltyPercent}% and exit`,
-        danger: true,
-      });
-      if (!confirmed) return;
-      await run(
-        `${LEGACY_KEY_PREFIX}:instant:${index.toString()}`,
-        () => instantExit(index),
-        `Instant exit completed. ${penaltyPercent}% was forfeited.`
-      );
-    },
-    [run, instantExit, penaltyPercent, requestConfirm]
-  );
-
-  const handleCancelExit = useCallback(
-    (index: bigint) =>
-      run(
-        `${LEGACY_KEY_PREFIX}:cancel:${index.toString()}`,
-        () => cancelExit(index),
-        'Request cancelled. xK613 is back in your wallet — you can now exit through StakingV2.'
-      ),
-    [run, cancelExit]
+    [cancelExit, refetch, onSettled, setError, setSuccessMessage]
   );
 
   return {
-    /** Nothing to migrate: no legacy address configured, or an empty queue. */
-    hasLegacyQueue: Boolean(legacyAddress) && exitQueue.length > 0,
+    /**
+     * Shown only after the cutover — before it, V1 still works normally and needs
+     * no migration prompt — and only while the user actually has something queued.
+     */
+    hasLegacyQueue: Boolean(legacyAddress) && isCutoverDone && exitQueueLength > 0n,
     keyPrefix: LEGACY_KEY_PREFIX,
     exitQueue,
-    lockDurationSeconds,
-    penaltyPercent,
-    paused,
     actionPending,
-    handleExit,
-    handleInstantExit,
     handleCancelExit,
   };
 }

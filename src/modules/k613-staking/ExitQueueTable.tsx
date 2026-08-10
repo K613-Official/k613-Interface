@@ -28,21 +28,26 @@ export type ExitQueueTableProps = {
   title: string;
   subtitle: string;
   rows: StakingExitRequest[];
-  /** Rendered next to the title, e.g. `2 / 4`. Omitted for the migration block, which has no slot budget to show. */
+  /** Rendered next to the title, e.g. `2 / 4`. Omitted where there is no slot budget to show. */
   countLabel?: string;
-  lockDurationSeconds: bigint;
+  lockDurationSeconds?: bigint;
   /** Instant-exit penalty of the contract this queue belongs to, e.g. `50.0`. */
-  penaltyPercent: string;
-  disabled: boolean;
+  penaltyPercent?: string;
+  disabled?: boolean;
   /** Key of the row action currently running, e.g. `v2:exit:0`. */
   actionPending: string | null;
-  /** Namespaces the action keys so the V2 and migration tables never share a spinner. */
+  /** Namespaces the action keys so two tables never share a spinner. */
   keyPrefix: string;
   /** Drops the table's own frame when it sits inside a section that already draws one. */
   embedded?: boolean;
   formatTokenAmount: (amount: bigint) => string;
-  onExit: (index: bigint) => void;
-  onInstantExit: (index: bigint) => void;
+  /**
+   * Omit both to render the cancel-only layout. The lock countdown and status
+   * columns go with them: they exist to say when `Exit` becomes available, so
+   * showing them where exiting is impossible would promise something false.
+   */
+  onExit?: (index: bigint) => void;
+  onInstantExit?: (index: bigint) => void;
   onCancel: (index: bigint) => void;
 };
 
@@ -65,6 +70,8 @@ export function ExitQueueTable({
   if (rows.length === 0) return null;
 
   const anyBusy = actionPending !== null;
+  const cancelOnly = !onExit && !onInstantExit;
+  const lockSeconds = lockDurationSeconds ?? BigInt(0);
 
   return (
     <ExitQueueSection embedded={embedded}>
@@ -74,53 +81,64 @@ export function ExitQueueTable({
       </ExitQueueHeader>
       <ExitQueueSubtitle>{subtitle}</ExitQueueSubtitle>
 
-      <ExitQueueTableHead>
+      <ExitQueueTableHead compact={cancelOnly}>
         <ExitQueueThCell>Amount</ExitQueueThCell>
         <ExitQueueThCell>Submitted</ExitQueueThCell>
-        <ExitQueueThCell>Unlocks in</ExitQueueThCell>
-        <ExitQueueThCell>Status</ExitQueueThCell>
+        {!cancelOnly && <ExitQueueThCell>Unlocks in</ExitQueueThCell>}
+        {!cancelOnly && <ExitQueueThCell>Status</ExitQueueThCell>}
         <ExitQueueThCell />
       </ExitQueueTableHead>
 
       {rows.map((row, index) => {
         const now = BigInt(Math.floor(Date.now() / 1000));
-        const unlocked = now >= row.exitInitiatedAt + lockDurationSeconds;
+        const unlocked = now >= row.exitInitiatedAt + lockSeconds;
         const exitBusy = actionPending === `${keyPrefix}:exit:${index}`;
         const instantBusy = actionPending === `${keyPrefix}:instant:${index}`;
         const cancelBusy = actionPending === `${keyPrefix}:cancel:${index}`;
 
         return (
-          <ExitQueueTableRow key={`${keyPrefix}-${row.exitInitiatedAt.toString()}-${index}`}>
+          <ExitQueueTableRow
+            compact={cancelOnly}
+            key={`${keyPrefix}-${row.exitInitiatedAt.toString()}-${index}`}
+          >
             <ExitQueueTdCell>{formatTokenAmount(row.amount)} xK613</ExitQueueTdCell>
             <ExitQueueTdCell>{formatSubmittedAt(row.exitInitiatedAt)}</ExitQueueTdCell>
-            <ExitQueueTdCell>
-              {unlocked ? '—' : formatUnlockCountdown(row.exitInitiatedAt, lockDurationSeconds)}
-            </ExitQueueTdCell>
-            <ExitQueueTdCell>
-              <StatusChip ready={unlocked}>{unlocked ? 'Ready' : 'Locked'}</StatusChip>
-            </ExitQueueTdCell>
+            {!cancelOnly && (
+              <ExitQueueTdCell>
+                {unlocked ? '—' : formatUnlockCountdown(row.exitInitiatedAt, lockSeconds)}
+              </ExitQueueTdCell>
+            )}
+            {!cancelOnly && (
+              <ExitQueueTdCell>
+                <StatusChip ready={unlocked}>{unlocked ? 'Ready' : 'Locked'}</StatusChip>
+              </ExitQueueTdCell>
+            )}
             <ExitQueueTdCell>
               <QueueActionsCell>
-                <QueueExitButton
-                  size="small"
-                  disabled={disabled || anyBusy || !unlocked}
-                  onClick={() => onExit(BigInt(index))}
-                >
-                  {exitBusy ? <CircularProgress size={14} color="inherit" /> : 'Exit'}
-                </QueueExitButton>
+                {onExit && (
+                  <QueueExitButton
+                    size="small"
+                    disabled={disabled || anyBusy || !unlocked}
+                    onClick={() => onExit(BigInt(index))}
+                  >
+                    {exitBusy ? <CircularProgress size={14} color="inherit" /> : 'Exit'}
+                  </QueueExitButton>
+                )}
                 {/* The contract reverts `instantExit` with `Unlocked()` once the lock
                     has elapsed — and by then `Exit` returns the full amount anyway. */}
-                <QueuePenaltyButton
-                  size="small"
-                  disabled={disabled || anyBusy || unlocked}
-                  onClick={() => onInstantExit(BigInt(index))}
-                >
-                  {instantBusy ? (
-                    <CircularProgress size={14} color="inherit" />
-                  ) : (
-                    `Instant exit −${penaltyPercent}%`
-                  )}
-                </QueuePenaltyButton>
+                {onInstantExit && (
+                  <QueuePenaltyButton
+                    size="small"
+                    disabled={disabled || anyBusy || unlocked}
+                    onClick={() => onInstantExit(BigInt(index))}
+                  >
+                    {instantBusy ? (
+                      <CircularProgress size={14} color="inherit" />
+                    ) : (
+                      `Instant exit −${penaltyPercent}%`
+                    )}
+                  </QueuePenaltyButton>
+                )}
                 <QueueCancelButton
                   size="small"
                   disabled={disabled || anyBusy}
