@@ -2,7 +2,9 @@
 
 import { CircularProgress } from '@mui/material';
 import { SyntheticEvent, useEffect, useState } from 'react';
+import { K613ConfirmDialog } from 'src/modules/k613-staking/K613ConfirmDialog';
 import { K613InfoDialog } from 'src/modules/k613-staking/K613InfoDialog';
+import { K613MigrationBlock } from 'src/modules/k613-staking/K613MigrationBlock';
 import { K613OnboardingDialog } from 'src/modules/k613-staking/K613OnboardingDialog';
 import {
   LoadingBox,
@@ -36,6 +38,8 @@ export function K613StakingPanel() {
     isLoading,
     hasStakingActivity,
     xk613Address,
+    confirmRequest,
+    resolveConfirm,
   } = ctx;
 
   useEffect(() => {
@@ -47,12 +51,23 @@ export function K613StakingPanel() {
     }
   }, [isLoading, hasStakingActivity]);
 
-  if (gate) {
-    return <PageRoot>{gate}</PageRoot>;
-  }
-
   const { gate: _gateHandled, ...providerValue } = ctx;
   void _gateHandled;
+
+  // Even when the page itself is gated — wrong network, StakingV2 not configured
+  // yet — anyone with a request left in the old contract still needs a way to
+  // finish withdrawing it.
+  if (gate) {
+    return (
+      <PageRoot>
+        <K613StakingProvider value={providerValue}>
+          {gate}
+          <K613MigrationBlock />
+        </K613StakingProvider>
+        <K613ConfirmDialog request={confirmRequest} onResolve={resolveConfirm} />
+      </PageRoot>
+    );
+  }
 
   const handleTabChange = (_: SyntheticEvent, newValue: number) => {
     setMainTab(newValue === 0 ? 'rewardPool' : 'lockExit');
@@ -128,6 +143,7 @@ export function K613StakingPanel() {
         xk613Address={xk613Address}
         onClose={() => setInfoDialog(null)}
       />
+      <K613ConfirmDialog request={confirmRequest} onResolve={resolveConfirm} />
     </PageRoot>
   );
 }

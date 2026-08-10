@@ -2,15 +2,22 @@ import { useQuery } from '@tanstack/react-query';
 import { waitForTransactionReceipt } from '@wagmi/core';
 import k613Artifact from 'src/abis/K613/K613.json';
 import rewardsDistributorArtifact from 'src/abis/RewardsDistributor/RewardsDistributor.json';
-import stakingArtifact from 'src/abis/Staking/Staking.json';
+import legacyStakingArtifact from 'src/abis/Staking/Staking.json';
+import stakingArtifact from 'src/abis/Staking/StakingV2.json';
+import xk613Artifact from 'src/abis/xK613.sol/xK613.json';
 import { addressesByChainId } from 'src/utils/addresses';
 import { useAccount, useConfig, usePublicClient, useReadContract, useWriteContract } from 'wagmi';
 
 const STAKING_ABI = (stakingArtifact as unknown as { abi: unknown[] }).abi;
+/**
+ * Previous Staking deployment. Identical to V2 except for `redeemRewards` and the
+ * system-staker functions, but kept as its own ABI so the migration block can only
+ * ever call what that contract actually exposes.
+ */
+const LEGACY_STAKING_ABI = (legacyStakingArtifact as unknown as { abi: unknown[] }).abi;
 const K613_ABI = (k613Artifact as unknown as { abi: unknown[] }).abi;
+const XK613_ABI = (xk613Artifact as unknown as { abi: unknown[] }).abi;
 const REWARDS_DISTRIBUTOR_ABI = (rewardsDistributorArtifact as unknown as { abi: unknown[] }).abi;
-
-const XK613_ADDRESS = '0x9064d55A8A8473fA39c41A16492Fa1094Eb4E8b5' as const;
 
 export type StakingExitRequest = {
   amount: bigint;
@@ -71,7 +78,13 @@ export function parseStakingDepositsRead(data: unknown): StakingDepositView | un
 export function useK613StakingAddress() {
   const { chainId } = useAccount();
   const addresses = chainId ? addressesByChainId(chainId) : null;
-  return addresses?.staking || null;
+  return addresses?.STAKING_V2 || null;
+}
+
+export function useK613LegacyStakingAddress() {
+  const { chainId } = useAccount();
+  const addresses = chainId ? addressesByChainId(chainId) : null;
+  return addresses?.STAKING_LEGACY || null;
 }
 
 export function useK613StakingData() {
@@ -133,6 +146,24 @@ export function useK613StakingData() {
     functionName: 'totalBacking',
   });
 
+  const exitPendingSum = useReadContract({
+    address: stakingAddress as `0x${string}` | undefined,
+    abi: STAKING_ABI,
+    functionName: 'exitPendingSum',
+    args: userAddress ? [userAddress] : undefined,
+  });
+
+  // V2 is deployed well before it is live: it can only mint or burn once the Gov
+  // Safe batch runs `xK613.setMinter(StakingV2)`. Until then `stake` and `exit`
+  // revert, so the address alone is not proof the contract is usable.
+  const xk613Minter = useReadContract({
+    address: xk613Address.data as `0x${string}` | undefined,
+    abi: XK613_ABI,
+    functionName: 'minter',
+  });
+
+  const minterAddress = xk613Minter.data as `0x${string}` | undefined;
+
   return {
     stakingAddress,
     userAddress,
@@ -145,6 +176,11 @@ export function useK613StakingData() {
     rewardsDistributor: rewardsDistributor.data as `0x${string}` | undefined,
     maxExitRequests: maxExitRequests.data as bigint | undefined,
     totalBacking: totalBacking.data as bigint | undefined,
+    exitPendingSum: exitPendingSum.data as bigint | undefined,
+    /** `undefined` until `minter()` resolves — callers must not treat that as "not live". */
+    isV2Live: minterAddress
+      ? minterAddress.toLowerCase() === (stakingAddress ?? '').toLowerCase()
+      : undefined,
     isLoading:
       deposits.isLoading ||
       lockDuration.isLoading ||
@@ -153,7 +189,8 @@ export function useK613StakingData() {
       xk613Address.isLoading ||
       paused.isLoading ||
       rewardsDistributor.isLoading ||
-      maxExitRequests.isLoading,
+      maxExitRequests.isLoading ||
+      exitPendingSum.isLoading,
     refetch: () => {
       deposits.refetch();
       lockDuration.refetch();
@@ -164,6 +201,75 @@ export function useK613StakingData() {
       rewardsDistributor.refetch();
       maxExitRequests.refetch();
       totalBacking.refetch();
+      exitPendingSum.refetch();
+      xk613Minter.refetch();
+    },
+  };
+}
+
+/**
+ * Reads for the previous Staking deployment after the cutover.
+ *
+ * The cutover is atomic: `xK613.setMinter(StakingV2)` lands together with seeding
+ * V2, and from that block on V1 has exactly one working function — `cancelExit`.
+ * `stake` reverts on mint, `exit` / `instantExit` / `redeemRewards` revert on
+ * burnFrom, because V1 no longer holds MINTER_ROLE. V1 is deliberately left
+ * unpaused so `cancelExit` stays reachable, which is why `paused` cannot be used
+ * to detect the cutover — `minter()` is the signal.
+ */
+export function useK613LegacyStakingData() {
+  const { address: userAddress } = useAccount();
+  const legacyAddress = useK613LegacyStakingAddress();
+  const enabled = Boolean(legacyAddress && userAddress);
+
+  const deposits = useReadContract({
+    address: legacyAddress as `0x${string}` | undefined,
+    abi: LEGACY_STAKING_ABI,
+    functionName: 'deposits',
+    args: userAddress ? [userAddress] : undefined,
+    query: { enabled },
+  });
+
+  const exitQueueLength = useReadContract({
+    address: legacyAddress as `0x${string}` | undefined,
+    abi: LEGACY_STAKING_ABI,
+    functionName: 'exitQueueLength',
+    args: userAddress ? [userAddress] : undefined,
+    query: { enabled },
+  });
+
+  // The token V1 minted — its `minter()` is what the cutover reassigns.
+  const legacyXk613 = useReadContract({
+    address: legacyAddress as `0x${string}` | undefined,
+    abi: LEGACY_STAKING_ABI,
+    functionName: 'xk613',
+    query: { enabled: Boolean(legacyAddress) },
+  });
+
+  const minter = useReadContract({
+    address: legacyXk613.data as `0x${string}` | undefined,
+    abi: XK613_ABI,
+    functionName: 'minter',
+  });
+
+  const minterAddress = minter.data as `0x${string}` | undefined;
+  // Only once the read resolves — treating "unknown" as done would flash the
+  // migration block at people whose V1 still works normally.
+  const isCutoverDone =
+    Boolean(minterAddress) &&
+    Boolean(legacyAddress) &&
+    minterAddress?.toLowerCase() !== legacyAddress?.toLowerCase();
+
+  return {
+    legacyAddress,
+    deposits,
+    exitQueueLength: (exitQueueLength.data as bigint | undefined) ?? BigInt(0),
+    isCutoverDone,
+    isLoading: deposits.isLoading || exitQueueLength.isLoading || minter.isLoading,
+    refetch: () => {
+      deposits.refetch();
+      exitQueueLength.refetch();
+      minter.refetch();
     },
   };
 }
@@ -191,6 +297,31 @@ export function useK613TokenAllowance(
     functionName: 'allowance',
     args: userAddress && spenderAddress ? [userAddress, spenderAddress] : undefined,
   });
+}
+
+/**
+ * The only call the previous Staking deployment still honours after the cutover.
+ * `exit` and `instantExit` are deliberately absent: both burn xK613, and V1 lost
+ * MINTER_ROLE, so they revert every time.
+ */
+export function useK613LegacyStakingActions() {
+  const legacyAddress = useK613LegacyStakingAddress();
+  const { writeContractAsync, isPending } = useWriteContract();
+  const config = useConfig();
+
+  const cancelExit = async (index: bigint) => {
+    if (!legacyAddress) throw new Error('Legacy staking contract not configured');
+    const hash = await writeContractAsync({
+      address: legacyAddress as `0x${string}`,
+      abi: LEGACY_STAKING_ABI,
+      functionName: 'cancelExit',
+      args: [index],
+    } as Parameters<typeof writeContractAsync>[0]);
+    await waitForTransactionReceipt(config, { hash });
+    return hash;
+  };
+
+  return { cancelExit, isPending };
 }
 
 export function useK613StakingActions() {
@@ -254,23 +385,12 @@ export function useK613StakingActions() {
     });
   };
 
-  const redeemRewards = async (amount: bigint) => {
-    if (!stakingAddress) throw new Error('Staking contract not configured');
-    return writeAndWait({
-      address: stakingAddress as `0x${string}`,
-      abi: STAKING_ABI,
-      functionName: 'redeemRewards',
-      args: [amount],
-    });
-  };
-
   return {
     stake,
     initiateExit,
     exit,
     instantExit,
     cancelExit,
-    redeemRewards,
     isPending,
   };
 }
@@ -328,8 +448,17 @@ export function useK613RewardsData(rewardsDistributorAddress: `0x${string}` | un
     functionName: 'totalDeposits',
   });
 
+  // Ask the distributor which token it actually holds rather than hardcoding an
+  // xK613 address: more than one xK613 deployment exists, and pointing this at
+  // the wrong one silently reports a zero reward balance.
+  const stakingToken = useReadContract({
+    address: rewardsDistributorAddress,
+    abi: REWARDS_DISTRIBUTOR_ABI,
+    functionName: 'stakingToken',
+  });
+
   const xk613Balance = useReadContract({
-    address: XK613_ADDRESS,
+    address: stakingToken.data as `0x${string}` | undefined,
     abi: K613_ABI,
     functionName: 'balanceOf',
     args: rewardsDistributorAddress ? [rewardsDistributorAddress] : undefined,
@@ -353,6 +482,7 @@ export function useK613RewardsData(rewardsDistributorAddress: `0x${string}` | un
       nextEpochAt.isLoading ||
       userPoolBalance.isLoading ||
       totalDeposits.isLoading ||
+      stakingToken.isLoading ||
       xk613Balance.isLoading,
     refetch: () => {
       pendingRewardsOf.refetch();
@@ -360,6 +490,7 @@ export function useK613RewardsData(rewardsDistributorAddress: `0x${string}` | un
       nextEpochAt.refetch();
       userPoolBalance.refetch();
       totalDeposits.refetch();
+      stakingToken.refetch();
       xk613Balance.refetch();
     },
   };
@@ -557,6 +688,15 @@ export function formatUnlockCountdown(
   return `${h}h ${String(m).padStart(2, '0')}m`;
 }
 
-export function formatExitRequestId(index: number): string {
-  return `REQ-${String(index + 1).padStart(3, '0')}`;
+/** Submission date of an exit request, e.g. `6 Aug 2026, 13:51`. */
+export function formatSubmittedAt(exitInitiatedAt: bigint): string {
+  const ms = Number(exitInitiatedAt) * 1000;
+  if (!Number.isFinite(ms) || ms <= 0) return '—';
+  return new Date(ms).toLocaleString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }

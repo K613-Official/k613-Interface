@@ -34,6 +34,7 @@ import {
   ARBITRUM_SEPOLIA_POOL_CONFIGURATOR,
   ARBITRUM_SEPOLIA_REWARDS_DISTRIBUTION,
   ARBITRUM_SEPOLIA_STAKING,
+  ARBITRUM_SEPOLIA_STAKING_LEGACY,
   ARBITRUM_SEPOLIA_TREASURY,
   ARBITRUM_SEPOLIA_UI_INCENTIVE_DATA_PROVIDER,
   ARBITRUM_SEPOLIA_UI_POOL_DATA_PROVIDER,
@@ -45,7 +46,13 @@ import {
 // Monad mainnet staking — hardcoded rather than env-driven: these are fixed
 // mainnet deployments, and NEXT_PUBLIC_* vars are baked in at build time, so a
 // missing var on the deploy platform would silently ship an empty address.
-const MONAD_STAKING = '0x36451F6b4c06916aafd16359CCf99eB1f584DB0b';
+//
+// Deployed, but NOT live until the Gov Safe batch grants MINTER_ROLE to it and
+// runs `xK613.setMinter(StakingV2)`. Until that batch executes, every V2 call
+// that mints or burns reverts, so the page gates itself on `xK613.minter()`
+// rather than trusting this constant alone.
+const MONAD_STAKING_V2 = '0x5A3DA7644c25F0A74DCb0bA13ae38214D8856415';
+const MONAD_STAKING_LEGACY = '0x36451F6b4c06916aafd16359CCf99eB1f584DB0b';
 const MONAD_REWARDS_DISTRIBUTION = '0xE3E8925E8554464611c86419B9e99AD7Cd47428f';
 const MONAD_UI_INCENTIVE_DATA_PROVIDER = '0xF872C01f32B653462a4eD7F5688342d568EeA488';
 
@@ -71,8 +78,12 @@ export type NetworkAddresses = {
   L2_ENCODER: string;
   COLLECTOR: string;
   STAKING: string;
+  /** StakingV2 — the contract every new stake and exit request goes to. */
+  STAKING_V2: string;
+  /** Previous Staking deployment, kept only to drain its exit queue. Empty when there is nothing to migrate. */
+  STAKING_LEGACY: string;
   REWARDS_DISTRIBUTION: string;
-  /** @deprecated используй `STAKING` */
+  /** @deprecated используй `STAKING_V2` */
   staking: string;
   /** @deprecated используй `REWARDS_DISTRIBUTION` */
   rewardsDistribution: string;
@@ -100,6 +111,8 @@ export const addresses_testnet: NetworkAddresses = {
   L2_ENCODER: ARBITRUM_SEPOLIA_L2_ENCODER,
   COLLECTOR: ARBITRUM_SEPOLIA_COLLECTOR,
   STAKING: ARBITRUM_SEPOLIA_STAKING,
+  STAKING_V2: ARBITRUM_SEPOLIA_STAKING,
+  STAKING_LEGACY: ARBITRUM_SEPOLIA_STAKING_LEGACY,
   REWARDS_DISTRIBUTION: ARBITRUM_SEPOLIA_REWARDS_DISTRIBUTION,
   staking: ARBITRUM_SEPOLIA_STAKING,
   rewardsDistribution: ARBITRUM_SEPOLIA_REWARDS_DISTRIBUTION,
@@ -126,9 +139,11 @@ export const addresses_mainnet: NetworkAddresses = {
   WETH_GATEWAY: MONAD_WETH_GATEWAY,
   L2_ENCODER: MONAD_L2_ENCODER,
   COLLECTOR: MONAD_COLLECTOR,
-  STAKING: MONAD_STAKING,
+  STAKING: MONAD_STAKING_V2,
+  STAKING_V2: MONAD_STAKING_V2,
+  STAKING_LEGACY: MONAD_STAKING_LEGACY,
   REWARDS_DISTRIBUTION: MONAD_REWARDS_DISTRIBUTION,
-  staking: MONAD_STAKING,
+  staking: MONAD_STAKING_V2,
   rewardsDistribution: MONAD_REWARDS_DISTRIBUTION,
 };
 

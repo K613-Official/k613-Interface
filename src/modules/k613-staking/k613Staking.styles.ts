@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
@@ -499,46 +498,19 @@ export const RewardStatValue = styled(Typography)(() => ({
   whiteSpace: 'nowrap',
 }));
 
-/* ─── Instant exit checkbox ─── */
-
-export const InstantExitRow = styled(Box)(() => ({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: 8,
-}));
-
-export const StyledCheckbox = styled(Checkbox)(({ theme }) => ({
-  padding: 0,
-  color: 'rgba(255, 255, 255, 0.23)',
-  '&.Mui-checked': {
-    color: theme.palette.primary.main,
-  },
-  '& .MuiSvgIcon-root': {
-    fontSize: 18,
-  },
-}));
-
-export const InstantExitLabel = styled(Typography)(() => ({
-  fontFamily: 'Roboto, sans-serif',
-  fontWeight: 400,
-  fontSize: 14,
-  lineHeight: 1.43,
-  letterSpacing: '0.17px',
-  color: '#FFFFFF',
-  cursor: 'pointer',
-}));
-
 /* ─── Exit queue section ─── */
 
-export const ExitQueueSection = styled(Box)(() => ({
+export const ExitQueueSection = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'embedded',
+})<{ embedded?: boolean }>(({ embedded }) => ({
   display: 'flex',
   flexDirection: 'column',
   gap: 0,
   marginTop: 0,
-  backgroundColor: 'rgba(255, 255, 255, 0.04)',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  borderRadius: 4,
+  backgroundColor: embedded ? 'transparent' : 'rgba(255, 255, 255, 0.04)',
+  // Inside the migration block the surrounding section already draws the frame.
+  border: embedded ? 'none' : '1px solid rgba(255, 255, 255, 0.1)',
+  borderRadius: embedded ? 0 : 4,
   overflow: 'hidden',
 }));
 
@@ -581,18 +553,22 @@ export const ExitQueueSubtitle = styled(Typography)(() => ({
   borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
 }));
 
-export const ExitQueueTableHead = styled(Box)(() => ({
+export const ExitQueueTableHead = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'compact',
+})<{ compact?: boolean }>(({ compact }) => ({
   display: 'grid',
-  gridTemplateColumns: '1fr 1fr 1fr 1fr auto',
+  gridTemplateColumns: compact ? '1fr 1fr auto' : '1fr 1fr 1fr 1fr auto',
   gap: 0,
   paddingInline: 16,
   paddingBlock: '8px',
   borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
 }));
 
-export const ExitQueueTableRow = styled(Box)(() => ({
+export const ExitQueueTableRow = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'compact',
+})<{ compact?: boolean }>(({ compact }) => ({
   display: 'grid',
-  gridTemplateColumns: '1fr 1fr 1fr 1fr auto',
+  gridTemplateColumns: compact ? '1fr 1fr auto' : '1fr 1fr 1fr 1fr auto',
   gap: 0,
   paddingInline: 16,
   paddingBlock: '12px',
@@ -679,6 +655,95 @@ export const QueueExitButton = styled(Button)(({ theme }) => ({
     backgroundColor: 'rgba(255, 255, 255, 0.12)',
     color: 'rgba(255, 255, 255, 0.3)',
   },
+}));
+
+/** Holds the per-row Exit / Instant exit / Cancel buttons. */
+export const QueueActionsCell = styled(Box)(() => ({
+  display: 'flex',
+  flexDirection: 'row',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  justifyContent: 'flex-end',
+  gap: 8,
+}));
+
+export const QueuePenaltyButton = styled(Button)(({ theme }) => ({
+  textTransform: 'uppercase',
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 500,
+  fontSize: 13,
+  lineHeight: '22px',
+  letterSpacing: '0.46px',
+  color: theme.palette.warning.main,
+  border: `1px solid ${theme.palette.warning.main}`,
+  borderRadius: 4,
+  padding: '4px 10px',
+  minWidth: 0,
+  whiteSpace: 'nowrap',
+  '&:hover': {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  '&.Mui-disabled': {
+    color: 'rgba(255, 255, 255, 0.3)',
+    border: '1px solid rgba(255, 255, 255, 0.12)',
+  },
+}));
+
+/* ─── Migration block ─── */
+
+export const MigrationSection = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 0,
+  backgroundColor: 'rgba(255, 255, 255, 0.04)',
+  border: `1px solid ${theme.palette.warning.main}`,
+  borderRadius: 4,
+  overflow: 'hidden',
+}));
+
+export const MigrationHeader = styled(Box)(() => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 4,
+  padding: '12px 16px',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+}));
+
+export const MigrationTitle = styled(Typography)(({ theme }) => ({
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 500,
+  fontSize: 14,
+  lineHeight: '24px',
+  letterSpacing: '0.17px',
+  color: theme.palette.warning.main,
+}));
+
+export const MigrationCaption = styled(Typography)(() => ({
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 400,
+  fontSize: 12,
+  lineHeight: 1.66,
+  letterSpacing: '0.4px',
+  color: 'rgba(255, 255, 255, 0.6)',
+}));
+
+/** Explanatory copy inside a panel — lock terms, penalty, two-step exit. */
+export const PanelNote = styled(Typography)(() => ({
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 400,
+  fontSize: 12,
+  lineHeight: 1.66,
+  letterSpacing: '0.4px',
+  color: 'rgba(255, 255, 255, 0.6)',
+}));
+
+export const WarningNote = styled(Typography)(({ theme }) => ({
+  fontFamily: 'Roboto, sans-serif',
+  fontWeight: 400,
+  fontSize: 12,
+  lineHeight: 1.66,
+  letterSpacing: '0.4px',
+  color: theme.palette.warning.main,
 }));
 
 /* ─── Legacy / misc ─── */
