@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ConnectWalletButton } from 'src/components/WalletConnection/ConnectWalletButton';
+import { useK613GlobalExitQueue } from 'src/hooks/useK613GlobalExitQueue';
 import {
   formatStakeLockPeriod,
   parseStakingDepositsRead,
@@ -132,6 +133,7 @@ export function useK613StakingController() {
   );
   const rewardsData = useK613RewardsData(rewardsDistributor);
   const { apr: calculatedApr } = useK613RewardsAPR(rewardsDistributor);
+  const globalExitQueue = useK613GlobalExitQueue(stakingAddress as `0x${string}` | undefined);
 
   const {
     stake,
@@ -680,6 +682,8 @@ export function useK613StakingController() {
     hasStakingActivity,
     instantExitRequiresDistributor,
     legacyStaking,
+    globalExitQueue,
+    globalQueuedFormatted: formatTokenAmount(globalExitQueue.totalAmount),
     pendingRewardsAmount,
     lastAccrualDisplay,
     actionPending,

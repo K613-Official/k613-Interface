@@ -48,7 +48,8 @@ export type ExitQueueTableProps = {
    */
   onExit?: (index: bigint) => void;
   onInstantExit?: (index: bigint) => void;
-  onCancel: (index: bigint) => void;
+  /** Omit together with the other two for a read-only table — the protocol-wide queue has no actions. */
+  onCancel?: (index: bigint) => void;
 };
 
 export function ExitQueueTable({
@@ -70,8 +71,10 @@ export function ExitQueueTable({
   if (rows.length === 0) return null;
 
   const anyBusy = actionPending !== null;
-  const cancelOnly = !onExit && !onInstantExit;
+  const readOnly = !onExit && !onInstantExit && !onCancel;
+  const cancelOnly = !readOnly && !onExit && !onInstantExit;
   const lockSeconds = lockDurationSeconds ?? BigInt(0);
+  const columns = readOnly ? '1fr 1fr 1fr 1fr' : cancelOnly ? '1fr 1fr auto' : undefined;
 
   return (
     <ExitQueueSection embedded={embedded}>
@@ -81,12 +84,12 @@ export function ExitQueueTable({
       </ExitQueueHeader>
       <ExitQueueSubtitle>{subtitle}</ExitQueueSubtitle>
 
-      <ExitQueueTableHead compact={cancelOnly}>
+      <ExitQueueTableHead columns={columns}>
         <ExitQueueThCell>Amount</ExitQueueThCell>
         <ExitQueueThCell>Submitted</ExitQueueThCell>
         {!cancelOnly && <ExitQueueThCell>Unlocks in</ExitQueueThCell>}
         {!cancelOnly && <ExitQueueThCell>Status</ExitQueueThCell>}
-        <ExitQueueThCell />
+        {!readOnly && <ExitQueueThCell />}
       </ExitQueueTableHead>
 
       {rows.map((row, index) => {
@@ -98,7 +101,7 @@ export function ExitQueueTable({
 
         return (
           <ExitQueueTableRow
-            compact={cancelOnly}
+            columns={columns}
             key={`${keyPrefix}-${row.exitInitiatedAt.toString()}-${index}`}
           >
             <ExitQueueTdCell>{formatTokenAmount(row.amount)} xK613</ExitQueueTdCell>
@@ -113,41 +116,45 @@ export function ExitQueueTable({
                 <StatusChip ready={unlocked}>{unlocked ? 'Ready' : 'Locked'}</StatusChip>
               </ExitQueueTdCell>
             )}
-            <ExitQueueTdCell>
-              <QueueActionsCell>
-                {onExit && (
-                  <QueueExitButton
-                    size="small"
-                    disabled={disabled || anyBusy || !unlocked}
-                    onClick={() => onExit(BigInt(index))}
-                  >
-                    {exitBusy ? <CircularProgress size={14} color="inherit" /> : 'Exit'}
-                  </QueueExitButton>
-                )}
-                {/* The contract reverts `instantExit` with `Unlocked()` once the lock
+            {readOnly ? null : (
+              <ExitQueueTdCell>
+                <QueueActionsCell>
+                  {onExit && (
+                    <QueueExitButton
+                      size="small"
+                      disabled={disabled || anyBusy || !unlocked}
+                      onClick={() => onExit(BigInt(index))}
+                    >
+                      {exitBusy ? <CircularProgress size={14} color="inherit" /> : 'Exit'}
+                    </QueueExitButton>
+                  )}
+                  {/* The contract reverts `instantExit` with `Unlocked()` once the lock
                     has elapsed — and by then `Exit` returns the full amount anyway. */}
-                {onInstantExit && (
-                  <QueuePenaltyButton
-                    size="small"
-                    disabled={disabled || anyBusy || unlocked}
-                    onClick={() => onInstantExit(BigInt(index))}
-                  >
-                    {instantBusy ? (
-                      <CircularProgress size={14} color="inherit" />
-                    ) : (
-                      `Instant exit −${penaltyPercent}%`
-                    )}
-                  </QueuePenaltyButton>
-                )}
-                <QueueCancelButton
-                  size="small"
-                  disabled={disabled || anyBusy}
-                  onClick={() => onCancel(BigInt(index))}
-                >
-                  {cancelBusy ? <CircularProgress size={14} color="inherit" /> : 'Cancel'}
-                </QueueCancelButton>
-              </QueueActionsCell>
-            </ExitQueueTdCell>
+                  {onInstantExit && (
+                    <QueuePenaltyButton
+                      size="small"
+                      disabled={disabled || anyBusy || unlocked}
+                      onClick={() => onInstantExit(BigInt(index))}
+                    >
+                      {instantBusy ? (
+                        <CircularProgress size={14} color="inherit" />
+                      ) : (
+                        `Instant exit −${penaltyPercent}%`
+                      )}
+                    </QueuePenaltyButton>
+                  )}
+                  {onCancel && (
+                    <QueueCancelButton
+                      size="small"
+                      disabled={disabled || anyBusy}
+                      onClick={() => onCancel(BigInt(index))}
+                    >
+                      {cancelBusy ? <CircularProgress size={14} color="inherit" /> : 'Cancel'}
+                    </QueueCancelButton>
+                  )}
+                </QueueActionsCell>
+              </ExitQueueTdCell>
+            )}
           </ExitQueueTableRow>
         );
       })}

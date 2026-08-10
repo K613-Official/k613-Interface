@@ -553,11 +553,13 @@ export const ExitQueueSubtitle = styled(Typography)(() => ({
   borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
 }));
 
+const DEFAULT_QUEUE_COLUMNS = '1fr 1fr 1fr 1fr auto';
+
 export const ExitQueueTableHead = styled(Box, {
-  shouldForwardProp: (prop) => prop !== 'compact',
-})<{ compact?: boolean }>(({ compact }) => ({
+  shouldForwardProp: (prop) => prop !== 'columns',
+})<{ columns?: string }>(({ columns }) => ({
   display: 'grid',
-  gridTemplateColumns: compact ? '1fr 1fr auto' : '1fr 1fr 1fr 1fr auto',
+  gridTemplateColumns: columns ?? DEFAULT_QUEUE_COLUMNS,
   gap: 0,
   paddingInline: 16,
   paddingBlock: '8px',
@@ -565,10 +567,10 @@ export const ExitQueueTableHead = styled(Box, {
 }));
 
 export const ExitQueueTableRow = styled(Box, {
-  shouldForwardProp: (prop) => prop !== 'compact',
-})<{ compact?: boolean }>(({ compact }) => ({
+  shouldForwardProp: (prop) => prop !== 'columns',
+})<{ columns?: string }>(({ columns }) => ({
   display: 'grid',
-  gridTemplateColumns: compact ? '1fr 1fr auto' : '1fr 1fr 1fr 1fr auto',
+  gridTemplateColumns: columns ?? DEFAULT_QUEUE_COLUMNS,
   gap: 0,
   paddingInline: 16,
   paddingBlock: '12px',
