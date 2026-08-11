@@ -257,7 +257,6 @@ export default function SupplyModal({ open, onClose, underlyingAsset }: Props) {
             txHash={mainTxState.txHash}
             onClose={handleClose}
             addToWalletAddress={reserve.aTokenAddress}
-            addToWalletSymbol={`a${symbol}`}
             addToWalletDecimals={reserve.decimals}
           />
         </ModalCard>

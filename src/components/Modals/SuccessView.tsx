@@ -5,6 +5,17 @@ import { TokenIcon } from 'src/components/primitives/TokenIcon';
 import { useDevice } from 'src/hooks';
 import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
 import { useRootStore } from 'src/store/root';
+import { useReadContract } from 'wagmi';
+
+const SYMBOL_ABI = [
+  {
+    type: 'function',
+    name: 'symbol',
+    inputs: [],
+    outputs: [{ type: 'string' }],
+    stateMutability: 'view',
+  },
+] as const;
 
 interface SuccessViewProps {
   action: string;
@@ -40,9 +51,21 @@ export function SuccessView({
 
   const explorerUrl = txHash ? currentNetworkConfig.explorerLinkBuilder({ tx: txHash }) : undefined;
   const baseIcon = iconSymbol ?? symbol;
-  // MetaMask validates the symbol against the on-chain contract AND limits it to 11 chars.
-  // Long debt symbols like `variableDebtUSDC` cannot satisfy both, so we fall back to copying the address.
-  const walletSymbol = addToWalletSymbol ?? '';
+
+  // MetaMask validates the symbol against the on-chain contract, so it has to be
+  // read rather than derived. Deriving it as `a${underlying}` produced `awstETH`
+  // against a contract that actually calls itself `aMonwstETH` — aTokens carry a
+  // per-market prefix — and the wallet rejected the request outright.
+  const onChainSymbol = useReadContract({
+    address: addToWalletAddress as `0x${string}` | undefined,
+    abi: SYMBOL_ABI,
+    functionName: 'symbol',
+    query: { enabled: Boolean(addToWalletAddress) },
+  });
+
+  // MetaMask also limits the symbol to 11 chars. Long debt symbols like
+  // `variableDebtUSDC` cannot satisfy both rules, so we fall back to copying the address.
+  const walletSymbol = (onChainSymbol.data as string | undefined) ?? addToWalletSymbol ?? '';
   const canAutoAdd = walletSymbol.length > 0 && walletSymbol.length <= 11;
   const [copied, setCopied] = useState(false);
 
