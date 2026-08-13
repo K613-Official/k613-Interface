@@ -1941,6 +1941,10 @@ msgstr "Debt ceiling is exceeded"
 msgid "The collateral chosen cannot be liquidated"
 msgstr "The collateral chosen cannot be liquidated"
 
+#: src/components/transactions/Emode/EmodeModalContent.tsx
+msgid "There are no E-Mode categories configured on this market yet."
+msgstr "There are no E-Mode categories configured on this market yet."
+
 #: src/ui-config/errorMapping.tsx
 msgid "Action cannot be performed because the reserve is frozen"
 msgstr "Action cannot be performed because the reserve is frozen"
@@ -1971,6 +1975,7 @@ msgstr "Isolated Debt Ceiling"
 msgid "Efficiency mode (E-Mode)"
 msgstr "Efficiency mode (E-Mode)"
 
+#: src/components/transactions/Emode/EmodeModalContent.tsx
 #: src/components/transactions/Emode/EmodeModalContent.tsx
 #: src/modules/dashboard/DashboardEModeButton.tsx
 msgid "Manage E-Mode"
