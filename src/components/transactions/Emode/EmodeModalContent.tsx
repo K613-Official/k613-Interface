@@ -95,8 +95,13 @@ export const EmodeModalContent = ({ user }: { user: ExtendedFormattedUser }) => 
     ])
   );
 
+  // category ids are pool config, not a dense range — fall back to the lowest configured one
+  const firstEmodeCategory = Object.values(eModeCategories)
+    .filter((emode) => emode.id !== 0)
+    .sort((a, b) => a.id - b.id)[0];
+
   const [selectedEmode, setSelectedEmode] = useState<EModeCategoryDisplay>(
-    user.userEmodeCategoryId === 0 ? eModeCategories[1] : eModeCategories[user.userEmodeCategoryId]
+    user.userEmodeCategoryId === 0 ? firstEmodeCategory : eModeCategories[user.userEmodeCategoryId]
   );
   const networkConfig = getNetworkConfig(currentChainId);
 
@@ -105,7 +110,7 @@ export const EmodeModalContent = ({ user }: { user: ExtendedFormattedUser }) => 
     currentTimestamp,
     userReserves: userReserves,
     formattedReserves: reserves,
-    userEmodeCategoryId: disableEmode ? 0 : selectedEmode.id,
+    userEmodeCategoryId: disableEmode || !selectedEmode ? 0 : selectedEmode.id,
     marketReferenceCurrencyDecimals,
     marketReferencePriceInUsd,
   });
@@ -167,6 +172,19 @@ export const EmodeModalContent = ({ user }: { user: ExtendedFormattedUser }) => 
   }
 
   if (emodeTxState.success) return <TxSuccessView action={<Trans>Emode</Trans>} />;
+
+  // no category is configured on the pool — nothing to select, and every control below reads
+  // selectedEmode
+  if (!selectedEmode) {
+    return (
+      <>
+        <TxModalTitle title={<Trans>Manage E-Mode</Trans>} />
+        <Warning severity="info" sx={{ mt: 4, mb: 0 }}>
+          <Trans>There are no E-Mode categories configured on this market yet.</Trans>
+        </Warning>
+      </>
+    );
+  }
 
   function selectEMode(id: number) {
     const emode = eModeCategories[id];
