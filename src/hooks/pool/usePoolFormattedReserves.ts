@@ -11,7 +11,6 @@ import { reserveSortFn } from 'src/store/poolSelectors';
 import { isReserveHidden } from 'src/ui-config/hiddenReserves';
 import { MarketDataType } from 'src/ui-config/marketsConfig';
 import { fetchIconSymbolAndName, IconMapInterface } from 'src/ui-config/reservePatches';
-import { deriveEModesFromReserves } from 'src/utils/legacyEModes';
 import { getNetworkConfig, NetworkConfig } from 'src/utils/marketsAndNetworksConfig';
 
 import { usePoolsEModes } from './usePoolEModes';
@@ -38,20 +37,13 @@ const formatReserves = memoize(
       (r) => !isReserveHidden(chainId, r.underlyingAsset)
     );
     const baseCurrencyData = reservesData.baseCurrencyData;
-    // the legacy UiPoolDataProvider has no getEModes() view, so the categories are reconstructed
-    // from the per-reserve e-mode fields it returns instead (bit indices refer to originalId, so
-    // the unfiltered list is the right input here)
-    const eModes =
-      poolsEModesData.length > 0
-        ? poolsEModesData
-        : deriveEModesFromReserves(reservesData.reservesData);
     return formatReservesAndIncentives({
       reserves,
       currentTimestamp: dayjs().unix(),
       marketReferenceCurrencyDecimals: baseCurrencyData.marketReferenceCurrencyDecimals,
       marketReferencePriceInUsd: baseCurrencyData.marketReferenceCurrencyPriceInUsd,
       reserveIncentives: incentivesData,
-      eModes,
+      eModes: poolsEModesData,
     })
       .map((r) => ({
         ...r,
