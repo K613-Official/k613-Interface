@@ -1,5 +1,5 @@
 import { Add, Remove } from '@mui/icons-material';
-import { Collapse, Typography } from '@mui/material';
+import { Collapse, Link as MuiLink, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import Layout from 'src/components/Layout';
 import MaxWidthContainer from 'src/components/MaxWidthContainer';
@@ -7,6 +7,7 @@ import MaxWidthContainer from 'src/components/MaxWidthContainer';
 import { FAQ_CATEGORIES, faqSectionDomId } from './const';
 import {
   Answer,
+  AnswerLinks,
   Body,
   Content,
   Divider,
@@ -114,6 +115,23 @@ export default function FaqPage() {
                                 <Typography variant="body1" color="text.secondary">
                                   {item.answer}
                                 </Typography>
+                                {item.links?.length ? (
+                                  <AnswerLinks>
+                                    {item.links.map((link) => (
+                                      <MuiLink
+                                        key={link.href}
+                                        href={link.href}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        variant="body1"
+                                        underline="always"
+                                        color="primary"
+                                      >
+                                        {link.label}
+                                      </MuiLink>
+                                    ))}
+                                  </AnswerLinks>
+                                ) : null}
                               </Answer>
                             </Collapse>
                           </Row>

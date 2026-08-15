@@ -1,6 +1,14 @@
+import { UNISWAP_K613_USDC_POOL_URL } from 'src/const/links';
+
+export type FaqLink = {
+  label: string;
+  href: string;
+};
+
 export type FaqItem = {
   question: string;
   answer: string;
+  links?: FaqLink[];
 };
 
 export type FaqCategory = {
@@ -98,6 +106,43 @@ export const FAQ_CATEGORIES: FaqCategory[] = [
         question: 'How much interest will I pay?',
         answer:
           'Interest depends on the reserve utilization and selected rate mode. Current rates are shown in the UI and can change over time with market conditions.',
+      },
+    ],
+  },
+  {
+    key: 'token-liquidity',
+    title: 'TOKEN & LIQUIDITY',
+    items: [
+      {
+        question: 'Where can I trade K613?',
+        answer:
+          'K613 trades against USDC on Uniswap on Monad, in the 0.05% fee pool. Always open the pool from an official K613 link and verify the token address 0xb09582631336068d4B0089d943f40CbF46dE5189 before swapping.',
+        links: [
+          {
+            label: 'K613 / USDC pool on Uniswap',
+            href: UNISWAP_K613_USDC_POOL_URL,
+          },
+        ],
+      },
+      {
+        question: 'Where did the initial liquidity come from?',
+        answer:
+          '100% of the funds raised during the Token Sale were added to the K613/USDC pool as liquidity. Nothing was withheld from the raise.',
+      },
+      {
+        question: 'Is the liquidity locked?',
+        answer:
+          'Yes. The LP position is held by a timelock contract and cannot be withdrawn before 29 July 2027 (UTC) — a one-year lock from the day liquidity was added. The unlock timestamp is stored on-chain and anyone can verify it by reading unlockTime() on the lock contract.',
+        links: [
+          {
+            label: 'LP timelock contract on Monad Explorer',
+            href: 'https://monadexplorer.com/address/0xbDB83DF26F8e554bd20754df3Dde7cab958956D5',
+          },
+          {
+            label: 'Pool contract on Monad Explorer',
+            href: 'https://monadexplorer.com/address/0xDD5557CEcFD7Ba0F5F2A1C38967d83Df2951a4F4',
+          },
+        ],
       },
     ],
   },
