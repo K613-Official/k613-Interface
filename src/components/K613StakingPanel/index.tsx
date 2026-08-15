@@ -69,11 +69,12 @@ export function K613StakingPanel() {
     );
   }
 
+  // Lock & Exit comes first: locking K613 into xK613 is what unlocks the reward pool.
   const handleTabChange = (_: SyntheticEvent, newValue: number) => {
-    setMainTab(newValue === 0 ? 'rewardPool' : 'lockExit');
+    setMainTab(newValue === 0 ? 'lockExit' : 'rewardPool');
   };
 
-  const tabIndex = mainTab === 'rewardPool' ? 0 : 1;
+  const tabIndex = mainTab === 'lockExit' ? 0 : 1;
 
   return (
     <PageRoot>
@@ -86,8 +87,8 @@ export function K613StakingPanel() {
           <PanelShell>
             {/* Top-level primary tabs */}
             <MainTabs value={tabIndex} onChange={handleTabChange}>
-              <MainTab label="Reward Pool" />
               <MainTab label="Lock & Exit" />
+              <MainTab label="Reward Pool" />
             </MainTabs>
 
             {/* Per-tab section header */}

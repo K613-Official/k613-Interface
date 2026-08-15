@@ -6,6 +6,7 @@ import { useMemo } from 'react';
 import { AddTokenToWalletButton } from 'src/components/AddTokenToWallet';
 import { K613_TOKEN_META, XK613_TOKEN_META } from 'src/const/k613Tokens';
 
+import { BuyOnUniswapButton } from '../BuyOnUniswapButton';
 import { ExitQueueTable } from '../ExitQueueTable';
 import { K613MigrationBlock } from '../K613MigrationBlock';
 import {
@@ -50,6 +51,7 @@ export function K613LockExitTab() {
     formatted,
     exitQueue,
     maxExitSlots,
+    walletK613,
     availableToExit,
     needsPoolWithdrawal,
     globalExitQueue,
@@ -105,7 +107,12 @@ export function K613LockExitTab() {
             <StatInner>
               <StatLabel>Available to lock</StatLabel>
               <StatValue>{formatted.walletK613} K613</StatValue>
-              <AddTokenToWalletButton token={k613Token} sx={{ mt: 0.5, ml: -1 }} />
+              {/* Nothing to lock yet — point at the pool instead of at the wallet import. */}
+              {walletK613 > 0n ? (
+                <AddTokenToWalletButton token={k613Token} sx={{ mt: 0.5, ml: -1 }} />
+              ) : (
+                <BuyOnUniswapButton sx={{ mt: 0.5, ml: -1 }} />
+              )}
             </StatInner>
           </StatCard>
           <StatCard>

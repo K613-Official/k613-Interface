@@ -39,7 +39,7 @@ const Footer: FC = () => {
               const { id, href, icon, alt } = link;
 
               return (
-                <Link key={id} href={href}>
+                <Link key={id} href={href} target="_blank" rel="noopener noreferrer">
                   <Image src={icon} width={24} height={24} alt={alt} />
                 </Link>
               );

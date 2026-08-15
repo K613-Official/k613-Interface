@@ -165,6 +165,14 @@ export const IconBox = styled(Box)(({ theme }) => ({
   },
 }));
 
+export const AnswerLinks = styled(Box)({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'flex-start',
+  gap: 8,
+  marginTop: 12,
+});
+
 export const Answer = styled(Box)(({ theme }) => ({
   maxWidth: 656,
   [theme.breakpoints.down('sm')]: {

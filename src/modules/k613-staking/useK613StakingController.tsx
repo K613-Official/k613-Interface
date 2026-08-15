@@ -53,7 +53,7 @@ export function useK613StakingController() {
   const stakingChainId = useRootStore((s) => s.currentMarketData.chainId) as number;
   const stakingNetworkName = useMemo(() => getNetworkConfig(stakingChainId).name, [stakingChainId]);
 
-  const [mainTab, setMainTab] = useState<K613MainTab>('rewardPool');
+  const [mainTab, setMainTab] = useState<K613MainTab>('lockExit');
   const [rewardPoolSubTab, setRewardPoolSubTab] = useState<K613RewardPoolSubTab>('claimRewards');
   const [lockExitSubTab, setLockExitSubTab] = useState<K613LockExitSubTab>('lock');
 
@@ -676,6 +676,7 @@ export function useK613StakingController() {
     lockPeriodLabel,
     exitQueue,
     maxExitSlots,
+    walletK613,
     availableToExit,
     needsPoolWithdrawal,
     penaltyPercent,
