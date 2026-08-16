@@ -5,7 +5,9 @@ import rewardsDistributorArtifact from 'src/abis/RewardsDistributor/RewardsDistr
 import legacyStakingArtifact from 'src/abis/Staking/Staking.json';
 import stakingArtifact from 'src/abis/Staking/StakingV2.json';
 import xk613Artifact from 'src/abis/xK613.sol/xK613.json';
+import { networkConfigs } from 'src/ui-config/networksConfig';
 import { addressesByChainId } from 'src/utils/addresses';
+import { Abi, encodeFunctionData } from 'viem';
 import { useAccount, useConfig, usePublicClient, useReadContract, useWriteContract } from 'wagmi';
 
 const STAKING_ABI = (stakingArtifact as unknown as { abi: unknown[] }).abi;
@@ -511,9 +513,20 @@ export function useK613RewardsData(rewardsDistributorAddress: `0x${string}` | un
  */
 const APR_WINDOW_DAYS = 30;
 const APR_MIN_WINDOW_DAYS = 7;
-const APR_SAMPLES = 6;
-/** How many separate payouts must land in the window for an average to mean anything. */
-const APR_MIN_ACCRUALS = 2;
+/**
+ * Sampling has to be dense enough to separate two payouts that land close together:
+ * every pair of buybacks between the same two samples reads as a single accrual.
+ */
+const APR_SAMPLES = 12;
+/**
+ * How many separate payouts must land in the window for an average to mean anything.
+ *
+ * One is enough. Two used to be the bar, but it silently assumed the full 30-day
+ * window: whenever the node cannot serve state that far back the window collapses
+ * to the 7-day floor, and buybacks land roughly weekly — so a single payout in the
+ * window is the normal case there, and requiring two hides the APR completely.
+ */
+const APR_MIN_ACCRUALS = 1;
 const BLOCK_TIME_PROBE_SPAN = 100_000n;
 
 export function useK613RewardsAPR(rewardsDistributorAddress: `0x${string}` | undefined) {
@@ -527,13 +540,64 @@ export function useK613RewardsAPR(rewardsDistributorAddress: `0x${string}` | und
     queryFn: async (): Promise<{ apr: string | null }> => {
       if (!publicClient || !rewardsDistributorAddress) return { apr: null };
 
-      const readAcc = (blockNumber: bigint) =>
-        publicClient.readContract({
-          address: rewardsDistributorAddress,
-          abi: REWARDS_DISTRIBUTOR_ABI,
-          functionName: 'accRewardPerShare',
-          blockNumber,
-        }) as Promise<bigint>;
+      // The index has to be read at past blocks, and not every endpoint keeps state
+      // that far back — a private node on a non-archive plan answers today's calls
+      // fine and rejects the historical ones, which silently zeroes the APR. So: try
+      // the app's client first, then the chain's own public nodes over plain
+      // eth_call, and stay on whichever one actually served history.
+      const callData = encodeFunctionData({
+        abi: REWARDS_DISTRIBUTOR_ABI as Abi,
+        functionName: 'accRewardPerShare',
+      });
+
+      const readViaUrl = (url: string) => async (blockNumber: bigint) => {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'eth_call',
+            params: [
+              { to: rewardsDistributorAddress, data: callData },
+              `0x${blockNumber.toString(16)}`,
+            ],
+          }),
+        });
+        const body = await response.json();
+        if (body.error || typeof body.result !== 'string' || body.result === '0x') {
+          throw new Error(body.error?.message ?? 'Historical state unavailable');
+        }
+        return BigInt(body.result);
+      };
+
+      const readers: Array<(blockNumber: bigint) => Promise<bigint>> = [
+        (blockNumber) =>
+          publicClient.readContract({
+            address: rewardsDistributorAddress,
+            abi: REWARDS_DISTRIBUTOR_ABI,
+            functionName: 'accRewardPerShare',
+            blockNumber,
+          }) as Promise<bigint>,
+        ...(publicClient.chain
+          ? (networkConfigs[publicClient.chain.id]?.publicJsonRPCUrl ?? []).map(readViaUrl)
+          : []),
+      ];
+
+      let reader = readers[0];
+      const readAcc = async (blockNumber: bigint): Promise<bigint> => {
+        let lastError: unknown = new Error('No RPC endpoint served the historical read');
+        for (const candidate of [reader, ...readers.filter((r) => r !== reader)]) {
+          try {
+            const value = await candidate(blockNumber);
+            reader = candidate;
+            return value;
+          } catch (e) {
+            lastError = e;
+          }
+        }
+        throw lastError;
+      };
 
       const latest = await publicClient.getBlockNumber();
       const [latestBlock, probeBlock] = await Promise.all([
