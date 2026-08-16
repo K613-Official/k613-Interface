@@ -1,6 +1,7 @@
 import { API_ETH_MOCK_ADDRESS } from '@aave/contract-helpers';
 import { valueToBigNumber } from '@aave/math-utils';
 import { useMemo } from 'react';
+import { getTotalApy } from 'src/components/incentives/ApyWithIncentives';
 import { ModalType } from 'src/components/Modals/types';
 import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { Position, useNetBorrowed, useNetSupplied } from 'src/hooks/useNetSupplied';
@@ -35,8 +36,22 @@ const formatToken = (value: string | number | undefined) => {
   });
 };
 
-const formatPercent = (value: string | number | undefined) =>
-  `${(Number(value || 0) * 100).toFixed(2)}%`;
+const formatPercent = (value: string | number | undefined) => {
+  const normalized = Number(value || 0);
+  if (!Number.isFinite(normalized)) return '∞%';
+  return `${(normalized * 100).toFixed(2)}%`;
+};
+
+/**
+ * Headline APY across the card's positions, as the plain sum of the per-row figures
+ * (protocol rate + reward emissions each). Deliberately not the balance-weighted
+ * average `user.earnedAPY` / `user.debtAPY`: the product wants the total to line up
+ * with adding up the column below it.
+ */
+const sumPositionApy = (
+  positions: Array<{ apyValue: number; incentives: Parameters<typeof getTotalApy>[1] }>
+) =>
+  positions.reduce((acc, position) => acc + getTotalApy(position.apyValue, position.incentives), 0);
 
 export function useInfoCardData(type: InfoCardType): {
   data: InfoCardViewData;
@@ -166,7 +181,7 @@ export function useInfoCardData(type: InfoCardType): {
       emptyText: 'Nothing supplied yet',
       metrics: [
         { label: 'Balance', value: formatCurrency(user?.totalLiquidityUSD) },
-        { label: 'APY', value: formatPercent(user?.earnedAPY), showAlert: true },
+        { label: 'APY', value: formatPercent(sumPositionApy(suppliedRaw)), showAlert: true },
         { label: 'Collateral', value: formatCurrency(user?.totalCollateralUSD), showAlert: true },
       ],
       positions: suppliedRaw as InfoPosition[],

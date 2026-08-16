@@ -529,6 +529,113 @@ const APR_SAMPLES = 12;
 const APR_MIN_ACCRUALS = 1;
 const BLOCK_TIME_PROBE_SPAN = 100_000n;
 
+/**
+ * One RPC endpoint, reduced to the three calls the APR needs. Every read of the
+ * window goes through a single source: mixing endpoints mid-calculation is how a
+ * node that answers historical calls with *current* state stays invisible.
+ */
+type AprSource = {
+  label: string;
+  getBlockNumber: () => Promise<bigint>;
+  getBlockTimestamp: (blockNumber: bigint) => Promise<number>;
+  readAcc: (blockNumber: bigint) => Promise<bigint>;
+};
+
+const jsonRpcSource = (url: string, distributor: `0x${string}`, callData: `0x${string}`) => {
+  const call = async (method: string, params: unknown[]) => {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+    });
+    const body = await response.json();
+    if (body.error || body.result === undefined || body.result === null) {
+      throw new Error(body.error?.message ?? `${method} failed`);
+    }
+    return body.result;
+  };
+
+  return {
+    label: url,
+    getBlockNumber: async () => BigInt(await call('eth_blockNumber', [])),
+    getBlockTimestamp: async (blockNumber: bigint) => {
+      const block = await call('eth_getBlockByNumber', [`0x${blockNumber.toString(16)}`, false]);
+      return Number(BigInt(block.timestamp));
+    },
+    readAcc: async (blockNumber: bigint) => {
+      const result = await call('eth_call', [
+        { to: distributor, data: callData },
+        `0x${blockNumber.toString(16)}`,
+      ]);
+      // A pruned node answers a historical call with empty data instead of an error
+      if (typeof result !== 'string' || result === '0x') {
+        throw new Error('Historical state unavailable');
+      }
+      return BigInt(result);
+    },
+  } satisfies AprSource;
+};
+
+/** `null` when this endpoint cannot support the calculation — the caller then tries the next one. */
+async function computeRewardsApr(source: AprSource): Promise<string | null> {
+  const latest = await source.getBlockNumber();
+  const [latestTs, probeTs] = await Promise.all([
+    source.getBlockTimestamp(latest),
+    source.getBlockTimestamp(latest - BLOCK_TIME_PROBE_SPAN),
+  ]);
+  const secondsPerBlock = (latestTs - probeTs) / Number(BLOCK_TIME_PROBE_SPAN);
+  if (!Number.isFinite(secondsPerBlock) || secondsPerBlock <= 0) return null;
+
+  // Nodes keep historical state for a limited depth: ask for 30 days and halve the
+  // window until this endpoint serves the historical call.
+  const minSpan = BigInt(Math.round((APR_MIN_WINDOW_DAYS * 86400) / secondsPerBlock));
+  let span = BigInt(Math.round((APR_WINDOW_DAYS * 86400) / secondsPerBlock));
+  let startBlock: bigint | null = null;
+  let accStart = 0n;
+
+  while (span >= minSpan) {
+    const candidate = latest - span;
+    try {
+      accStart = await source.readAcc(candidate);
+      startBlock = candidate;
+      break;
+    } catch {
+      span /= 2n;
+    }
+  }
+
+  // A zero index at the window start means the pool only began accruing inside the
+  // window. Annualising that cold start invents a 3-digit APR.
+  if (startBlock === null || accStart === 0n) return null;
+
+  const windowStart = startBlock;
+  const step = (latest - windowStart) / BigInt(APR_SAMPLES);
+  const sampleBlocks = Array.from(
+    { length: APR_SAMPLES - 1 },
+    (_, i) => windowStart + step * BigInt(i + 1)
+  );
+  const [startTs, samples, accLatest] = await Promise.all([
+    source.getBlockTimestamp(windowStart),
+    Promise.all(sampleBlocks.map(source.readAcc)),
+    source.readAcc(latest),
+  ]);
+
+  const series = [accStart, ...samples, accLatest];
+  const accruals = series.reduce(
+    (count, value, i) => (i > 0 && value > series[i - 1] ? count + 1 : count),
+    0
+  );
+  // Also the tell for an endpoint that serves current state for every past block:
+  // the whole series comes back flat, so there is nothing to annualise here.
+  if (accruals < APR_MIN_ACCRUALS) return null;
+
+  const windowSeconds = latestTs - startTs;
+  if (windowSeconds <= 0) return null;
+
+  const growthPerToken = Number(accLatest - accStart) / 1e18;
+  return (growthPerToken * ((365 * 86400) / windowSeconds) * 100).toFixed(2);
+}
+
 export function useK613RewardsAPR(rewardsDistributorAddress: `0x${string}` | undefined) {
   const publicClient = usePublicClient();
 
@@ -540,121 +647,45 @@ export function useK613RewardsAPR(rewardsDistributorAddress: `0x${string}` | und
     queryFn: async (): Promise<{ apr: string | null }> => {
       if (!publicClient || !rewardsDistributorAddress) return { apr: null };
 
-      // The index has to be read at past blocks, and not every endpoint keeps state
-      // that far back — a private node on a non-archive plan answers today's calls
-      // fine and rejects the historical ones, which silently zeroes the APR. So: try
-      // the app's client first, then the chain's own public nodes over plain
-      // eth_call, and stay on whichever one actually served history.
       const callData = encodeFunctionData({
         abi: REWARDS_DISTRIBUTOR_ABI as Abi,
         functionName: 'accRewardPerShare',
       });
 
-      const readViaUrl = (url: string) => async (blockNumber: bigint) => {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            jsonrpc: '2.0',
-            id: 1,
-            method: 'eth_call',
-            params: [
-              { to: rewardsDistributorAddress, data: callData },
-              `0x${blockNumber.toString(16)}`,
-            ],
-          }),
-        });
-        const body = await response.json();
-        if (body.error || typeof body.result !== 'string' || body.result === '0x') {
-          throw new Error(body.error?.message ?? 'Historical state unavailable');
-        }
-        return BigInt(body.result);
-      };
-
-      const readers: Array<(blockNumber: bigint) => Promise<bigint>> = [
-        (blockNumber) =>
-          publicClient.readContract({
-            address: rewardsDistributorAddress,
-            abi: REWARDS_DISTRIBUTOR_ABI,
-            functionName: 'accRewardPerShare',
-            blockNumber,
-          }) as Promise<bigint>,
+      const sources: AprSource[] = [
+        {
+          label: 'app',
+          getBlockNumber: () => publicClient.getBlockNumber(),
+          getBlockTimestamp: async (blockNumber) =>
+            Number((await publicClient.getBlock({ blockNumber })).timestamp),
+          readAcc: (blockNumber) =>
+            publicClient.readContract({
+              address: rewardsDistributorAddress,
+              abi: REWARDS_DISTRIBUTOR_ABI,
+              functionName: 'accRewardPerShare',
+              blockNumber,
+            }) as Promise<bigint>,
+        },
         ...(publicClient.chain
-          ? (networkConfigs[publicClient.chain.id]?.publicJsonRPCUrl ?? []).map(readViaUrl)
+          ? (networkConfigs[publicClient.chain.id]?.publicJsonRPCUrl ?? []).map((url) =>
+              jsonRpcSource(url, rewardsDistributorAddress, callData)
+            )
           : []),
       ];
 
-      let reader = readers[0];
-      const readAcc = async (blockNumber: bigint): Promise<bigint> => {
-        let lastError: unknown = new Error('No RPC endpoint served the historical read');
-        for (const candidate of [reader, ...readers.filter((r) => r !== reader)]) {
-          try {
-            const value = await candidate(blockNumber);
-            reader = candidate;
-            return value;
-          } catch (e) {
-            lastError = e;
-          }
-        }
-        throw lastError;
-      };
-
-      const latest = await publicClient.getBlockNumber();
-      const [latestBlock, probeBlock] = await Promise.all([
-        publicClient.getBlock({ blockNumber: latest }),
-        publicClient.getBlock({ blockNumber: latest - BLOCK_TIME_PROBE_SPAN }),
-      ]);
-      const secondsPerBlock =
-        Number(latestBlock.timestamp - probeBlock.timestamp) / Number(BLOCK_TIME_PROBE_SPAN);
-      if (!Number.isFinite(secondsPerBlock) || secondsPerBlock <= 0) return { apr: null };
-
-      // Nodes keep historical state for a limited depth: ask for 30 days and
-      // halve the window until the node serves the historical call.
-      const minSpan = BigInt(Math.round((APR_MIN_WINDOW_DAYS * 86400) / secondsPerBlock));
-      let span = BigInt(Math.round((APR_WINDOW_DAYS * 86400) / secondsPerBlock));
-      let startBlock: bigint | null = null;
-      let accStart = 0n;
-
-      while (span >= minSpan) {
-        const candidate = latest - span;
+      // Whatever the app's own endpoint does — rejects historical calls, rate-limits
+      // mid-window, or hands back today's state for every past block — the figure is
+      // still available from the chain's public nodes, so keep asking down the list.
+      for (const source of sources) {
         try {
-          accStart = await readAcc(candidate);
-          startBlock = candidate;
-          break;
+          const apr = await computeRewardsApr(source);
+          if (apr !== null) return { apr };
         } catch {
-          span /= 2n;
+          // endpoint unusable for this calculation — try the next
         }
       }
 
-      // A zero index at the window start means the pool only began accruing
-      // inside the window. Annualising that cold start invents a 3-digit APR.
-      if (startBlock === null || accStart === 0n) return { apr: null };
-
-      const windowStart = startBlock;
-      const step = (latest - windowStart) / BigInt(APR_SAMPLES);
-      const sampleBlocks = Array.from(
-        { length: APR_SAMPLES - 1 },
-        (_, i) => windowStart + step * BigInt(i + 1)
-      );
-      const [startTsBlock, samples, accLatest] = await Promise.all([
-        publicClient.getBlock({ blockNumber: windowStart }),
-        Promise.all(sampleBlocks.map(readAcc)),
-        readAcc(latest),
-      ]);
-
-      const series = [accStart, ...samples, accLatest];
-      const accruals = series.reduce(
-        (count, value, i) => (i > 0 && value > series[i - 1] ? count + 1 : count),
-        0
-      );
-      if (accruals < APR_MIN_ACCRUALS) return { apr: null };
-
-      const windowSeconds = Number(latestBlock.timestamp - startTsBlock.timestamp);
-      if (windowSeconds <= 0) return { apr: null };
-
-      const growthPerToken = Number(accLatest - accStart) / 1e18;
-      const apr = growthPerToken * ((365 * 86400) / windowSeconds) * 100;
-      return { apr: apr.toFixed(2) };
+      return { apr: null };
     },
   });
 
