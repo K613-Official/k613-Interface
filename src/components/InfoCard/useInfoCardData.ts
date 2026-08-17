@@ -1,7 +1,6 @@
 import { API_ETH_MOCK_ADDRESS } from '@aave/contract-helpers';
 import { valueToBigNumber } from '@aave/math-utils';
 import { useMemo } from 'react';
-import { getTotalApy } from 'src/components/incentives/ApyWithIncentives';
 import { ModalType } from 'src/components/Modals/types';
 import { useAppDataContext } from 'src/hooks/app-data-provider/useAppDataProvider';
 import { Position, useNetBorrowed, useNetSupplied } from 'src/hooks/useNetSupplied';
@@ -11,6 +10,7 @@ import { useModalStore } from 'src/store/useModalStore';
 import { fetchIconSymbolAndName } from 'src/ui-config/reservePatches';
 import { GHO_SYMBOL } from 'src/utils/ghoUtilities';
 import { GENERAL } from 'src/utils/mixPanelEvents';
+import { suppliedApySum } from 'src/utils/portfolioApy';
 
 import { InfoCardType, InfoCardViewData, InfoPosition } from './data';
 
@@ -41,17 +41,6 @@ const formatPercent = (value: string | number | undefined) => {
   if (!Number.isFinite(normalized)) return '∞%';
   return `${(normalized * 100).toFixed(2)}%`;
 };
-
-/**
- * Headline APY across the card's positions, as the plain sum of the per-row figures
- * (protocol rate + reward emissions each). Deliberately not the balance-weighted
- * average `user.earnedAPY` / `user.debtAPY`: the product wants the total to line up
- * with adding up the column below it.
- */
-const sumPositionApy = (
-  positions: Array<{ apyValue: number; incentives: Parameters<typeof getTotalApy>[1] }>
-) =>
-  positions.reduce((acc, position) => acc + getTotalApy(position.apyValue, position.incentives), 0);
 
 export function useInfoCardData(type: InfoCardType): {
   data: InfoCardViewData;
@@ -181,7 +170,7 @@ export function useInfoCardData(type: InfoCardType): {
       emptyText: 'Nothing supplied yet',
       metrics: [
         { label: 'Balance', value: formatCurrency(user?.totalLiquidityUSD) },
-        { label: 'APY', value: formatPercent(sumPositionApy(suppliedRaw)), showAlert: true },
+        { label: 'APY', value: formatPercent(suppliedApySum(user)), showAlert: true },
         { label: 'Collateral', value: formatCurrency(user?.totalCollateralUSD), showAlert: true },
       ],
       positions: suppliedRaw as InfoPosition[],
