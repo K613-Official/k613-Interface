@@ -17,6 +17,7 @@ import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
 import { LiquidationRiskParametresInfoModal } from 'src/modules/dashboard/LiquidationRiskParametresModal/LiquidationRiskParametresModal';
 import { useRootStore } from 'src/store/root';
 import { useModalStore } from 'src/store/useModalStore';
+import { netApySum } from 'src/utils/portfolioApy';
 
 import { DASHBOARD_TABLES } from './const';
 import {
@@ -66,7 +67,9 @@ export default function DashboardPage() {
     });
     return { claimableAmount: amount, claimableSymbol: symbol };
   }, [onChainClaimable]);
-  const netApyValue = user?.netAPY;
+  // Sum of the supply rows minus sum of the borrow rows, so this reconciles with the
+  // APY shown on the position cards rather than with the weighted `user.netAPY`.
+  const netApyValue = user ? netApySum(user) : undefined;
   const netApyFinite = typeof netApyValue === 'number' && Number.isFinite(netApyValue);
 
   return (
