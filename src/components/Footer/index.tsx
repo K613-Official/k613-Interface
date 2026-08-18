@@ -1,10 +1,9 @@
 import { Box, Link } from '@mui/material';
-import Image from 'next/image';
 import { FC } from 'react';
 import MaxWidthContainer from 'src/components/MaxWidthContainer';
 
 import { SOCIAL_LINKS } from './const';
-import { Container, LinksWrapper, Wrapper } from './styles';
+import { Container, LinksWrapper, SocialIcon, Wrapper } from './styles';
 
 const Footer: FC = () => {
   return (
@@ -36,11 +35,18 @@ const Footer: FC = () => {
 
           <Box display="flex" alignItems="center" gap={2}>
             {SOCIAL_LINKS.map((link) => {
-              const { id, href, icon, alt } = link;
+              const { id, href, icon, alt, scale } = link;
 
               return (
-                <Link key={id} href={href} target="_blank" rel="noopener noreferrer">
-                  <Image src={icon} width={24} height={24} alt={alt} />
+                <Link
+                  key={id}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={alt}
+                  sx={{ display: 'inline-flex' }}
+                >
+                  <SocialIcon icon={icon} scale={scale} role="img" />
                 </Link>
               );
             })}
