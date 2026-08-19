@@ -576,8 +576,17 @@ const jsonRpcSource = (url: string, distributor: `0x${string}`, callData: `0x${s
   } satisfies AprSource;
 };
 
+export type RewardsAprResult = {
+  /** Annualised rate, percent, as a fixed-2 string. */
+  apr: string;
+  /** How much history this endpoint actually served — the figure is only as good as this. */
+  windowDays: number;
+  /** Separate payouts seen in the window. One payout is a sample, not an average. */
+  payouts: number;
+};
+
 /** `null` when this endpoint cannot support the calculation — the caller then tries the next one. */
-async function computeRewardsApr(source: AprSource): Promise<string | null> {
+async function computeRewardsApr(source: AprSource): Promise<RewardsAprResult | null> {
   const latest = await source.getBlockNumber();
   const [latestTs, probeTs] = await Promise.all([
     source.getBlockTimestamp(latest),
@@ -586,27 +595,51 @@ async function computeRewardsApr(source: AprSource): Promise<string | null> {
   const secondsPerBlock = (latestTs - probeTs) / Number(BLOCK_TIME_PROBE_SPAN);
   if (!Number.isFinite(secondsPerBlock) || secondsPerBlock <= 0) return null;
 
-  // Nodes keep historical state for a limited depth: ask for 30 days and halve the
-  // window until this endpoint serves the historical call.
+  // Nodes keep historical state for a limited depth. Halving from 30 days lands on
+  // 7.5 even when the node happily serves 10, and with a 7-day epoch that shortfall
+  // decides whether a payout falls inside the window at all — the difference between
+  // showing 12% and 0.5% for the same pool. So binary-search the real boundary.
+  const maxSpan = BigInt(Math.round((APR_WINDOW_DAYS * 86400) / secondsPerBlock));
   const minSpan = BigInt(Math.round((APR_MIN_WINDOW_DAYS * 86400) / secondsPerBlock));
-  let span = BigInt(Math.round((APR_WINDOW_DAYS * 86400) / secondsPerBlock));
-  let startBlock: bigint | null = null;
-  let accStart = 0n;
 
-  while (span >= minSpan) {
-    const candidate = latest - span;
+  const servesState = async (span: bigint) => {
     try {
-      accStart = await source.readAcc(candidate);
-      startBlock = candidate;
-      break;
+      return await source.readAcc(latest - span);
     } catch {
-      span /= 2n;
+      return null;
     }
+  };
+
+  let accStart = await servesState(maxSpan);
+  let deepest = accStart === null ? null : maxSpan;
+
+  if (accStart === null) {
+    let servable = 0n;
+    let unservable = maxSpan;
+    // Bail out early when even the shortest useful window is out of reach.
+    const atMin = await servesState(minSpan);
+    if (atMin === null) return null;
+    accStart = atMin;
+    servable = minSpan;
+
+    while (unservable - servable > BigInt(Math.round(86400 / secondsPerBlock))) {
+      const middle = (servable + unservable) / 2n;
+      const value = await servesState(middle);
+      if (value === null) {
+        unservable = middle;
+      } else {
+        servable = middle;
+        accStart = value;
+      }
+    }
+    deepest = servable;
   }
+
+  const startBlock = deepest === null ? null : latest - deepest;
 
   // A zero index at the window start means the pool only began accruing inside the
   // window. Annualising that cold start invents a 3-digit APR.
-  if (startBlock === null || accStart === 0n) return null;
+  if (startBlock === null || accStart === null || accStart === 0n) return null;
 
   const windowStart = startBlock;
   const step = (latest - windowStart) / BigInt(APR_SAMPLES);
@@ -633,7 +666,11 @@ async function computeRewardsApr(source: AprSource): Promise<string | null> {
   if (windowSeconds <= 0) return null;
 
   const growthPerToken = Number(accLatest - accStart) / 1e18;
-  return (growthPerToken * ((365 * 86400) / windowSeconds) * 100).toFixed(2);
+  return {
+    apr: (growthPerToken * ((365 * 86400) / windowSeconds) * 100).toFixed(2),
+    windowDays: windowSeconds / 86400,
+    payouts: accruals,
+  };
 }
 
 export function useK613RewardsAPR(rewardsDistributorAddress: `0x${string}` | undefined) {
@@ -644,7 +681,7 @@ export function useK613RewardsAPR(rewardsDistributorAddress: `0x${string}` | und
     enabled: Boolean(publicClient && rewardsDistributorAddress),
     staleTime: 10 * 60 * 1000,
     retry: false,
-    queryFn: async (): Promise<{ apr: string | null }> => {
+    queryFn: async (): Promise<{ apr: string | null; windowDays?: number; payouts?: number }> => {
       if (!publicClient || !rewardsDistributorAddress) return { apr: null };
 
       const callData = encodeFunctionData({
@@ -678,8 +715,8 @@ export function useK613RewardsAPR(rewardsDistributorAddress: `0x${string}` | und
       // still available from the chain's public nodes, so keep asking down the list.
       for (const source of sources) {
         try {
-          const apr = await computeRewardsApr(source);
-          if (apr !== null) return { apr };
+          const result = await computeRewardsApr(source);
+          if (result !== null) return result;
         } catch {
           // endpoint unusable for this calculation — try the next
         }
@@ -689,7 +726,13 @@ export function useK613RewardsAPR(rewardsDistributorAddress: `0x${string}` | und
     },
   });
 
-  return { apr: data?.apr ?? null };
+  return {
+    apr: data?.apr ?? null,
+    /** Days of history the figure is based on — the caller should say so out loud. */
+    windowDays: data?.windowDays ?? null,
+    /** Payouts observed in that window. One or two is a sample, not a trend. */
+    payouts: data?.payouts ?? null,
+  };
 }
 
 export function useK613RewardsActions(rewardsDistributorAddress: `0x${string}` | undefined) {

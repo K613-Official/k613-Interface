@@ -124,7 +124,11 @@ export function useK613StakingController() {
     rewardsDistributor as `0x${string}` | undefined
   );
   const rewardsData = useK613RewardsData(rewardsDistributor);
-  const { apr: calculatedApr } = useK613RewardsAPR(rewardsDistributor);
+  const {
+    apr: calculatedApr,
+    windowDays: aprWindowDays,
+    payouts: aprPayouts,
+  } = useK613RewardsAPR(rewardsDistributor);
   const globalExitQueue = useK613GlobalExitQueue(stakingAddress as `0x${string}` | undefined);
 
   const {
@@ -664,6 +668,8 @@ export function useK613StakingController() {
     resolveConfirm,
     formatted,
     displayApy,
+    aprWindowDays,
+    aprPayouts,
     lockDurationSeconds,
     lockPeriodLabel,
     exitQueue,
