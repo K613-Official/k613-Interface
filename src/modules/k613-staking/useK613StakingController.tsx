@@ -16,6 +16,7 @@ import {
   useK613TokenBalance,
 } from 'src/hooks/useK613Staking';
 import { useRootStore } from 'src/store/root';
+import { formatNumber } from 'src/utils/formatNumber';
 import { getNetworkConfig } from 'src/utils/marketsAndNetworksConfig';
 import { formatUnits, parseUnits } from 'viem';
 import { useAccount, useSwitchChain } from 'wagmi';
@@ -32,19 +33,10 @@ import { useK613LegacyStakingBlock } from './useK613LegacyStakingBlock';
 
 const MAX_UINT256 = BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
 
+// Headline figures go through the shared formatter: decimals by magnitude, thousands
+// collapsed into K/M/B. Printing 314,319.7704 in a stat card is four digits nobody acts on.
 function formatTokenAmount(amount: bigint): string {
-  const negative = amount < 0n;
-  const normalized = negative ? -amount : amount;
-  const formatted = formatUnits(normalized, 18);
-  const [integerPart, fractionPartRaw = ''] = formatted.split('.');
-  const fractionPart = fractionPartRaw.replace(/0+$/, '').slice(0, 4);
-  const integerWithGroups = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-
-  if (!fractionPart) {
-    return `${negative ? '-' : ''}${integerWithGroups}`;
-  }
-
-  return `${negative ? '-' : ''}${integerWithGroups}.${fractionPart}`;
+  return formatNumber(Number(formatUnits(amount, 18)));
 }
 
 export function useK613StakingController() {
@@ -677,6 +669,9 @@ export function useK613StakingController() {
     exitQueue,
     maxExitSlots,
     walletK613,
+    protocolTVL,
+    totalPoolDeposits,
+    userPoolBalance,
     availableToExit,
     needsPoolWithdrawal,
     penaltyPercent,

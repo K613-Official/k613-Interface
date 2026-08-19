@@ -2,6 +2,7 @@
 
 import { Alert, CircularProgress, Snackbar } from '@mui/material';
 import InputAdornment from '@mui/material/InputAdornment';
+import { formatPercentValue } from 'src/utils/formatNumber';
 
 import {
   AmountFieldWrap,
@@ -35,6 +36,7 @@ import {
   TabItem,
 } from '../k613Staking.styles';
 import { useK613StakingPage } from '../K613StakingContext';
+import { K613UsdCaption } from '../K613UsdCaption';
 
 export function K613RewardPoolTab() {
   const {
@@ -50,6 +52,8 @@ export function K613RewardPoolTab() {
     isClaimPending,
     error,
     pendingRewardsAmount,
+    protocolTVL,
+    totalPoolDeposits,
     displayApy,
     handleClaimRewards,
     handleDeposit,
@@ -61,6 +65,15 @@ export function K613RewardPoolTab() {
   } = useK613StakingPage();
 
   const claimBusy = isClaimPending || actionPending === 'claimRewards:claim';
+  // Weekly epochs, so the compounded figure is the APR re-deposited 52 times a year.
+  const EPOCHS_PER_YEAR = 52;
+  const apyLabel =
+    displayApy === '—'
+      ? '—'
+      : formatPercentValue(
+          (Math.pow(1 + Number(displayApy) / 100 / EPOCHS_PER_YEAR, EPOCHS_PER_YEAR) - 1) * 100
+        );
+
   const claimButtonLabel =
     actionPending === 'claimRewards:claim' ? 'Confirm in wallet' : 'Claim rewards';
   const onClaimClick = handleClaimRewards;
@@ -84,14 +97,17 @@ export function K613RewardPoolTab() {
         <StatsRow>
           <StatCard>
             <StatInner>
-              <StatLabel>TVL</StatLabel>
+              {/* Named for what it is: everything locked in staking, the pool is a subset of it. */}
+              <StatLabel>TVL (locked in staking)</StatLabel>
               <StatValue>{formatted.protocolTVL} K613</StatValue>
+              <K613UsdCaption amount={protocolTVL} />
             </StatInner>
           </StatCard>
           <StatCard>
             <StatInner>
-              <StatLabel>Total deposited</StatLabel>
+              <StatLabel>Total deposited (reward pool)</StatLabel>
               <StatValue>{formatted.totalPoolDeposits} xK613</StatValue>
+              <K613UsdCaption amount={totalPoolDeposits} />
             </StatInner>
           </StatCard>
           <StatCard>
@@ -141,10 +157,13 @@ export function K613RewardPoolTab() {
               <RewardStatCard>
                 <RewardStatLabel>Available rewards</RewardStatLabel>
                 <RewardStatValue>{formatted.pendingRewards} xK613</RewardStatValue>
+                <K613UsdCaption amount={pendingRewardsAmount} />
               </RewardStatCard>
               <RewardStatCard>
-                <RewardStatLabel>APR</RewardStatLabel>
-                <RewardStatValue>{displayApy !== '—' ? `${displayApy}%` : '—'}</RewardStatValue>
+                <RewardStatLabel>APR / APY</RewardStatLabel>
+                <RewardStatValue>
+                  {displayApy !== '—' ? `${formatPercentValue(displayApy)} / ${apyLabel}` : '—'}
+                </RewardStatValue>
               </RewardStatCard>
             </RewardStatsRow>
 
