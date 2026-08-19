@@ -55,8 +55,6 @@ export function K613RewardPoolTab() {
     protocolTVL,
     totalPoolDeposits,
     displayApy,
-    aprWindowDays,
-    aprPayouts,
     handleClaimRewards,
     handleDeposit,
     handleWithdraw,
@@ -170,15 +168,9 @@ export function K613RewardPoolTab() {
             </RewardStatsRow>
 
             <PanelSection>
-              <BalanceCaption>
-                {displayApy === '—'
-                  ? 'APR appears after several buyback cycles'
-                  : `Measured over the last ${Math.round(aprWindowDays ?? 0)} days (${
-                      aprPayouts ?? 0
-                    } payout${
-                      aprPayouts === 1 ? '' : 's'
-                    }). Payouts land once per weekly epoch — buybacks plus instant-exit penalties — so a short window swings the figure. APY assumes you re-deposit every epoch.`}
-              </BalanceCaption>
+              {displayApy === '—' && (
+                <BalanceCaption>APR appears after several buyback cycles</BalanceCaption>
+              )}
             </PanelSection>
 
             <CtaButton
