@@ -38,6 +38,7 @@ import {
   WarningNote,
 } from '../k613Staking.styles';
 import { useK613StakingPage } from '../K613StakingContext';
+import { K613UsdCaption } from '../K613UsdCaption';
 
 export function K613LockExitTab() {
   const {
@@ -107,6 +108,7 @@ export function K613LockExitTab() {
             <StatInner>
               <StatLabel>Available to lock</StatLabel>
               <StatValue>{formatted.walletK613} K613</StatValue>
+              <K613UsdCaption amount={walletK613} />
               {/* Nothing to lock yet — point at the pool instead of at the wallet import. */}
               {walletK613 > 0n ? (
                 <AddTokenToWalletButton token={k613Token} sx={{ mt: 0.5, ml: -1 }} />
@@ -119,6 +121,7 @@ export function K613LockExitTab() {
             <StatInner>
               <StatLabel>Available to exit</StatLabel>
               <StatValue>{formatted.availableToExit} xK613</StatValue>
+              <K613UsdCaption amount={availableToExit} />
               <AddTokenToWalletButton token={xk613Token} sx={{ mt: 0.5, ml: -1 }} />
             </StatInner>
           </StatCard>

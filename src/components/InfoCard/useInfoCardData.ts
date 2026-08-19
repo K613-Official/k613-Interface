@@ -8,6 +8,7 @@ import { useWeb3Context } from 'src/libs/hooks/useWeb3Context';
 import { useRootStore } from 'src/store/root';
 import { useModalStore } from 'src/store/useModalStore';
 import { fetchIconSymbolAndName } from 'src/ui-config/reservePatches';
+import { formatNumber, formatPercentValue, formatUsd } from 'src/utils/formatNumber';
 import { GHO_SYMBOL } from 'src/utils/ghoUtilities';
 import { GENERAL } from 'src/utils/mixPanelEvents';
 import { suppliedApySum } from 'src/utils/portfolioApy';
@@ -20,27 +21,13 @@ const formatAccrued = (position: Position | undefined) => {
   return `+${earned.toFixed(earned.gte(1) ? 2 : 4)}`;
 };
 
-const formatCurrency = (value: string | number | undefined) => {
-  const normalized = Number(value || 0);
-  return `$${normalized.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-};
+// One formatter for the whole app: decimals by magnitude, K/M/B past a thousand.
+const formatCurrency = (value: string | number | undefined) => formatUsd(Number(value || 0));
 
-const formatToken = (value: string | number | undefined) => {
-  const normalized = Number(value || 0);
-  return normalized.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-};
+const formatToken = (value: string | number | undefined) => formatNumber(Number(value || 0));
 
-const formatPercent = (value: string | number | undefined) => {
-  const normalized = Number(value || 0);
-  if (!Number.isFinite(normalized)) return '∞%';
-  return `${(normalized * 100).toFixed(2)}%`;
-};
+const formatPercent = (value: string | number | undefined) =>
+  formatPercentValue(Number(value || 0) * 100);
 
 export function useInfoCardData(type: InfoCardType): {
   data: InfoCardViewData;
@@ -157,11 +144,12 @@ export function useInfoCardData(type: InfoCardType): {
     const borrowPowerDenominator = valueToBigNumber(
       user?.totalBorrowsMarketReferenceCurrency || '0'
     ).plus(user?.availableBorrowsMarketReferenceCurrency || '0');
+    // Kept as a ratio, not a percentage: formatPercent multiplies by 100 itself, and
+    // doing it here as well printed "borrow power used" a hundred times too large.
     const borrowPowerUsed = borrowPowerDenominator.eq(0)
       ? 0
       : valueToBigNumber(user?.totalBorrowsMarketReferenceCurrency || '0')
           .div(borrowPowerDenominator)
-          .multipliedBy(100)
           .toNumber();
 
     const supplyData: InfoCardViewData = {

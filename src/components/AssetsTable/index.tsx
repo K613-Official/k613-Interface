@@ -51,6 +51,7 @@ import { useRootStore } from 'src/store/root';
 import { useModalStore } from 'src/store/useModalStore';
 import { CustomMarket } from 'src/ui-config/marketsConfig';
 import { fetchIconSymbolAndName } from 'src/ui-config/reservePatches';
+import { formatNumber } from 'src/utils/formatNumber';
 import {
   assetCanBeBorrowedByUser,
   getMaxAmountAvailableToBorrow,
@@ -788,9 +789,7 @@ function SupplyMobileCard({
       <Box display="flex" flexDirection="column" gap={2}>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="body2">Wallet balance</Typography>
-          <Typography variant="body2">
-            {Number(row.walletBalanceStr).toLocaleString(undefined, { maximumFractionDigits: 6 })}
-          </Typography>
+          <Typography variant="body2">{formatNumber(row.walletBalanceStr)}</Typography>
         </Box>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="body2">APY</Typography>
@@ -854,9 +853,7 @@ function BorrowMobileCard({
       <Box display="flex" flexDirection="column" gap={2}>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="body2">Available</Typography>
-          <Typography variant="body2">
-            {row.availableBorrows.toLocaleString(undefined, { maximumFractionDigits: 6 })}
-          </Typography>
+          <Typography variant="body2">{formatNumber(row.availableBorrows)}</Typography>
         </Box>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="body2">APY, variable</Typography>
@@ -915,9 +912,7 @@ function SupplyTableRow({
         </Stack>
       </TableCell>
 
-      <TableCell align="center">
-        {Number(row.walletBalanceStr).toLocaleString(undefined, { maximumFractionDigits: 6 })}
-      </TableCell>
+      <TableCell align="center">{formatNumber(row.walletBalanceStr)}</TableCell>
       <TableCell align="center">
         <ApyWithIncentives value={row.apyPercent} incentives={row.incentives} symbol={row.symbol} />
       </TableCell>
@@ -974,9 +969,7 @@ function BorrowTableRow({
         </Stack>
       </TableCell>
 
-      <TableCell align="center">
-        {row.availableBorrows.toLocaleString(undefined, { maximumFractionDigits: 6 })}
-      </TableCell>
+      <TableCell align="center">{formatNumber(row.availableBorrows)}</TableCell>
       <TableCell align="center">
         <ApyWithIncentives
           value={row.borrowApyPercent}
