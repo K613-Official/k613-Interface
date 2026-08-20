@@ -449,6 +449,21 @@ export function useK613RewardsData(rewardsDistributorAddress: `0x${string}` | un
     abi: REWARDS_DISTRIBUTOR_ABI,
     functionName: 'totalDeposits',
   });
+  // What the pool owes its depositors regardless of who has claimed: buybacks and
+  // instant-exit penalties waiting for the next epoch flush. The alternative —
+  // token balance minus deposits — is the unclaimed leftover, which drops every
+  // time someone claims even though nothing about the pool's yield changed.
+  const pendingRewards = useReadContract({
+    address: rewardsDistributorAddress,
+    abi: REWARDS_DISTRIBUTOR_ABI,
+    functionName: 'pendingRewards',
+  });
+
+  const pendingPenalties = useReadContract({
+    address: rewardsDistributorAddress,
+    abi: REWARDS_DISTRIBUTOR_ABI,
+    functionName: 'pendingPenalties',
+  });
 
   // Ask the distributor which token it actually holds rather than hardcoding an
   // xK613 address: more than one xK613 deployment exists, and pointing this at
@@ -478,12 +493,18 @@ export function useK613RewardsData(rewardsDistributorAddress: `0x${string}` | un
     userPoolBalance: userPoolBalance.data as bigint | undefined,
     totalDeposits: totalDepositsValue,
     poolPendingRewards: poolRewardBalance,
+    /** Queued for the next epoch flush — independent of who has claimed. */
+    queuedForNextEpoch:
+      ((pendingRewards.data as bigint | undefined) ?? BigInt(0)) +
+      ((pendingPenalties.data as bigint | undefined) ?? BigInt(0)),
     isLoading:
       pendingRewardsOf.isLoading ||
       lastEpochFlushAt.isLoading ||
       nextEpochAt.isLoading ||
       userPoolBalance.isLoading ||
       totalDeposits.isLoading ||
+      pendingRewards.isLoading ||
+      pendingPenalties.isLoading ||
       stakingToken.isLoading ||
       xk613Balance.isLoading,
     refetch: () => {
@@ -492,6 +513,8 @@ export function useK613RewardsData(rewardsDistributorAddress: `0x${string}` | un
       nextEpochAt.refetch();
       userPoolBalance.refetch();
       totalDeposits.refetch();
+      pendingRewards.refetch();
+      pendingPenalties.refetch();
       stakingToken.refetch();
       xk613Balance.refetch();
     },
