@@ -449,7 +449,6 @@ export function useK613RewardsData(rewardsDistributorAddress: `0x${string}` | un
     abi: REWARDS_DISTRIBUTOR_ABI,
     functionName: 'totalDeposits',
   });
-
   // Ask the distributor which token it actually holds rather than hardcoding an
   // xK613 address: more than one xK613 deployment exists, and pointing this at
   // the wrong one silently reports a zero reward balance.

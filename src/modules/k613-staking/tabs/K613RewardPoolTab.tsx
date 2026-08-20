@@ -100,6 +100,7 @@ export function K613RewardPoolTab() {
               {/* Named for what it is: everything locked in staking, the pool is a subset of it. */}
               <StatLabel>TVL (locked in staking)</StatLabel>
               <StatValue>{formatted.protocolTVL} K613</StatValue>
+              <BalanceCaption>Backs the whole xK613 supply 1:1</BalanceCaption>
               <K613UsdCaption amount={protocolTVL} />
             </StatInner>
           </StatCard>
@@ -114,6 +115,7 @@ export function K613RewardPoolTab() {
             <StatInner>
               <StatLabel>Total Rewards</StatLabel>
               <StatValue>{formatted.poolPendingRewards} xK613</StatValue>
+              <BalanceCaption>Buybacks + instant-exit penalties</BalanceCaption>
             </StatInner>
           </StatCard>
         </StatsRow>
@@ -160,10 +162,8 @@ export function K613RewardPoolTab() {
                 <K613UsdCaption amount={pendingRewardsAmount} />
               </RewardStatCard>
               <RewardStatCard>
-                <RewardStatLabel>APR / APY</RewardStatLabel>
-                <RewardStatValue>
-                  {displayApy !== '—' ? `${formatPercentValue(displayApy)} / ${apyLabel}` : '—'}
-                </RewardStatValue>
+                <RewardStatLabel>APY</RewardStatLabel>
+                <RewardStatValue>{apyLabel}</RewardStatValue>
               </RewardStatCard>
             </RewardStatsRow>
 
