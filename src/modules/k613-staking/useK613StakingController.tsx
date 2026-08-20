@@ -169,8 +169,6 @@ export function useK613StakingController() {
     typeof rewardsData.totalDeposits === 'bigint' ? rewardsData.totalDeposits : BigInt(0);
   const poolPendingRewards =
     typeof rewardsData.poolPendingRewards === 'bigint' ? rewardsData.poolPendingRewards : BigInt(0);
-  const queuedForNextEpoch =
-    typeof rewardsData.queuedForNextEpoch === 'bigint' ? rewardsData.queuedForNextEpoch : BigInt(0);
   const protocolTVL = typeof totalBacking === 'bigint' ? totalBacking : BigInt(0);
 
   // The contract's own tally. Until that read resolves, fall back to summing the
@@ -226,7 +224,6 @@ export function useK613StakingController() {
       userPoolBalance: formatTokenAmount(userPoolBalance),
       totalPoolDeposits: formatTokenAmount(totalPoolDeposits),
       poolPendingRewards: formatTokenAmount(poolPendingRewards),
-      queuedForNextEpoch: formatTokenAmount(queuedForNextEpoch),
       protocolTVL: formatTokenAmount(protocolTVL),
     }),
     [
@@ -243,7 +240,6 @@ export function useK613StakingController() {
       userPoolBalance,
       totalPoolDeposits,
       poolPendingRewards,
-      queuedForNextEpoch,
       protocolTVL,
     ]
   );

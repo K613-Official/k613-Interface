@@ -113,9 +113,8 @@ export function K613RewardPoolTab() {
           </StatCard>
           <StatCard>
             <StatInner>
-              {/* Owed to depositors, not "left in the contract": claiming must not move this. */}
-              <StatLabel>Rewards next epoch</StatLabel>
-              <StatValue>{formatted.queuedForNextEpoch} xK613</StatValue>
+              <StatLabel>Total Rewards</StatLabel>
+              <StatValue>{formatted.poolPendingRewards} xK613</StatValue>
               <BalanceCaption>Buybacks + instant-exit penalties</BalanceCaption>
             </StatInner>
           </StatCard>
@@ -163,10 +162,8 @@ export function K613RewardPoolTab() {
                 <K613UsdCaption amount={pendingRewardsAmount} />
               </RewardStatCard>
               <RewardStatCard>
-                <RewardStatLabel>APR / APY</RewardStatLabel>
-                <RewardStatValue>
-                  {displayApy !== '—' ? `${formatPercentValue(displayApy)} / ${apyLabel}` : '—'}
-                </RewardStatValue>
+                <RewardStatLabel>APY</RewardStatLabel>
+                <RewardStatValue>{apyLabel}</RewardStatValue>
               </RewardStatCard>
             </RewardStatsRow>
 
