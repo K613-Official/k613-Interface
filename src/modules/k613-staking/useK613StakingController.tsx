@@ -169,6 +169,8 @@ export function useK613StakingController() {
     typeof rewardsData.totalDeposits === 'bigint' ? rewardsData.totalDeposits : BigInt(0);
   const poolPendingRewards =
     typeof rewardsData.poolPendingRewards === 'bigint' ? rewardsData.poolPendingRewards : BigInt(0);
+  const queuedForNextEpoch =
+    typeof rewardsData.queuedForNextEpoch === 'bigint' ? rewardsData.queuedForNextEpoch : BigInt(0);
   const protocolTVL = typeof totalBacking === 'bigint' ? totalBacking : BigInt(0);
 
   // The contract's own tally. Until that read resolves, fall back to summing the
@@ -194,7 +196,32 @@ export function useK613StakingController() {
 
   const hasStakingActivity = walletXk613 > 0n || queuedTotal > 0n || userPoolBalance > 0n;
 
-  const displayApy = calculatedApr || '—';
+  /**
+   * Rate from what the running epoch has already accumulated — buybacks and
+   * instant-exit penalties waiting for the next flush, over the pool's deposits.
+   *
+   * This is the only rate that survives without archive state: the trailing
+   * measurement reads `accRewardPerShare` at past blocks, and public Monad nodes
+   * have been pruning that to under a week, which blanked the figure entirely.
+   * Needs a few hours of epoch elapsed first — annualising ten minutes of accrual
+   * produces a number with no meaning.
+   */
+  const projectedApr = useMemo(() => {
+    const lastFlush = rewardsData.lastEpochFlushAt;
+    if (!lastFlush || lastFlush <= 0n || totalPoolDeposits <= 0n || queuedForNextEpoch <= 0n) {
+      return null;
+    }
+    const elapsedSeconds = Math.floor(Date.now() / 1000) - Number(lastFlush);
+    const MIN_ELAPSED_SECONDS = 6 * 3600;
+    if (!Number.isFinite(elapsedSeconds) || elapsedSeconds < MIN_ELAPSED_SECONDS) return null;
+
+    const perToken = Number(queuedForNextEpoch) / Number(totalPoolDeposits);
+    const annualised = perToken * ((365 * 86400) / elapsedSeconds) * 100;
+    return Number.isFinite(annualised) && annualised > 0 ? annualised.toFixed(2) : null;
+  }, [rewardsData.lastEpochFlushAt, totalPoolDeposits, queuedForNextEpoch]);
+
+  // Measured history first when the node still serves it, the running epoch otherwise.
+  const displayApy = calculatedApr || projectedApr || '—';
 
   const lastAccrualDisplay = useMemo(() => {
     const lastEpoch = rewardsData.lastEpochFlushAt;
@@ -224,6 +251,7 @@ export function useK613StakingController() {
       userPoolBalance: formatTokenAmount(userPoolBalance),
       totalPoolDeposits: formatTokenAmount(totalPoolDeposits),
       poolPendingRewards: formatTokenAmount(poolPendingRewards),
+      queuedForNextEpoch: formatTokenAmount(queuedForNextEpoch),
       protocolTVL: formatTokenAmount(protocolTVL),
     }),
     [
