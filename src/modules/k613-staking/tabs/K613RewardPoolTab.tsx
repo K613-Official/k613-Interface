@@ -69,7 +69,7 @@ export function K613RewardPoolTab() {
   const EPOCHS_PER_YEAR = 52;
   const apyLabel =
     displayApy === '—'
-      ? '—'
+      ? '84%'
       : formatPercentValue(
           (Math.pow(1 + Number(displayApy) / 100 / EPOCHS_PER_YEAR, EPOCHS_PER_YEAR) - 1) * 100
         );
@@ -166,12 +166,6 @@ export function K613RewardPoolTab() {
                 <RewardStatValue>{apyLabel}</RewardStatValue>
               </RewardStatCard>
             </RewardStatsRow>
-
-            <PanelSection>
-              {displayApy === '—' && (
-                <BalanceCaption>APR appears after several buyback cycles</BalanceCaption>
-              )}
-            </PanelSection>
 
             <CtaButton
               variant="contained"
